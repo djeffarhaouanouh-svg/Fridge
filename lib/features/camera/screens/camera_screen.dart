@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:camera/camera.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/google_vision_service.dart';
 import '../../../core/services/spoonacular_service.dart';
@@ -16,55 +16,25 @@ class CameraScreen extends ConsumerStatefulWidget {
 }
 
 class _CameraScreenState extends ConsumerState<CameraScreen> {
-  CameraController? _cameraController;
-  bool _isInitialized = false;
+  final _picker = ImagePicker();
   String _scanStep = '';
 
-  @override
-  void initState() {
-    super.initState();
-    _initCamera();
-  }
-
-  Future<void> _initCamera() async {
-    try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) return;
-      _cameraController = CameraController(
-        cameras.first,
-        ResolutionPreset.high,
-        enableAudio: false,
-      );
-      await _cameraController!.initialize();
-      if (mounted) setState(() => _isInitialized = true);
-    } catch (e) {
-      debugPrint('Camera init error: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _cameraController?.dispose();
-    super.dispose();
-  }
-
   Future<void> _handleScan() async {
-    if (_cameraController == null || !_isInitialized) return;
+    final photo = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
+    if (photo == null) return;
 
     ref.read(scanStatusProvider.notifier).state = ScanStatus.loading;
 
     try {
-      // 1. Prendre la photo
-      setState(() => _scanStep = 'Photo prise…');
-      final photo = await _cameraController!.takePicture();
       final bytes = await photo.readAsBytes();
 
-      // 2. Google Vision → détecter les ingrédients
       setState(() => _scanStep = 'Détection des ingrédients…');
       final ingredients = await GoogleVisionService().detectIngredients(bytes);
       ref.read(detectedIngredientsProvider.notifier).state = ingredients;
 
-      // 3. Spoonacular → trouver les recettes
       setState(() => _scanStep = 'Recherche des recettes…');
       if (ingredients.isNotEmpty) {
         final meals = await SpoonacularService().findByIngredients(ingredients);
@@ -85,33 +55,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isScanning =
-        ref.watch(scanStatusProvider) == ScanStatus.loading;
+    final isScanning = ref.watch(scanStatusProvider) == ScanStatus.loading;
 
     return Scaffold(
       backgroundColor: AppTokens.bg,
       body: Stack(
         children: [
-          // Camera preview
-          if (_isInitialized && _cameraController != null)
-            Positioned.fill(
-              child: ClipRRect(
-                child: AspectRatio(
-                  aspectRatio: _cameraController!.value.aspectRatio,
-                  child: CameraPreview(_cameraController!),
-                ),
-              ),
-            )
-          else
-            Positioned.fill(
-              child: Container(
-                color: AppTokens.surface,
-                child: Center(
-                    child: CircularProgressIndicator(color: AppTokens.accent)),
-              ),
-            ),
-
-          // Gradient overlay
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -128,7 +77,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               ),
             ),
           ),
-
           SafeArea(
             child: Column(
               children: [
@@ -143,10 +91,25 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Pointe vers les ingrédients',
+                  'Prends une photo de tes ingrédients',
                   style: GoogleFonts.dmSans(fontSize: 14, color: AppTokens.muted),
                 ),
                 const Spacer(),
+                Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTokens.surface,
+                    border: Border.all(color: AppTokens.border),
+                  ),
+                  child: Icon(
+                    Icons.kitchen_outlined,
+                    size: 80,
+                    color: AppTokens.muted,
+                  ),
+                ),
+                const SizedBox(height: 40),
                 if (_scanStep.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),

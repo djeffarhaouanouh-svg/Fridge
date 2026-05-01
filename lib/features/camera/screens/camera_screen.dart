@@ -33,24 +33,41 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
       setState(() => _scanStep = 'Détection des ingrédients…');
       final ingredients = await GoogleVisionService().detectIngredients(bytes);
+
+      if (ingredients.isEmpty) {
+        _showError('Aucun ingrédient détecté. Réessaie avec une photo plus nette.');
+        ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
+        setState(() => _scanStep = '');
+        return;
+      }
+
       ref.read(detectedIngredientsProvider.notifier).state = ingredients;
 
       setState(() => _scanStep = 'Recherche des recettes…');
-      if (ingredients.isNotEmpty) {
-        final meals = await SpoonacularService().findByIngredients(ingredients);
-        if (meals.isNotEmpty) {
-          ref.read(mealsProvider.notifier).setMeals(meals);
-        }
+      final meals = await SpoonacularService().findByIngredients(ingredients);
+      if (meals.isNotEmpty) {
+        ref.read(mealsProvider.notifier).setMeals(meals);
       }
 
       ref.read(scanStatusProvider.notifier).state = ScanStatus.done;
+      setState(() => _scanStep = '');
+      if (mounted) ref.read(selectedTabProvider.notifier).state = 1;
     } catch (e) {
-      debugPrint('Scan error: $e');
-      ref.read(scanStatusProvider.notifier).state = ScanStatus.error;
+      _showError('Erreur : $e');
+      ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
+      setState(() => _scanStep = '');
     }
+  }
 
-    setState(() => _scanStep = '');
-    if (mounted) ref.read(selectedTabProvider.notifier).state = 1;
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade800,
+        duration: const Duration(seconds: 6),
+      ),
+    );
   }
 
   @override

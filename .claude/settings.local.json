@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(keytool -genkey -v -keystore \"c:/Users/Thomas/Downloads/fridge_app/fridge_app/android/app/fridge_app.keystore\" -keyalg RSA -keysize 2048 -validity 10000 -alias fridge_app -storepass fridge2024 -keypass fridge2024 -dname \"CN=Fridge App, OU=Dev, O=FridgeApp, L=Paris, ST=IDF, C=FR\")"
+    ]
+  }
+}

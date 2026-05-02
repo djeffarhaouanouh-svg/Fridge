@@ -65,39 +65,46 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTokens.card,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        expand: false,
+        builder: (_, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              day.dayName,
-              style: GoogleFonts.syne(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppTokens.text,
+              const SizedBox(height: 20),
+              Text(
+                day.dayName,
+                style: GoogleFonts.syne(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppTokens.text,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            _MealRow(icon: '☀️', label: 'Déjeuner', meal: day.lunch),
-            const SizedBox(height: 12),
-            _MealRow(icon: '🌙', label: 'Dîner', meal: day.dinner),
-          ],
+              const SizedBox(height: 20),
+              _MealSection(icon: '☀️', label: 'Déjeuner', meal: day.lunch),
+              const SizedBox(height: 16),
+              _MealSection(icon: '🌙', label: 'Dîner', meal: day.dinner),
+            ],
+          ),
         ),
       ),
     );
@@ -429,12 +436,12 @@ class _NavButton extends StatelessWidget {
   }
 }
 
-class _MealRow extends StatelessWidget {
+class _MealSection extends StatelessWidget {
   final String icon;
   final String label;
-  final String meal;
+  final PlanMeal meal;
 
-  const _MealRow({
+  const _MealSection({
     required this.icon,
     required this.label,
     required this.meal,
@@ -443,41 +450,133 @@ class _MealRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTokens.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         border: Border.all(color: AppTokens.border),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 18)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 11,
-                    color: AppTokens.muted,
-                  ),
+          // Header: icon + label + badges
+          Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: GoogleFonts.dmSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTokens.muted,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  meal,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTokens.text,
-                  ),
-                ),
-              ],
+              ),
+              const Spacer(),
+              _Badge(
+                icon: Icons.local_fire_department_rounded,
+                label: '${meal.kcal} kcal',
+                color: const Color(0xFFE8A050),
+              ),
+              const SizedBox(width: 6),
+              _Badge(
+                icon: Icons.timer_outlined,
+                label: meal.time,
+                color: AppTokens.muted,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            meal.name,
+            style: GoogleFonts.syne(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppTokens.text,
             ),
           ),
+          const SizedBox(height: 14),
+          // Steps
+          Text(
+            'Préparation',
+            style: GoogleFonts.dmSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppTokens.muted,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...meal.steps.asMap().entries.map((e) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 22,
+                      height: 22,
+                      margin: const EdgeInsets.only(top: 1),
+                      decoration: BoxDecoration(
+                        color: AppTokens.accent.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${e.key + 1}',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppTokens.accent,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        e.value,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          color: AppTokens.text,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
         ],
       ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _Badge({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: GoogleFonts.dmSans(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }

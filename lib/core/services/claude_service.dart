@@ -168,7 +168,7 @@ Rules:
       headers: _headers,
       body: jsonEncode({
         'model': _model,
-        'max_tokens': 2048,
+        'max_tokens': 4096,
         'messages': [
           {
             'role': 'user',
@@ -185,8 +185,18 @@ Return ONLY a JSON array with exactly 7 objects:
   {
     "day": "Samedi",
     "date": "2026-05-02",
-    "lunch": "Salade de tomates",
-    "dinner": "Poulet rôti"
+    "lunch": {
+      "name": "Salade de tomates",
+      "kcal": 320,
+      "time": "15 min",
+      "steps": ["Étape 1 en français", "Étape 2 en français", "Étape 3 en français"]
+    },
+    "dinner": {
+      "name": "Poulet rôti aux herbes",
+      "kcal": 520,
+      "time": "35 min",
+      "steps": ["Étape 1 en français", "Étape 2 en français", "Étape 3 en français", "Étape 4 en français"]
+    }
   }
 ]
 
@@ -194,6 +204,8 @@ Rules:
 - Use mainly ingredients visible in the photos
 - Meal names in French, concise (max 5 words)
 - Vary meals across the week (no repetition)
+- 3 to 5 cooking steps per meal, in French, clear and actionable
+- kcal: realistic estimate between 250 and 800
 - Return ONLY the JSON array, nothing else.''',
               },
             ],

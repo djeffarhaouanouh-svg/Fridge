@@ -213,7 +213,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             // Viewfinder
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 0),
                 child: ClipRRect(
                   key: _viewfinderKey,
                   borderRadius: BorderRadius.circular(20),
@@ -361,23 +361,16 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                       height: 72,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white,
+                        color: Colors.transparent,
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 4,
+                          color: Colors.white,
+                          width: 3,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withOpacity(0.15),
-                            blurRadius: 20,
-                            spreadRadius: 4,
-                          ),
-                        ],
                       ),
                       child: isScanning
                           ? Center(
                               child: CircularProgressIndicator(
-                                color: AppTokens.bg,
+                                color: Colors.white,
                                 strokeWidth: 2.5,
                               ),
                             )

@@ -208,180 +208,180 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               ),
             ),
 
-            // Viewfinder
+            // Viewfinder plein ecran avec controles en overlay
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: ClipRRect(
-                  key: _viewfinderKey,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        color: const Color(0xFF0A1A0A),
+              child: ClipRRect(
+                key: _viewfinderKey,
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      color: const Color(0xFF0A1A0A),
+                    ),
+                    const Positioned(
+                        top: 20, left: 20, child: _Corner(topLeft: true)),
+                    const Positioned(
+                        top: 20, right: 20, child: _Corner(topRight: true)),
+                    const Positioned(
+                        bottom: 110,
+                        left: 20,
+                        child: _Corner(bottomLeft: true)),
+                    const Positioned(
+                        bottom: 110,
+                        right: 20,
+                        child: _Corner(bottomRight: true)),
+                    if (isScanning)
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(
+                                color: AppTokens.accent, strokeWidth: 2),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Analyse en cours…',
+                              style: GoogleFonts.dmSans(
+                                  color: AppTokens.accent, fontSize: 14),
+                            ),
+                          ],
+                        ),
                       ),
-                      const Positioned(
-                          top: 20, left: 20, child: _Corner(topLeft: true)),
-                      const Positioned(
-                          top: 20, right: 20, child: _Corner(topRight: true)),
-                      const Positioned(
-                          bottom: 20,
-                          left: 20,
-                          child: _Corner(bottomLeft: true)),
-                      const Positioned(
-                          bottom: 20,
-                          right: 20,
-                          child: _Corner(bottomRight: true)),
-                      if (isScanning)
-                        Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(
-                                  color: AppTokens.accent, strokeWidth: 2),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Analyse en cours…',
-                                style: GoogleFonts.dmSans(
-                                    color: AppTokens.accent, fontSize: 14),
+                    // Flash shutter effect
+                    AnimatedBuilder(
+                      animation: _flashAnim,
+                      builder: (_, __) => _flashAnim.value > 0
+                          ? Positioned.fill(
+                              child: ColoredBox(
+                                color: Colors.white
+                                    .withOpacity(_flashAnim.value),
                               ),
-                            ],
-                          ),
-                        ),
-                      // Flash shutter effect
-                      AnimatedBuilder(
-                        animation: _flashAnim,
-                        builder: (_, __) => _flashAnim.value > 0
-                            ? Positioned.fill(
-                                child: ColoredBox(
-                                  color: Colors.white
-                                      .withOpacity(_flashAnim.value),
-                                ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Bas : miniature + capture
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Miniature
-                  GestureDetector(
-                    onTap: isScanning
-                        ? null
-                        : (hasPhotos ? _analyzePhotos : null),
-                    child: Container(
-                      key: _thumbnailKey,
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color:
-                              hasPhotos ? AppTokens.accent : Colors.white12,
-                          width: hasPhotos ? 2 : 1,
-                        ),
-                        color: const Color(0xFF1A2A1A),
-                      ),
-                      child: Stack(
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    // Controles en overlay en bas
+                    Positioned(
+                      bottom: 24,
+                      left: 32,
+                      right: 32,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: hasPhotos
-                                ? Image.memory(
-                                    _photos.last,
-                                    width: 56,
-                                    height: 56,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Center(
-                                    child: Icon(Icons.grid_view_rounded,
-                                        color: AppTokens.muted, size: 22),
-                                  ),
-                          ),
-                          if (hasPhotos)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                width: 18,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  color: AppTokens.accent,
-                                  shape: BoxShape.circle,
+                          // Miniature
+                          GestureDetector(
+                            onTap: isScanning
+                                ? null
+                                : (hasPhotos ? _analyzePhotos : null),
+                            child: Container(
+                              key: _thumbnailKey,
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: hasPhotos
+                                      ? AppTokens.accent
+                                      : Colors.white12,
+                                  width: hasPhotos ? 2 : 1,
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    '${_photos.length}',
-                                    style: GoogleFonts.dmSans(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTokens.bg,
+                                color: const Color(0xFF1A2A1A),
+                              ),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: hasPhotos
+                                        ? Image.memory(
+                                            _photos.last,
+                                            width: 56,
+                                            height: 56,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Center(
+                                            child: Icon(
+                                                Icons.grid_view_rounded,
+                                                color: AppTokens.muted,
+                                                size: 22),
+                                          ),
+                                  ),
+                                  if (hasPhotos)
+                                    Positioned(
+                                      top: 4,
+                                      right: 4,
+                                      child: Container(
+                                        width: 18,
+                                        height: 18,
+                                        decoration: BoxDecoration(
+                                          color: AppTokens.accent,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${_photos.length}',
+                                            style: GoogleFonts.dmSans(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTokens.bg,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
+                                  if (hasPhotos && !isScanning)
+                                    Positioned.fill(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          color:
+                                              Colors.black.withOpacity(0.35),
+                                        ),
+                                        child: const Center(
+                                          child: Icon(Icons.send_rounded,
+                                              color: Colors.white, size: 20),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                          if (hasPhotos && !isScanning)
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: Colors.black.withOpacity(0.35),
-                                ),
-                                child: const Center(
-                                  child: Icon(Icons.send_rounded,
-                                      color: Colors.white, size: 20),
+                          ),
+
+                          // Bouton capture
+                          GestureDetector(
+                            onTap:
+                                (isScanning || _isAnimating) ? null : _takePhoto,
+                            child: Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.transparent,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
                                 ),
                               ),
+                              child: isScanning
+                                  ? const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : null,
                             ),
+                          ),
+
+                          const SizedBox(width: 56),
                         ],
                       ),
                     ),
-                  ),
-
-                  // Bouton capture
-                  GestureDetector(
-                    onTap: (isScanning || _isAnimating) ? null : _takePhoto,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.transparent,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 4,
-                        ),
-                      ),
-                      child: isScanning
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-
-                  const SizedBox(width: 56),
-                ],
+                  ],
+                ),
               ),
             ),
-
-            const SizedBox(height: 16),
           ],
         ),
       ),

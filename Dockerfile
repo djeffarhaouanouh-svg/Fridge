@@ -1,12 +1,15 @@
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 
+ARG ANTHROPIC_API_KEY
+
 WORKDIR /app
 
 COPY pubspec.yaml pubspec.lock* ./
 RUN flutter pub get
 
 COPY . .
-RUN flutter build web --release
+RUN flutter build web --release \
+  --dart-define=ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 
 FROM nginx:alpine
 COPY --from=build /app/build/web /usr/share/nginx/html

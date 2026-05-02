@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_tokens.dart';
-import '../../../core/services/google_vision_service.dart';
-import '../../../core/services/spoonacular_service.dart';
+import '../../../core/services/claude_service.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
 
@@ -31,8 +30,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     try {
       final bytes = await photo.readAsBytes();
 
+      final claude = ClaudeService();
+
       setState(() => _scanStep = 'Détection des ingrédients…');
-      final ingredients = await GoogleVisionService().detectIngredients(bytes);
+      final ingredients = await claude.detectIngredients(bytes);
 
       if (ingredients.isEmpty) {
         _showError('Aucun ingrédient détecté. Réessaie avec une photo plus nette.');
@@ -43,8 +44,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
       ref.read(detectedIngredientsProvider.notifier).state = ingredients;
 
-      setState(() => _scanStep = 'Recherche des recettes…');
-      final meals = await SpoonacularService().findByIngredients(ingredients);
+      setState(() => _scanStep = 'Génération des recettes…');
+      final meals = await claude.findRecipes(ingredients);
       if (meals.isNotEmpty) {
         ref.read(mealsProvider.notifier).setMeals(meals);
       }

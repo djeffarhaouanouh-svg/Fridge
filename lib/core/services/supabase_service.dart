@@ -3,8 +3,8 @@ import '../../features/meals/models/meal.dart';
 
 // Config Supabase — récupère ces valeurs dans ton dashboard :
 // https://supabase.com/dashboard → Settings → API
-const supabaseUrl = 'METS_TON_URL_SUPABASE';
-const supabaseAnonKey = 'METS_TA_ANON_KEY';
+const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 // SQL à exécuter dans Supabase → SQL Editor pour créer la table :
 // create table saved_recipes (

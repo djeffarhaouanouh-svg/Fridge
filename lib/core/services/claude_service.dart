@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../../features/meals/models/meal.dart';
+import '../../features/plan/models/day_plan.dart';
 
 class ClaudeService {
   static const _apiKey = String.fromEnvironment('ANTHROPIC_API_KEY');
@@ -14,6 +15,18 @@ class ClaudeService {
         'anthropic-dangerous-direct-browser-access': 'true',
         'content-type': 'application/json',
       };
+
+  static String _frDayName(DateTime date) {
+    const names = [
+      'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'
+    ];
+    return names[date.weekday - 1];
+  }
+
+  static String _isoDate(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
 
   String _mediaType(Uint8List bytes) {
     if (bytes.length >= 4 &&
@@ -132,5 +145,75 @@ Rules:
       r['photo'] = 'https://picsum.photos/seed/$seed/600/400';
       return Meal.fromJson(r);
     }).toList();
+  }
+
+  Future<List<DayPlan>> generateWeekPlan(List<Uint8List> photos) async {
+    final today = DateTime.now();
+    final days = List.generate(7, (i) {
+      final date = today.add(Duration(days: i));
+      return '"${_isoDate(date)}" (${_frDayName(date)})';
+    }).join(', ');
+
+    final imageContent = photos.take(3).map((photo) => {
+          'type': 'image',
+          'source': {
+            'type': 'base64',
+            'media_type': _mediaType(photo),
+            'data': base64Encode(photo),
+          },
+        }).toList();
+
+    final response = await http.post(
+      Uri.parse(_baseUrl),
+      headers: _headers,
+      body: jsonEncode({
+        'model': _model,
+        'max_tokens': 2048,
+        'messages': [
+          {
+            'role': 'user',
+            'content': [
+              ...imageContent,
+              {
+                'type': 'text',
+                'text': '''Based on the ingredients visible in these fridge photos, generate a meal plan for the next 7 days.
+
+Days: $days
+
+Return ONLY a JSON array with exactly 7 objects:
+[
+  {
+    "day": "Samedi",
+    "date": "2026-05-02",
+    "lunch": "Salade de tomates",
+    "dinner": "Poulet rôti"
+  }
+]
+
+Rules:
+- Use mainly ingredients visible in the photos
+- Meal names in French, concise (max 5 words)
+- Vary meals across the week (no repetition)
+- Return ONLY the JSON array, nothing else.''',
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Claude plan ${response.statusCode}: ${response.body}');
+    }
+
+    final data = jsonDecode(response.body);
+    final text = (data['content'][0]['text'] as String)
+        .replaceAll(RegExp(r'```json|```'), '')
+        .trim();
+
+    final List<dynamic> plans = jsonDecode(text);
+    return plans
+        .map((p) => DayPlan.fromJson(p as Map<String, dynamic>))
+        .toList();
   }
 }

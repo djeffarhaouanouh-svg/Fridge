@@ -1,8 +1,18 @@
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/meal.dart';
 import '../data/mock_data.dart';
+import '../../plan/models/day_plan.dart';
 
 enum ScanStatus { idle, loading, done, error }
+
+enum PlanStatus { idle, loading, done, error }
+
+final capturedPhotosProvider = StateProvider<List<Uint8List>>((ref) => []);
+
+final planStatusProvider = StateProvider<PlanStatus>((ref) => PlanStatus.idle);
+
+final weekPlanProvider = StateProvider<List<DayPlan>>((ref) => []);
 
 final scanStatusProvider = StateProvider<ScanStatus>((ref) => ScanStatus.idle);
 

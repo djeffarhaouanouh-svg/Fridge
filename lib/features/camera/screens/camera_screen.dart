@@ -30,6 +30,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     if (photo == null) return;
     final bytes = await photo.readAsBytes();
     setState(() => _photos.add(bytes));
+    ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
   }
 
   Future<void> _analyzePhotos() async {

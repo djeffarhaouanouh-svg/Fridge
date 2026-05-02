@@ -15,9 +15,9 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF0F0F0F),
-      systemNavigationBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: AppTokens.paper,
+      systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
 
@@ -33,12 +33,13 @@ class FridgeApp extends StatelessWidget {
       title: 'Fridge',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        scaffoldBackgroundColor: AppTokens.bg,
-        colorScheme: ColorScheme.dark(
-          primary: AppTokens.accent,
+        scaffoldBackgroundColor: AppTokens.paper,
+        colorScheme: ColorScheme.light(
+          primary: AppTokens.coral,
           surface: AppTokens.surface,
+          background: AppTokens.paper,
         ),
-        textTheme: GoogleFonts.dmSansTextTheme(),
+        textTheme: GoogleFonts.interTextTheme(),
       ),
       home: const MainScreen(),
     );
@@ -56,13 +57,35 @@ class MainScreen extends ConsumerWidget {
       body: IndexedStack(
         index: selectedTab,
         children: const [
-          CameraScreen(),
-          ResultsScreen(),
-          PlanScreen(),
-          ProfileScreen(),
+          ResultsScreen(),   // 0 — Recettes
+          PlanScreen(),      // 1 — Plan
+          CameraScreen(),    // 2 — Scanner (FAB)
+          _FavoritesPlaceholder(), // 3 — Favoris (à créer)
+          ProfileScreen(),   // 4 — Profil
         ],
       ),
       bottomNavigationBar: const BottomNav(),
+    );
+  }
+}
+
+class _FavoritesPlaceholder extends StatelessWidget {
+  const _FavoritesPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTokens.paper,
+      body: Center(
+        child: Text(
+          'Favoris',
+          style: GoogleFonts.fraunces(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: AppTokens.ink,
+          ),
+        ),
+      ),
     );
   }
 }

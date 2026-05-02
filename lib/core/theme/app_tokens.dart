@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
 
-/// Design Tokens - identiques au prototype HTML
 class AppTokens {
-  // Colors
-  static const Color bg = Color(0xFF0F0F0F);
-  static const Color surface = Color(0xFF1A1A1A);
-  static const Color card = Color(0xFF222222);
-  static const Color border = Color(0x12FFFFFF);
-  static const Color text = Color(0xFFF5F0E8);
-  static const Color muted = Color(0x73F5F0E8);
-  static const Color accent = Color(0xFF82D28C);
-  static const Color accentDim = Color(0x26825D28C);
-  static const Color warm = Color(0xFFE8D5A3);
-  static const Color red = Color(0xFFE07070);
+  // Inks (text)
+  static const Color ink = Color(0xFF1A1410);
+  static const Color inkSoft = Color(0xFF4A3F38);
+  static const Color muted = Color(0xFF9A8D83);
+  static const Color hairline = Color(0xFFE8DFD6);
+  static const Color hairlineSoft = Color(0xFFF1EBE3);
+
+  // Surfaces (papier chaud)
+  static const Color paper = Color(0xFFFDFAF5);
+  static const Color surface = Color(0xFFF7F1E8);
+  static const Color surface2 = Color(0xFFF0E8DC);
+  static const Color placeholder = Color(0xFFE0D4C2);
+  static const Color placeholderDeep = Color(0xFFC9B9A3);
+
+  // Coral Marmiton
+  static const Color coral = Color(0xFFEE5C42);
+  static const Color coralSoft = Color(0xFFFFE7DF);
+  static const Color coralDeep = Color(0xFFD24228);
+
+  // Apple iOS green (glass pills CTA principaux uniquement)
+  static const Color iosGreen = Color(0xFF34C759);
 
   // Spacing
   static const double xs = 4.0;
@@ -23,29 +32,39 @@ class AppTokens {
   static const double xxl = 24.0;
   static const double xxxl = 32.0;
 
-  // Border Radius
+  // Border radius
   static const double radiusSm = 12.0;
-  static const double radiusMd = 14.0;
-  static const double radiusLg = 20.0;
+  static const double radiusMd = 16.0;
+  static const double radiusLg = 22.0;
+  static const double radiusPill = 999.0;
 
-  // Typography - Utilise Google Fonts
-  static const String fontSyne = 'Syne';
-  static const String fontDMSans = 'DM Sans';
+  // Fonts
+  static const String fontDisplay = 'Fraunces';
+  static const String fontBody = 'Inter';
 
-  // Shadows
   static List<BoxShadow> cardShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.1),
-      blurRadius: 12,
-      offset: const Offset(0, 4),
+      color: Color(0x14000000),
+      blurRadius: 24,
+      offset: Offset(0, 8),
     ),
   ];
 
-  static List<BoxShadow> accentGlow = [
+  static List<BoxShadow> coralGlow = [
     BoxShadow(
-      color: accent.withOpacity(0.25),
-      blurRadius: 20,
-      offset: const Offset(0, 4),
+      color: Color(0x73EE5C42),
+      blurRadius: 22,
+      offset: Offset(0, 8),
     ),
   ];
+
+  // Compat aliases — anciens noms dark-theme, à retirer écran par écran lors de la refonte
+  static const Color bg = paper;
+  static const Color card = surface;
+  static const Color border = hairline;
+  static const Color text = ink;
+  static const Color accent = coral;
+  static const Color accentDim = coralSoft;
+  static const Color warm = surface2;
+  static const Color red = Color(0xFFE07070);
 }

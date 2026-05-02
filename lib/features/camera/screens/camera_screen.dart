@@ -208,13 +208,15 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               ),
             ),
 
+            const SizedBox(height: 16),
+
             // Viewfinder
             Expanded(
               child: Padding(
-                padding: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ClipRRect(
                   key: _viewfinderKey,
-                  borderRadius: BorderRadius.zero,
+                  borderRadius: BorderRadius.circular(20),
                   child: Stack(
                     children: [
                       Container(
@@ -267,7 +269,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 24),
 
             // Bas : miniature + capture
             Padding(
@@ -355,20 +357,27 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   GestureDetector(
                     onTap: (isScanning || _isAnimating) ? null : _takePhoto,
                     child: Container(
-                      width: 84,
-                      height: 84,
+                      width: 72,
+                      height: 72,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.transparent,
+                        color: Colors.white,
                         border: Border.all(
-                          color: Colors.white,
+                          color: Colors.white.withOpacity(0.3),
                           width: 4,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withOpacity(0.15),
+                            blurRadius: 20,
+                            spreadRadius: 4,
+                          ),
+                        ],
                       ),
                       child: isScanning
                           ? Center(
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: AppTokens.bg,
                                 strokeWidth: 2.5,
                               ),
                             )

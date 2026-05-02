@@ -95,7 +95,7 @@ Suggest 3 recipes. Return ONLY a JSON array with this exact structure:
     "difficulty": "facile",
     "time": "25 min",
     "locked": false,
-    "photo": "https://source.unsplash.com/featured/600x400/?food,KEYWORD",
+    "photo": "",
     "ingredients": [{"name": "chicken", "qty": "200g", "photo": ""}],
     "steps": ["Étape 1", "Étape 2"]
   }
@@ -109,7 +109,6 @@ Rules:
 - 4-6 cooking steps in French
 - protein: "moyen" or "élevé"
 - difficulty: "facile" or "intermédiaire"
-- For "photo": replace KEYWORD with 1-2 English food words describing the dish (e.g. "banana,toast" or "smoothie,bowl")
 - Return ONLY the JSON array, nothing else.''',
           },
         ],
@@ -127,6 +126,11 @@ Rules:
         .trim();
 
     final List<dynamic> recipes = jsonDecode(text);
-    return recipes.map((r) => Meal.fromJson(r as Map<String, dynamic>)).toList();
+    return recipes.asMap().entries.map((e) {
+      final r = Map<String, dynamic>.from(e.value as Map);
+      final seed = Uri.encodeComponent(r['title'] ?? 'food${e.key}');
+      r['photo'] = 'https://picsum.photos/seed/$seed/600/400';
+      return Meal.fromJson(r);
+    }).toList();
   }
 }

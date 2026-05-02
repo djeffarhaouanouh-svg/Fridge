@@ -208,12 +208,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               ),
             ),
 
-            const SizedBox(height: 16),
-
             // Viewfinder
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 0),
                 child: ClipRRect(
                   key: _viewfinderKey,
                   borderRadius: BorderRadius.circular(20),
@@ -357,27 +355,20 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   GestureDetector(
                     onTap: (isScanning || _isAnimating) ? null : _takePhoto,
                     child: Container(
-                      width: 72,
-                      height: 72,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white,
+                        color: Colors.transparent,
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white,
                           width: 4,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withOpacity(0.15),
-                            blurRadius: 20,
-                            spreadRadius: 4,
-                          ),
-                        ],
                       ),
                       child: isScanning
-                          ? Center(
+                          ? const Center(
                               child: CircularProgressIndicator(
-                                color: AppTokens.bg,
+                                color: Colors.white,
                                 strokeWidth: 2.5,
                               ),
                             )

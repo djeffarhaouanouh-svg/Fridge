@@ -20,7 +20,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
   final List<Uint8List> _photos = [];
   String _selectedSpeed = 'Rapide';
   String _selectedDiet = 'Sportif';
-  String _selectedCuisine = 'Italien';
 
   Future<void> _takePhoto() async {
     final photo = await _picker.pickImage(
@@ -103,12 +102,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                     value: _selectedDiet,
                     options: const ['Sportif', 'Vegan', 'Léger'],
                     onChanged: (v) => setState(() => _selectedDiet = v),
-                  ),
-                  const SizedBox(width: 8),
-                  _FilterChip(
-                    value: _selectedCuisine,
-                    options: const ['Italien', 'Français', 'Asiatique'],
-                    onChanged: (v) => setState(() => _selectedCuisine = v),
                   ),
                 ],
               ),
@@ -436,9 +429,8 @@ class _CornerPainter extends CustomPainter {
       path.lineTo(0, 0);
     } else if (bottomRight) {
       path.moveTo(0, h);
-      path.lineTo(w, h - r);
-      path.arcToPoint(Offset(w - r, h),
-          radius: const Radius.circular(r), clockwise: false);
+      path.lineTo(w - r, h);
+      path.arcToPoint(Offset(w, h - r), radius: const Radius.circular(r));
       path.lineTo(w, 0);
     }
 

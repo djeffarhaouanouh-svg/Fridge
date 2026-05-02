@@ -208,15 +208,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               ),
             ),
 
-            const SizedBox(height: 16),
-
             // Viewfinder
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
+                padding: EdgeInsets.zero,
                 child: ClipRRect(
                   key: _viewfinderKey,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.zero,
                   child: Stack(
                     children: [
                       Container(
@@ -269,7 +267,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
 
             // Bas : miniature + capture
             Padding(
@@ -357,14 +355,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   GestureDetector(
                     onTap: (isScanning || _isAnimating) ? null : _takePhoto,
                     child: Container(
-                      width: 72,
-                      height: 72,
+                      width: 84,
+                      height: 84,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.transparent,
                         border: Border.all(
                           color: Colors.white,
-                          width: 3,
+                          width: 4,
                         ),
                       ),
                       child: isScanning

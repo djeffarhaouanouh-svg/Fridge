@@ -194,9 +194,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 child: Stack(
                   children: [
                     const Positioned(
-                        top: 20, left: 20, child: _Corner(topLeft: true)),
+                        top: 80, left: 20, child: _Corner(topLeft: true)),
                     const Positioned(
-                        top: 20, right: 20, child: _Corner(topRight: true)),
+                        top: 80, right: 20, child: _Corner(topRight: true)),
                     const Positioned(
                         bottom: 110,
                         left: 20,

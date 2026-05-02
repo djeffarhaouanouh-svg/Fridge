@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,31 +17,37 @@ class CameraScreen extends ConsumerStatefulWidget {
 
 class _CameraScreenState extends ConsumerState<CameraScreen> {
   final _picker = ImagePicker();
+  final List<Uint8List> _photos = [];
   String _selectedSpeed = 'Rapide';
   String _selectedDiet = 'Sportif';
   String _selectedCuisine = 'Italien';
-  String? _lastPhotoPath;
 
-  Future<void> _handleScan() async {
+  Future<void> _takePhoto() async {
     final photo = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 85,
     );
     if (photo == null) return;
+    final bytes = await photo.readAsBytes();
+    setState(() => _photos.add(bytes));
+  }
 
-    setState(() => _lastPhotoPath = photo.path);
+  Future<void> _analyzePhotos() async {
+    if (_photos.isEmpty) return;
+
     ref.read(scanStatusProvider.notifier).state = ScanStatus.loading;
-
     final claude = ClaudeService();
-    try {
-      final bytes = await photo.readAsBytes();
 
-      final ingredients = await claude.detectIngredients(bytes);
+    try {
+      // On envoie la dernière photo pour la détection
+      final ingredients = await claude.detectIngredients(_photos.last);
+
       if (ingredients.isEmpty) {
-        _showError('Aucun ingrédient détecté. Réessaie.');
+        _showError('Aucun ingrédient détecté. Réessaie avec une meilleure photo.');
         ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
         return;
       }
+
       ref.read(detectedIngredientsProvider.notifier).state = ingredients;
 
       final meals = await claude.findRecipes(ingredients);
@@ -49,6 +56,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       }
 
       ref.read(scanStatusProvider.notifier).state = ScanStatus.done;
+      setState(() => _photos.clear());
       if (mounted) ref.read(selectedTabProvider.notifier).state = 1;
     } catch (e) {
       _showError('Erreur : $e');
@@ -70,6 +78,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     final isScanning = ref.watch(scanStatusProvider) == ScanStatus.loading;
+    final hasPhotos = _photos.isNotEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFF080D08),
@@ -85,7 +94,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                 children: [
                   _FilterChip(
                     value: _selectedSpeed,
-                    options: const ['Rapide', 'Lent', 'Moyen'],
+                    options: const ['Rapide', 'Moyen', 'Lent'],
                     onChanged: (v) => setState(() => _selectedSpeed = v),
                   ),
                   const SizedBox(width: 8),
@@ -114,32 +123,26 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                   borderRadius: BorderRadius.circular(20),
                   child: Stack(
                     children: [
-                      // Fond vert sombre
                       Container(
                         width: double.infinity,
                         color: const Color(0xFF0A1A0A),
                       ),
-
-                      // Coins du scanner
                       const Positioned(top: 20, left: 20, child: _Corner(topLeft: true)),
                       const Positioned(top: 20, right: 20, child: _Corner(topRight: true)),
                       const Positioned(bottom: 20, left: 20, child: _Corner(bottomLeft: true)),
                       const Positioned(bottom: 20, right: 20, child: _Corner(bottomRight: true)),
-
-                      // Spinner pendant le scan
                       if (isScanning)
                         Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              CircularProgressIndicator(color: AppTokens.accent, strokeWidth: 2),
+                              CircularProgressIndicator(
+                                  color: AppTokens.accent, strokeWidth: 2),
                               const SizedBox(height: 16),
                               Text(
                                 'Analyse en cours…',
                                 style: GoogleFonts.dmSans(
-                                  color: AppTokens.accent,
-                                  fontSize: 14,
-                                ),
+                                    color: AppTokens.accent, fontSize: 14),
                               ),
                             ],
                           ),
@@ -152,82 +155,90 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
             const SizedBox(height: 24),
 
-            // Barre du bas : galerie + bouton capture
+            // Bas : miniature + capture
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Miniature galerie
+                  // Miniature — appuyer pour envoyer à l'IA
                   GestureDetector(
-                    onTap: isScanning ? null : () async {
-                      final photo = await _picker.pickImage(source: ImageSource.gallery);
-                      if (photo == null) return;
-                      setState(() => _lastPhotoPath = photo.path);
-                      ref.read(scanStatusProvider.notifier).state = ScanStatus.loading;
-                      final claude = ClaudeService();
-                      try {
-                        final bytes = await photo.readAsBytes();
-                        final ingredients = await claude.detectIngredients(bytes);
-                        if (ingredients.isEmpty) {
-                          _showError('Aucun ingrédient détecté.');
-                          ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
-                          return;
-                        }
-                        ref.read(detectedIngredientsProvider.notifier).state = ingredients;
-                        final meals = await claude.findRecipes(ingredients);
-                        if (meals.isNotEmpty) ref.read(mealsProvider.notifier).setMeals(meals);
-                        ref.read(scanStatusProvider.notifier).state = ScanStatus.done;
-                        if (mounted) ref.read(selectedTabProvider.notifier).state = 1;
-                      } catch (e) {
-                        _showError('Erreur : $e');
-                        ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
-                      }
-                    },
+                    onTap: isScanning ? null : (hasPhotos ? _analyzePhotos : null),
                     child: Container(
-                      width: 52,
-                      height: 52,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A2A1A),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTokens.border),
+                        border: Border.all(
+                          color: hasPhotos ? AppTokens.accent : Colors.white12,
+                          width: hasPhotos ? 2 : 1,
+                        ),
+                        color: const Color(0xFF1A2A1A),
                       ),
                       child: Stack(
                         children: [
-                          Center(
-                            child: Icon(Icons.grid_view_rounded, color: AppTokens.muted, size: 22),
+                          // Photo ou icône vide
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: hasPhotos
+                                ? Image.memory(
+                                    _photos.last,
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Center(
+                                    child: Icon(Icons.grid_view_rounded,
+                                        color: AppTokens.muted, size: 22),
+                                  ),
                           ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: AppTokens.accent,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '1',
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTokens.bg,
+                          // Badge compteur
+                          if (hasPhotos)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                width: 18,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  color: AppTokens.accent,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${_photos.length}',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTokens.bg,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
+                          // Icône "envoyer" au survol si photos présentes
+                          if (hasPhotos && !isScanning)
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.black.withOpacity(0.35),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.send_rounded,
+                                      color: Colors.white, size: 20),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
                   ),
 
-                  // Bouton capture principal
+                  // Bouton capture
                   GestureDetector(
-                    onTap: isScanning ? null : _handleScan,
+                    onTap: isScanning ? null : _takePhoto,
                     child: Container(
                       width: 72,
                       height: 72,
@@ -257,8 +268,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                     ),
                   ),
 
-                  // Espace équilibre (symétrie)
-                  const SizedBox(width: 52),
+                  // Espace symétrie
+                  const SizedBox(width: 56),
                 ],
               ),
             ),
@@ -308,10 +319,8 @@ class _FilterChip extends StatelessWidget {
                 const SizedBox(height: 12),
                 ...options.map(
                   (o) => ListTile(
-                    title: Text(
-                      o,
-                      style: GoogleFonts.dmSans(color: Colors.white),
-                    ),
+                    title: Text(o,
+                        style: GoogleFonts.dmSans(color: Colors.white)),
                     trailing: o == value
                         ? Icon(Icons.check, color: AppTokens.accent)
                         : null,
@@ -346,7 +355,8 @@ class _FilterChip extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.keyboard_arrow_down, color: Colors.white54, size: 16),
+              const Icon(Icons.keyboard_arrow_down,
+                  color: Colors.white54, size: 16),
             ],
           ),
         ),
@@ -406,7 +416,6 @@ class _CornerPainter extends CustomPainter {
     const r = 6.0;
     final w = size.width;
     final h = size.height;
-
     final path = Path();
 
     if (topLeft) {
@@ -427,7 +436,8 @@ class _CornerPainter extends CustomPainter {
     } else if (bottomRight) {
       path.moveTo(0, h);
       path.lineTo(w, h - r);
-      path.arcToPoint(Offset(w - r, h), radius: const Radius.circular(r), clockwise: false);
+      path.arcToPoint(Offset(w - r, h),
+          radius: const Radius.circular(r), clockwise: false);
       path.lineTo(w, 0);
     }
 

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
@@ -40,11 +41,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
     _flyController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 480),
+      duration: const Duration(milliseconds: 800),
     );
     _flyAnim = CurvedAnimation(
       parent: _flyController,
-      curve: Curves.easeInCubic,
+      curve: Curves.easeInOut,
     );
 
     _flashController = AnimationController(
@@ -99,10 +100,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               top: rect.top,
               width: rect.width,
               height: rect.height,
-              child: ClipRRect(
-                borderRadius:
-                    BorderRadius.circular(lerpDouble(20, 12, t)!),
-                child: Image.memory(bytes, fit: BoxFit.cover),
+              child: Transform.rotate(
+                angle: t * 2 * math.pi,
+                child: ClipRRect(
+                  borderRadius:
+                      BorderRadius.circular(lerpDouble(20, 12, t)!),
+                  child: Image.memory(bytes, fit: BoxFit.cover),
+                ),
               ),
             );
           },

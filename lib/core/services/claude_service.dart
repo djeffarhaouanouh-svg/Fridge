@@ -15,8 +15,18 @@ class ClaudeService {
         'content-type': 'application/json',
       };
 
+  String _mediaType(Uint8List bytes) {
+    if (bytes.length >= 4 &&
+        bytes[0] == 0x89 && bytes[1] == 0x50 &&
+        bytes[2] == 0x4E && bytes[3] == 0x47) {
+      return 'image/png';
+    }
+    return 'image/jpeg';
+  }
+
   Future<List<String>> detectIngredients(Uint8List imageBytes) async {
     final base64Image = base64Encode(imageBytes);
+    final mediaType = _mediaType(imageBytes);
 
     final response = await http.post(
       Uri.parse(_baseUrl),
@@ -32,7 +42,7 @@ class ClaudeService {
                 'type': 'image',
                 'source': {
                   'type': 'base64',
-                  'media_type': 'image/jpeg',
+                  'media_type': mediaType,
                   'data': base64Image,
                 },
               },

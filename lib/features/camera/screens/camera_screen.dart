@@ -430,7 +430,8 @@ class _CornerPainter extends CustomPainter {
     } else if (bottomRight) {
       path.moveTo(0, h);
       path.lineTo(w - r, h);
-      path.arcToPoint(Offset(w, h - r), radius: const Radius.circular(r));
+      path.arcToPoint(Offset(w, h - r),
+          radius: const Radius.circular(r), clockwise: false);
       path.lineTo(w, 0);
     }
 

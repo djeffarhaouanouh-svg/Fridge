@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,21 +16,117 @@ class CameraScreen extends ConsumerStatefulWidget {
   ConsumerState<CameraScreen> createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends ConsumerState<CameraScreen> {
+class _CameraScreenState extends ConsumerState<CameraScreen>
+    with TickerProviderStateMixin {
   final _picker = ImagePicker();
   final List<Uint8List> _photos = [];
   String _selectedSpeed = 'Rapide';
   String _selectedDiet = 'Sportif';
 
+  final _viewfinderKey = GlobalKey();
+  final _thumbnailKey = GlobalKey();
+
+  late final AnimationController _flyController;
+  late final Animation<double> _flyAnim;
+  late final AnimationController _flashController;
+  late final Animation<double> _flashAnim;
+
+  OverlayEntry? _flyEntry;
+  bool _isAnimating = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _flyController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
+    _flyAnim = CurvedAnimation(
+      parent: _flyController,
+      curve: Curves.easeInCubic,
+    );
+
+    _flashController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 180),
+    );
+    _flashAnim = Tween<double>(begin: 0.7, end: 0.0).animate(
+      CurvedAnimation(parent: _flashController, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _flyController.dispose();
+    _flashController.dispose();
+    _flyEntry?.remove();
+    super.dispose();
+  }
+
   Future<void> _takePhoto() async {
+    if (_isAnimating) return;
+
     final photo = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 85,
     );
     if (photo == null) return;
     final bytes = await photo.readAsBytes();
-    setState(() => _photos.add(bytes));
-    ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
+
+    final vfBox =
+        _viewfinderKey.currentContext?.findRenderObject() as RenderBox?;
+    final thumbBox =
+        _thumbnailKey.currentContext?.findRenderObject() as RenderBox?;
+
+    if (vfBox != null && thumbBox != null && mounted) {
+      final startRect = vfBox.localToGlobal(Offset.zero) & vfBox.size;
+      final endRect = thumbBox.localToGlobal(Offset.zero) & thumbBox.size;
+
+      // White flash
+      _flashController.forward(from: 0);
+
+      setState(() => _isAnimating = true);
+
+      _flyEntry = OverlayEntry(
+        builder: (_) => AnimatedBuilder(
+          animation: _flyAnim,
+          builder: (context, _) {
+            final t = _flyAnim.value;
+            final rect = Rect.lerp(startRect, endRect, t)!;
+            return Positioned(
+              left: rect.left,
+              top: rect.top,
+              width: rect.width,
+              height: rect.height,
+              child: ClipRRect(
+                borderRadius:
+                    BorderRadius.circular(lerpDouble(20, 12, t)!),
+                child: Image.memory(bytes, fit: BoxFit.cover),
+              ),
+            );
+          },
+        ),
+      );
+
+      Overlay.of(context).insert(_flyEntry!);
+
+      _flyController.forward(from: 0).then((_) {
+        _flyEntry?.remove();
+        _flyEntry = null;
+        if (mounted) {
+          setState(() {
+            _photos.add(bytes);
+            _isAnimating = false;
+          });
+          ref.read(capturedPhotosProvider.notifier).state =
+              List.from(_photos);
+        }
+      });
+    } else {
+      setState(() => _photos.add(bytes));
+      ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
+    }
   }
 
   Future<void> _analyzePhotos() async {
@@ -39,11 +136,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     final claude = ClaudeService();
 
     try {
-      // On envoie la dernière photo pour la détection
       final ingredients = await claude.detectIngredients(_photos.last);
 
       if (ingredients.isEmpty) {
-        _showError('Aucun ingrédient détecté. Réessaie avec une meilleure photo.');
+        _showError(
+            'Aucun ingrédient détecté. Réessaie avec une meilleure photo.');
         ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
         return;
       }
@@ -114,6 +211,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ClipRRect(
+                  key: _viewfinderKey,
                   borderRadius: BorderRadius.circular(20),
                   child: Stack(
                     children: [
@@ -121,10 +219,18 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                         width: double.infinity,
                         color: const Color(0xFF0A1A0A),
                       ),
-                      const Positioned(top: 20, left: 20, child: _Corner(topLeft: true)),
-                      const Positioned(top: 20, right: 20, child: _Corner(topRight: true)),
-                      const Positioned(bottom: 20, left: 20, child: _Corner(bottomLeft: true)),
-                      const Positioned(bottom: 20, right: 20, child: _Corner(bottomRight: true)),
+                      const Positioned(
+                          top: 20, left: 20, child: _Corner(topLeft: true)),
+                      const Positioned(
+                          top: 20, right: 20, child: _Corner(topRight: true)),
+                      const Positioned(
+                          bottom: 20,
+                          left: 20,
+                          child: _Corner(bottomLeft: true)),
+                      const Positioned(
+                          bottom: 20,
+                          right: 20,
+                          child: _Corner(bottomRight: true)),
                       if (isScanning)
                         Center(
                           child: Column(
@@ -141,6 +247,18 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                             ],
                           ),
                         ),
+                      // Flash shutter effect
+                      AnimatedBuilder(
+                        animation: _flashAnim,
+                        builder: (_, __) => _flashAnim.value > 0
+                            ? Positioned.fill(
+                                child: ColoredBox(
+                                  color: Colors.white
+                                      .withOpacity(_flashAnim.value),
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
                 ),
@@ -156,23 +274,26 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Miniature — appuyer pour envoyer à l'IA
+                  // Miniature
                   GestureDetector(
-                    onTap: isScanning ? null : (hasPhotos ? _analyzePhotos : null),
+                    onTap: isScanning
+                        ? null
+                        : (hasPhotos ? _analyzePhotos : null),
                     child: Container(
+                      key: _thumbnailKey,
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: hasPhotos ? AppTokens.accent : Colors.white12,
+                          color:
+                              hasPhotos ? AppTokens.accent : Colors.white12,
                           width: hasPhotos ? 2 : 1,
                         ),
                         color: const Color(0xFF1A2A1A),
                       ),
                       child: Stack(
                         children: [
-                          // Photo ou icône vide
                           ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: hasPhotos
@@ -187,7 +308,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                                         color: AppTokens.muted, size: 22),
                                   ),
                           ),
-                          // Badge compteur
                           if (hasPhotos)
                             Positioned(
                               top: 4,
@@ -211,7 +331,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                                 ),
                               ),
                             ),
-                          // Icône "envoyer" au survol si photos présentes
                           if (hasPhotos && !isScanning)
                             Positioned.fill(
                               child: Container(
@@ -232,7 +351,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
                   // Bouton capture
                   GestureDetector(
-                    onTap: isScanning ? null : _takePhoto,
+                    onTap: (isScanning || _isAnimating) ? null : _takePhoto,
                     child: Container(
                       width: 72,
                       height: 72,
@@ -262,7 +381,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                     ),
                   ),
 
-                  // Espace symétrie
                   const SizedBox(width: 56),
                 ],
               ),

@@ -28,8 +28,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final meals = ref.watch(mealsProvider);
-    final heroMeals = meals.take(3).toList();
-    final fridgeMeals = meals.length > 3 ? meals.skip(3).toList() : <Meal>[];
+    final heroMeals = meals.take(1).toList();
+    final fridgeMeals = meals;
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
@@ -131,30 +131,28 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ),
 
           // Section "Avec ton frigo"
-          if (fridgeMeals.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 28, 18, 14),
-                child: Text(
-                  'Avec ton frigo',
-                  style: GoogleFonts.fraunces(
-                    fontSize: 19, fontWeight: FontWeight.w600, color: AppTokens.ink,
-                  ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 28, 18, 14),
+              child: Text(
+                'Avec ton frigo',
+                style: GoogleFonts.fraunces(
+                  fontSize: 19, fontWeight: FontWeight.w600, color: AppTokens.ink,
                 ),
               ),
             ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 215,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                  itemCount: fridgeMeals.length,
-                  itemBuilder: (context, i) => _CompactCard(meal: fridgeMeals[i]),
-                ),
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 215,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                itemCount: fridgeMeals.length,
+                itemBuilder: (context, i) => _CompactCard(meal: fridgeMeals[i]),
               ),
             ),
-          ],
+          ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],

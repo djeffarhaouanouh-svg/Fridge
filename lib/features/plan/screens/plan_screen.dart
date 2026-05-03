@@ -237,6 +237,9 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       final key = '${_isoDate(days[i])}_Petit-déj';
                       return selections[key]?.title ?? _breakfasts[i % _breakfasts.length];
                     }),
+                    selectedMeals: List.generate(days.length, (i) {
+                      return selections['${_isoDate(days[i])}_Petit-déj'];
+                    }),
                     scrollController: _breakfastScrollController,
                     selectedDayIndex: _selectedDayIndex,
                     onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
@@ -258,6 +261,9 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       final key = '${_isoDate(days[i])}_Déjeuner';
                       return selections[key]?.title ?? planMap[_isoDate(days[i])]?.lunch.name ?? '';
                     }),
+                    selectedMeals: List.generate(days.length, (i) {
+                      return selections['${_isoDate(days[i])}_Déjeuner'];
+                    }),
                     scrollController: _lunchScrollController,
                     selectedDayIndex: _selectedDayIndex,
                     onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
@@ -278,6 +284,9 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     meals: List.generate(days.length, (i) {
                       final key = '${_isoDate(days[i])}_Dîner';
                       return selections[key]?.title ?? planMap[_isoDate(days[i])]?.dinner.name ?? '';
+                    }),
+                    selectedMeals: List.generate(days.length, (i) {
+                      return selections['${_isoDate(days[i])}_Dîner'];
                     }),
                     scrollController: _dinnerScrollController,
                     selectedDayIndex: _selectedDayIndex,
@@ -323,6 +332,7 @@ class _MealRow extends StatelessWidget {
   final List<DateTime> days;
   final List<String> frDays;
   final List<String> meals;
+  final List<Meal?> selectedMeals;
   final ScrollController scrollController;
   final int selectedDayIndex;
   final void Function(int)? onCardTap;
@@ -332,6 +342,7 @@ class _MealRow extends StatelessWidget {
     required this.days,
     required this.frDays,
     required this.meals,
+    required this.selectedMeals,
     required this.scrollController,
     required this.selectedDayIndex,
     this.onCardTap,
@@ -377,6 +388,7 @@ class _MealRow extends StatelessWidget {
               final isSelected = i == selectedDayIndex;
               final mealName = meals[i];
               final dayLabel = '${frDays[i].toUpperCase()} ${days[i].day}';
+              final selectedMeal = selectedMeals[i];
 
               return GestureDetector(
                 onTap: () => onCardTap?.call(i),
@@ -398,14 +410,22 @@ class _MealRow extends StatelessWidget {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(AppTokens.radiusMd),
                       ),
-                      child: Container(
-                        height: 80,
-                        color: AppTokens.placeholder,
-                        child: Center(
-                          child: Icon(Icons.image_not_supported_outlined,
-                            color: AppTokens.placeholderDeep, size: 22),
-                        ),
-                      ),
+                      child: selectedMeal != null && selectedMeal.photo.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: selectedMeal.photo,
+                              height: 80, width: 110,
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(height: 80, color: AppTokens.placeholder),
+                              errorWidget: (_, __, ___) => Container(height: 80, color: AppTokens.placeholder),
+                            )
+                          : Container(
+                              height: 80,
+                              color: AppTokens.placeholder,
+                              child: Center(
+                                child: Icon(Icons.image_not_supported_outlined,
+                                  color: AppTokens.placeholderDeep, size: 22),
+                              ),
+                            ),
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),

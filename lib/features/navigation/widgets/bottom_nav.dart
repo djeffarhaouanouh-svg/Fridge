@@ -21,7 +21,9 @@ class BottomNav extends ConsumerWidget {
       _NavTab(icon: Icons.person_outline, label: 'Profil', index: 3),
     ];
 
-    return Padding(
+    return Material(
+      type: MaterialType.transparency,
+      child: Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, bottom + 14),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppTokens.radiusPill),
@@ -86,7 +88,7 @@ class BottomNav extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 

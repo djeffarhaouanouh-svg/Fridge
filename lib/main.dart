@@ -55,23 +55,16 @@ class MainScreen extends ConsumerWidget {
 
     return Scaffold(
       extendBody: true,
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: selectedTab,
-            children: const [
-              HomeScreen(),    // 0 — Home
-              PlanScreen(),    // 1 — Plan de la semaine
-              CameraScreen(),  // 2 — Scanner
-              ProfileScreen(), // 3 — Profil
-            ],
-          ),
-          const Positioned(
-            left: 0, right: 0, bottom: 0,
-            child: BottomNav(),
-          ),
+      body: IndexedStack(
+        index: selectedTab,
+        children: const [
+          HomeScreen(),    // 0 — Home
+          PlanScreen(),    // 1 — Plan de la semaine
+          CameraScreen(),  // 2 — Scanner
+          ProfileScreen(), // 3 — Profil
         ],
       ),
+      bottomNavigationBar: const BottomNav(),
     );
   }
 }

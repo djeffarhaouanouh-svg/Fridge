@@ -170,6 +170,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   }
 
 
+  void _removeLastPhoto() {
+    if (_photos.isEmpty) return;
+    setState(() => _photos.removeLast());
+    ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
+  }
+
   Future<void> _analyzePhotos() async {
     if (_photos.isEmpty) return;
 
@@ -327,53 +333,76 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Miniature / envoyer
-                  GestureDetector(
-                    onTap: isScanning ? null : (hasPhotos ? _analyzePhotos : null),
-                    child: Container(
-                      key: _thumbnailKey,
-                      width: 56, height: 56,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: hasPhotos ? AppTokens.coral : Colors.white24,
-                          width: hasPhotos ? 2 : 1,
-                        ),
-                        color: Colors.white10,
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: hasPhotos
-                                ? Image.memory(_photos.last, width: 56, height: 56, fit: BoxFit.cover)
-                                : Center(child: Icon(Icons.grid_view_rounded, color: Colors.white38, size: 22)),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      GestureDetector(
+                        onTap: isScanning ? null : (hasPhotos ? _analyzePhotos : null),
+                        child: Container(
+                          key: _thumbnailKey,
+                          width: 56, height: 56,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: hasPhotos ? AppTokens.coral : Colors.white24,
+                              width: hasPhotos ? 2 : 1,
+                            ),
+                            color: Colors.white10,
                           ),
-                          if (hasPhotos)
-                            Positioned(
-                              top: 4, right: 4,
-                              child: Container(
-                                width: 18, height: 18,
-                                decoration: BoxDecoration(color: AppTokens.coral, shape: BoxShape.circle),
-                                child: Center(
-                                  child: Text('${_photos.length}',
-                                    style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: hasPhotos
+                                    ? Image.memory(_photos.last, width: 56, height: 56, fit: BoxFit.cover)
+                                    : Center(child: Icon(Icons.grid_view_rounded, color: Colors.white38, size: 22)),
+                              ),
+                              if (hasPhotos)
+                                Positioned(
+                                  top: 4, right: 4,
+                                  child: Container(
+                                    width: 18, height: 18,
+                                    decoration: BoxDecoration(color: AppTokens.coral, shape: BoxShape.circle),
+                                    child: Center(
+                                      child: Text('${_photos.length}',
+                                        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          if (hasPhotos && !isScanning)
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: Colors.black.withOpacity(0.35),
+                              if (hasPhotos && !isScanning)
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: Colors.black.withValues(alpha: 0.35),
+                                    ),
+                                    child: const Center(child: Icon(Icons.send_rounded, color: Colors.white, size: 20)),
+                                  ),
                                 ),
-                                child: const Center(child: Icon(Icons.send_rounded, color: Colors.white, size: 20)),
-                              ),
-                            ),
-                        ],
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+
+                      // Bulle X — supprimer la dernière photo
+                      if (hasPhotos && !isScanning)
+                        Positioned(
+                          top: -7, left: -7,
+                          child: GestureDetector(
+                            onTap: _removeLastPhoto,
+                            child: Container(
+                              width: 22, height: 22,
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade600,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                              child: const Icon(Icons.close, size: 13, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
 
                   // Bouton capture

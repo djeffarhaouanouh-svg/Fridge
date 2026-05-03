@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'core/theme/app_tokens.dart';
 import 'features/navigation/widgets/bottom_nav.dart';
 import 'features/camera/screens/camera_screen.dart';
-import 'features/meals/screens/results_screen.dart';
+import 'features/home/screens/home_screen.dart';
 import 'features/plan/screens/plan_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 
@@ -57,7 +57,7 @@ class MainScreen extends ConsumerWidget {
       body: IndexedStack(
         index: selectedTab,
         children: const [
-          ResultsScreen(), // 0 — Home
+          HomeScreen(),    // 0 — Home
           PlanScreen(),    // 1 — Plan de la semaine
           CameraScreen(),  // 2 — Scanner
           ProfileScreen(), // 3 — Profil

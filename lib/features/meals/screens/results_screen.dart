@@ -3,250 +3,130 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_tokens.dart';
-import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/glass_button.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
 import 'recipe_screen.dart';
 
-class ResultsScreen extends ConsumerStatefulWidget {
+class ResultsScreen extends ConsumerWidget {
   const ResultsScreen({super.key});
 
   @override
-  ConsumerState<ResultsScreen> createState() => _ResultsScreenState();
-}
-
-class _ResultsScreenState extends ConsumerState<ResultsScreen> {
-  final PageController _heroController = PageController();
-  int _heroPage = 0;
-
-  @override
-  void dispose() {
-    _heroController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final meals = ref.watch(mealsProvider);
-    final heroMeals = meals.take(1).toList();
-    final fridgeMeals = meals;
+    final ingredients = ref.watch(detectedIngredientsProvider);
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: AppHeader(brand: true)),
-
-          // Titre "Qu'est-ce qu'on mange ce soir ?"
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+              child: Row(
                 children: [
+                  GestureDetector(
+                    onTap: () => Navigator.maybePop(context),
+                    child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppTokens.ink),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Voici ce qu\'on a trouvé',
+                        style: GoogleFonts.fraunces(
+                          fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 18),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                children: [
+                  // Section ingrédients détectés
+                  if (ingredients.isNotEmpty) ...[
+                    Text(
+                      'DÉTECTÉS · ${ingredients.length}',
+                      style: GoogleFonts.inter(
+                        fontSize: 11, fontWeight: FontWeight.w700,
+                        color: AppTokens.coral, letterSpacing: 0.06 * 11,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8, runSpacing: 8,
+                      children: [
+                        ...ingredients.map((ing) => _IngredientTag(label: ing)),
+                        GestureDetector(
+                          onTap: () {},
+                          child: Text('+ Ajouter',
+                            style: GoogleFonts.inter(
+                              fontSize: 13, fontWeight: FontWeight.w500,
+                              color: AppTokens.muted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Container(height: 1, color: AppTokens.hairlineSoft),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Titre section recettes
                   RichText(
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: 'Qu\'est-ce qu\'on mange ',
+                          text: '${meals.length} recettes pour ',
                           style: GoogleFonts.fraunces(
-                            fontSize: 27, fontWeight: FontWeight.w700,
+                            fontSize: 22, fontWeight: FontWeight.w700,
                             color: AppTokens.ink, height: 1.2,
                           ),
                         ),
                         TextSpan(
                           text: 'ce soir',
                           style: GoogleFonts.fraunces(
-                            fontSize: 27, fontWeight: FontWeight.w700,
+                            fontSize: 22, fontWeight: FontWeight.w700,
                             color: AppTokens.coral, fontStyle: FontStyle.italic,
                             height: 1.2,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' ?',
-                          style: GoogleFonts.fraunces(
-                            fontSize: 27, fontWeight: FontWeight.w700,
-                            color: AppTokens.ink, height: 1.2,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
-                    '${meals.length} idées à partir de ton frigo',
+                    'Avec ce que tu as déjà',
                     style: GoogleFonts.inter(
-                      fontSize: 13.5, fontWeight: FontWeight.w500,
-                      color: AppTokens.muted,
+                      fontSize: 13, fontWeight: FontWeight.w500, color: AppTokens.muted,
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                  const SizedBox(height: 18),
 
-          // Hero carousel
-          if (heroMeals.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 230,
-                    child: PageView.builder(
-                      controller: _heroController,
-                      onPageChanged: (i) => setState(() => _heroPage = i),
-                      itemCount: heroMeals.length,
-                      itemBuilder: (context, i) => GestureDetector(
-                        onTap: () {
-                          final meal = heroMeals[i];
-                          if (!meal.locked) {
-                            Navigator.push(context, MaterialPageRoute(
-                              builder: (_) => RecipeScreen(meal: meal),
-                            ));
-                          }
-                        },
-                        child: _HeroCard(meal: heroMeals[i], index: i),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(heroMeals.length, (i) {
-                      final isActive = i == _heroPage;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        width: isActive ? 18 : 6,
-                        height: 6,
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        decoration: BoxDecoration(
-                          color: isActive ? AppTokens.coral : AppTokens.placeholder,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      );
-                    }),
-                  ),
-                ],
-              ),
-            ),
+                  // Liste des recettes
+                  ...List.generate(meals.length, (i) => _RecipeRow(
+                    meal: meals[i],
+                    index: i,
+                    detectedCount: ingredients.isNotEmpty ? ingredients.length : meals[i].ingredients.length,
+                  )),
 
-          // Section "Avec ton frigo"
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 28, 18, 14),
-              child: Text(
-                'Avec ton frigo',
-                style: GoogleFonts.fraunces(
-                  fontSize: 19, fontWeight: FontWeight.w600, color: AppTokens.ink,
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 215,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                itemCount: fridgeMeals.length,
-                itemBuilder: (context, i) => _CompactCard(meal: fridgeMeals[i]),
-              ),
-            ),
-          ),
+                  const SizedBox(height: 28),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroCard extends ConsumerWidget {
-  final Meal meal;
-  final int index;
-  const _HeroCard({required this.meal, required this.index});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-        child: Stack(
-          children: [
-            // Image de fond
-            Positioned.fill(
-              child: meal.photo.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: meal.photo, fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppTokens.placeholder),
-                      errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
-                    )
-                  : Container(color: AppTokens.placeholder),
-            ),
-            // Gradient sombre en bas
-            Positioned.fill(
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Color(0xD9000000)],
-                    stops: [0.35, 1.0],
-                  ),
-                ),
-              ),
-            ),
-            // Contenu bas
-            Positioned(
-              left: 16, right: 16, bottom: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'RECETTE DU SOIR',
-                    style: GoogleFonts.inter(
-                      fontSize: 10.5, fontWeight: FontWeight.w700,
-                      color: AppTokens.coral, letterSpacing: 0.7,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    meal.title,
-                    style: GoogleFonts.fraunces(
-                      fontSize: 19, fontWeight: FontWeight.w600,
-                      color: Colors.white, height: 1.2,
-                    ),
-                    maxLines: 2, overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded, size: 14, color: AppTokens.coral),
-                      const SizedBox(width: 4),
-                      Text(
-                        '4.7 · 213 avis · ${meal.time}',
-                        style: GoogleFonts.inter(
-                          fontSize: 12, fontWeight: FontWeight.w500,
-                          color: Colors.white70,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppTokens.coral,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'RECETTE ${index + 1}',
-                          style: GoogleFonts.inter(
-                            fontSize: 9.5, fontWeight: FontWeight.w700,
-                            color: Colors.white, letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ],
+                  // CTA "Générer plus de recettes"
+                  GlassButton(
+                    label: 'Générer plus de recettes',
+                    icon: Icons.auto_awesome,
+                    color: GlassButtonColor.green,
+                    size: GlassButtonSize.lg,
+                    fullWidth: true,
+                    onTap: () {},
                   ),
                 ],
               ),
@@ -258,14 +138,50 @@ class _HeroCard extends ConsumerWidget {
   }
 }
 
-class _CompactCard extends ConsumerWidget {
+class _IngredientTag extends StatelessWidget {
+  final String label;
+  const _IngredientTag({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTokens.surface,
+        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 5, height: 5,
+            decoration: const BoxDecoration(
+              color: AppTokens.ink, shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(label,
+            style: GoogleFonts.inter(
+              fontSize: 13, fontWeight: FontWeight.w500, color: AppTokens.ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecipeRow extends ConsumerWidget {
   final Meal meal;
-  const _CompactCard({required this.meal});
+  final int index;
+  final int detectedCount;
+  const _RecipeRow({required this.meal, required this.index, required this.detectedCount});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final total = meal.ingredients.length;
     final have = total;
+    final num = (index + 1).toString().padLeft(2, '0');
 
     return GestureDetector(
       onTap: () {
@@ -275,94 +191,80 @@ class _CompactCard extends ConsumerWidget {
           ));
         }
       },
-      child: Container(
-        width: 148,
-        margin: const EdgeInsets.only(right: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-              child: SizedBox(
-                height: 148,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: meal.photo.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: meal.photo, fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(color: AppTokens.placeholder),
-                              errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
-                            )
-                          : Container(color: AppTokens.placeholder),
-                    ),
-                    // Heart
-                    Positioned(
-                      top: 8, right: 8,
-                      child: GestureDetector(
-                        onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
-                        child: Container(
-                          width: 30, height: 30,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.92),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            meal.isFavorite ? Icons.favorite : Icons.favorite_border,
-                            size: 16,
-                            color: AppTokens.coral,
-                          ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Thumbnail
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                  child: SizedBox(
+                    width: 72, height: 72,
+                    child: meal.photo.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: meal.photo, fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(color: AppTokens.placeholder),
+                            errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
+                          )
+                        : Container(color: AppTokens.placeholder),
+                  ),
+                ),
+                const SizedBox(width: 14),
+
+                // Infos
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('N°$num',
+                        style: GoogleFonts.inter(
+                          fontSize: 11, fontWeight: FontWeight.w700,
+                          color: AppTokens.coral, letterSpacing: 0.3,
                         ),
                       ),
-                    ),
-                    // Badge ingrédients
-                    if (total > 0)
-                      Positioned(
-                        left: 8, bottom: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.92),
-                            borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                          ),
-                          child: Text(
-                            '$have/$total ✓',
+                      const SizedBox(height: 4),
+                      Text(meal.title,
+                        style: GoogleFonts.fraunces(
+                          fontSize: 15.5, fontWeight: FontWeight.w600,
+                          color: AppTokens.ink, height: 1.25,
+                        ),
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.schedule_outlined, size: 13, color: AppTokens.muted),
+                          const SizedBox(width: 4),
+                          Text(meal.time,
                             style: GoogleFonts.inter(
-                              fontSize: 10.5, fontWeight: FontWeight.w700,
-                              color: AppTokens.ink,
+                              fontSize: 12, fontWeight: FontWeight.w500, color: AppTokens.muted,
                             ),
                           ),
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Text('·',
+                              style: GoogleFonts.inter(fontSize: 12, color: AppTokens.muted),
+                            ),
+                          ),
+                          Text('$have/$total ✓',
+                            style: GoogleFonts.inter(
+                              fontSize: 12, fontWeight: FontWeight.w600, color: AppTokens.muted,
+                            ),
+                          ),
+                        ],
                       ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              meal.title,
-              style: GoogleFonts.inter(
-                fontSize: 13, fontWeight: FontWeight.w600, color: AppTokens.ink,
-              ),
-              maxLines: 2, overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.star_rounded, size: 12, color: AppTokens.coral),
-                const SizedBox(width: 3),
-                Text(
-                  '4.6 · ${meal.time}',
-                  style: GoogleFonts.inter(
-                    fontSize: 11.5, fontWeight: FontWeight.w500, color: AppTokens.muted,
+                    ],
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          // Séparateur coral
+          Container(height: 1.5, color: AppTokens.coral.withOpacity(0.25)),
+        ],
       ),
     );
   }

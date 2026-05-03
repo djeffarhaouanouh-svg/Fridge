@@ -303,7 +303,7 @@ class _CompactCard extends ConsumerWidget {
                       child: GestureDetector(
                         onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
                         child: Container(
-                          width: 32, height: 32,
+                          width: 30, height: 30,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.92),
@@ -311,7 +311,7 @@ class _CompactCard extends ConsumerWidget {
                           ),
                           child: Icon(
                             meal.isFavorite ? Icons.favorite : Icons.favorite_border,
-                            size: 18,
+                            size: 16,
                             color: AppTokens.coral,
                           ),
                         ),

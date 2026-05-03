@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' show lerpDouble;
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,6 +34,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   OverlayEntry? _flyEntry;
   bool _isAnimating = false;
 
+  // Live camera preview
+  CameraController? _cameraController;
+  bool _cameraReady = false;
+
   @override
   void initState() {
     super.initState();
@@ -49,11 +54,40 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     _flashController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 180),
-      value: 1.0, // démarre à la fin → _flashAnim = 0.0 → pas d'overlay initial
+      value: 1.0,
     );
     _flashAnim = Tween<double>(begin: 0.7, end: 0.0).animate(
       CurvedAnimation(parent: _flashController, curve: Curves.easeOut),
     );
+
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+      final back = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => cameras.first,
+      );
+      final ctrl = CameraController(
+        back,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+      await ctrl.initialize();
+      if (!mounted) {
+        ctrl.dispose();
+        return;
+      }
+      setState(() {
+        _cameraController = ctrl;
+        _cameraReady = true;
+      });
+    } catch (_) {
+      // Permission refusée ou caméra indisponible → fond noir conservé
+    }
   }
 
   @override
@@ -61,6 +95,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     _flyController.dispose();
     _flashController.dispose();
     _flyEntry?.remove();
+    _cameraController?.dispose();
     super.dispose();
   }
 
@@ -233,12 +268,17 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       backgroundColor: const Color(0xFF1C1816),
       body: Stack(
           children: [
-            // Viewfinder plein écran
+            // Viewfinder plein écran — live preview ou fond noir si indispo
             Positioned.fill(
-              child: Container(
-                key: _viewfinderKey,
-                color: const Color(0xFF1C1816),
-              ),
+              child: _cameraReady && _cameraController != null
+                  ? CameraPreview(
+                      _cameraController!,
+                      child: Container(key: _viewfinderKey),
+                    )
+                  : Container(
+                      key: _viewfinderKey,
+                      color: const Color(0xFF1C1816),
+                    ),
             ),
 
             // Frame de scan centré

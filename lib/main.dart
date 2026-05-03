@@ -57,11 +57,11 @@ class MainScreen extends ConsumerWidget {
       body: IndexedStack(
         index: selectedTab,
         children: const [
-          ResultsScreen(),   // 0 — Recettes
-          PlanScreen(),      // 1 — Plan
-          CameraScreen(),    // 2 — Scanner (FAB)
-          _FavoritesPlaceholder(), // 3 — Favoris (à créer)
-          ProfileScreen(),   // 4 — Profil
+          ResultsScreen(),         // 0 — Home (Recettes)
+          PlanScreen(),            // 1 — Plan
+          CameraScreen(),          // 2 — Scanner (FAB)
+          _FavoritesPlaceholder(), // 3 — Favoris
+          ProfileScreen(),         // 4 — Profil
         ],
       ),
       bottomNavigationBar: const BottomNav(),

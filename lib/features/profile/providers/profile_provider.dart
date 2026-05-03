@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/user_service.dart';
 
 enum CookingObjective { weightLoss, muscleGain, family, passion }
 enum CookingLevel { beginner, intermediate, advanced, expert }
@@ -72,7 +73,14 @@ class UserProfile {
 }
 
 class UserProfileNotifier extends StateNotifier<UserProfile> {
-  UserProfileNotifier() : super(const UserProfile());
+  UserProfileNotifier() : super(const UserProfile()) {
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final info = await UserService().fetchUser();
+    state = state.copyWith(name: info.name, email: info.email);
+  }
 
   void setObjective(CookingObjective obj) =>
       state = state.copyWith(objective: state.objective == obj ? null : obj);

@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../meals/providers/meals_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../meals/models/meal.dart';
 import '../../meals/screens/recipe_screen.dart';
 
@@ -30,6 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final meals = ref.watch(mealsProvider);
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
     final heroMeals = meals.take(3).toList();
+    final firstName = ref.watch(userProfileProvider).name.split(' ').first;
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
@@ -49,15 +51,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         TextSpan(
                           text: 'Bonjour ',
                           style: GoogleFonts.fraunces(
-                            fontSize: 21,
+                            fontSize: 19,
                             fontWeight: FontWeight.w400,
                             color: AppTokens.inkSoft,
                           ),
                         ),
                         TextSpan(
-                          text: 'Thomas',
+                          text: firstName,
                           style: GoogleFonts.fraunces(
-                            fontSize: 21,
+                            fontSize: 19,
                             fontWeight: FontWeight.w600,
                             color: AppTokens.coral,
                           ),

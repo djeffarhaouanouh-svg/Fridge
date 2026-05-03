@@ -110,24 +110,29 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   Future<void> _pickAndProcess(ImageSource source) async {
     final photo = await _picker.pickImage(
       source: source,
-      imageQuality: 85,
+      imageQuality: 75,
     );
     if (photo == null) return;
     final bytes = await photo.readAsBytes();
 
-    final vfBox =
-        _viewfinderKey.currentContext?.findRenderObject() as RenderBox?;
-    final thumbBox =
-        _thumbnailKey.currentContext?.findRenderObject() as RenderBox?;
+    if (!mounted) return;
+
+    // Ajoute immédiatement la photo — pas besoin d'attendre l'animation
+    setState(() {
+      _photos.add(bytes);
+      _isAnimating = true;
+    });
+    ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
+
+    // Animation fly (cosmétique uniquement, en parallèle)
+    final vfBox = _viewfinderKey.currentContext?.findRenderObject() as RenderBox?;
+    final thumbBox = _thumbnailKey.currentContext?.findRenderObject() as RenderBox?;
 
     if (vfBox != null && thumbBox != null && mounted) {
       final startRect = vfBox.localToGlobal(Offset.zero) & vfBox.size;
       final endRect = thumbBox.localToGlobal(Offset.zero) & thumbBox.size;
 
-      // White flash
       _flashController.forward(from: 0);
-
-      setState(() => _isAnimating = true);
 
       _flyEntry = OverlayEntry(
         builder: (_) => AnimatedBuilder(
@@ -143,8 +148,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               child: Transform.rotate(
                 angle: t * 2 * math.pi,
                 child: ClipRRect(
-                  borderRadius:
-                      BorderRadius.circular(lerpDouble(20, 12, t)!),
+                  borderRadius: BorderRadius.circular(lerpDouble(20, 12, t)!),
                   child: Image.memory(bytes, fit: BoxFit.cover),
                 ),
               ),
@@ -158,18 +162,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       _flyController.forward(from: 0).then((_) {
         _flyEntry?.remove();
         _flyEntry = null;
-        if (mounted) {
-          setState(() {
-            _photos.add(bytes);
-            _isAnimating = false;
-          });
-          ref.read(capturedPhotosProvider.notifier).state =
-              List.from(_photos);
-        }
+        if (mounted) setState(() => _isAnimating = false);
       });
     } else {
-      setState(() => _photos.add(bytes));
-      ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
+      setState(() => _isAnimating = false);
     }
   }
 

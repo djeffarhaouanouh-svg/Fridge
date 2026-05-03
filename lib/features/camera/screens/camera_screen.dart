@@ -279,7 +279,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   : const SizedBox.shrink(),
             ),
 
-            // Header : X + titre
+            // Header : X + logo
             Positioned(
               top: MediaQuery.of(context).padding.top + 12, left: 16, right: 16,
               child: Row(
@@ -295,14 +295,22 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                       child: const Icon(Icons.close, color: Colors.white, size: 20),
                     ),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Center(
-                      child: Text('Scanner',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.kitchen_outlined, color: AppTokens.coral, size: 20),
+                          const SizedBox(width: 5),
+                          Text('fridge·ai',
+                            style: GoogleFonts.fraunces(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: AppTokens.coral,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

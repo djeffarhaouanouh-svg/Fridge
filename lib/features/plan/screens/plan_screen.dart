@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../../core/services/claude_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -154,27 +155,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         bottom: false,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.maybePop(context),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 18, color: AppTokens.ink),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text('Ma semaine',
-                        style: GoogleFonts.fraunces(
-                          fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 32),
-                ],
-              ),
-            ),
+            const AppHeader(brand: true),
 
             Expanded(
               child: ListView(

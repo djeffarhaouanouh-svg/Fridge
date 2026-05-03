@@ -30,9 +30,9 @@ class BottomNav extends ConsumerWidget {
           child: Container(
             height: 56,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.62),
+              color: Colors.white.withOpacity(0.18),
               borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              border: Border.all(color: Colors.white.withOpacity(0.55), width: 0.5),
+              border: Border.all(color: Colors.white.withOpacity(0.35), width: 0.5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.08),
@@ -56,7 +56,7 @@ class BottomNav extends ConsumerWidget {
                             : const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                         decoration: BoxDecoration(
                           color: isActive
-                              ? Colors.white.withOpacity(0.75)
+                              ? Colors.white.withOpacity(0.45)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(AppTokens.radiusPill),
                         ),

@@ -49,6 +49,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     _flashController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 180),
+      value: 1.0, // démarre à la fin → _flashAnim = 0.0 → pas d'overlay initial
     );
     _flashAnim = Tween<double>(begin: 0.7, end: 0.0).animate(
       CurvedAnimation(parent: _flashController, curve: Curves.easeOut),
@@ -269,14 +270,16 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 ),
               ),
 
-            // Flash shutter
-            AnimatedBuilder(
-              animation: _flashAnim,
-              builder: (_, __) => _flashAnim.value > 0
-                  ? Positioned.fill(
-                      child: ColoredBox(color: Colors.white.withOpacity(_flashAnim.value)),
-                    )
-                  : const SizedBox.shrink(),
+            // Flash shutter — Positioned.fill doit être enfant direct du Stack
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedBuilder(
+                  animation: _flashAnim,
+                  builder: (_, __) => ColoredBox(
+                    color: Colors.white.withValues(alpha: _flashAnim.value),
+                  ),
+                ),
+              ),
             ),
 
             // Header : X + logo
@@ -320,8 +323,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             ),
 
             // Contrôles bas : miniature + bouton capture
+            // viewPadding.bottom + 16 (margin nav) + 60 (nav height) + 20 (spacing)
             Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + 36, left: 32, right: 32,
+              bottom: MediaQuery.of(context).viewPadding.bottom + 96, left: 32, right: 32,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,

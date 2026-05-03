@@ -50,3 +50,6 @@ final favoriteMealsProvider = Provider<List<Meal>>((ref) {
 });
 
 final selectedMealProvider = StateProvider<Meal?>((ref) => null);
+
+// Clé : "${isoDate}_${mealType}", ex: "2026-05-03_Petit-déj"
+final planMealSelectionsProvider = StateProvider<Map<String, Meal>>((ref) => {});

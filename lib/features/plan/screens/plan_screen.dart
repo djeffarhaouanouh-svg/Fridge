@@ -135,6 +135,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
   Widget build(BuildContext context) {
     final status = ref.watch(planStatusProvider);
     final weekPlan = ref.watch(weekPlanProvider);
+    final selections = ref.watch(planMealSelectionsProvider);
     final isLoading = status == PlanStatus.loading;
     final days = _days;
     final weekNum = _weekNumber(days.first);
@@ -251,7 +252,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     label: 'PETIT-DÉJ',
                     days: days,
                     frDays: frDays,
-                    meals: List.generate(days.length, (i) => _breakfasts[i % _breakfasts.length]),
+                    meals: List.generate(days.length, (i) {
+                      final key = '${_isoDate(days[i])}_Petit-déj';
+                      return selections[key]?.title ?? _breakfasts[i % _breakfasts.length];
+                    }),
                     scrollController: _breakfastScrollController,
                     selectedDayIndex: _selectedDayIndex,
                     onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
@@ -270,7 +274,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     days: days,
                     frDays: frDays,
                     meals: List.generate(days.length, (i) {
-                      return planMap[_isoDate(days[i])]?.lunch.name ?? '';
+                      final key = '${_isoDate(days[i])}_Déjeuner';
+                      return selections[key]?.title ?? planMap[_isoDate(days[i])]?.lunch.name ?? '';
                     }),
                     scrollController: _lunchScrollController,
                     selectedDayIndex: _selectedDayIndex,
@@ -290,7 +295,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     days: days,
                     frDays: frDays,
                     meals: List.generate(days.length, (i) {
-                      return planMap[_isoDate(days[i])]?.dinner.name ?? '';
+                      final key = '${_isoDate(days[i])}_Dîner';
+                      return selections[key]?.title ?? planMap[_isoDate(days[i])]?.dinner.name ?? '';
                     }),
                     scrollController: _dinnerScrollController,
                     selectedDayIndex: _selectedDayIndex,
@@ -476,6 +482,19 @@ class PlanMealDetailScreen extends ConsumerStatefulWidget {
 
 class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
   Meal? _selected;
+  bool _initialized = false;
+
+  String get _slotKey {
+    final d = widget.day;
+    return '${d.year}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}_${widget.mealType}';
+  }
+
+  void _selectMeal(Meal meal) {
+    setState(() => _selected = meal);
+    final current = Map<String, Meal>.from(ref.read(planMealSelectionsProvider));
+    current[_slotKey] = meal;
+    ref.read(planMealSelectionsProvider.notifier).state = current;
+  }
 
   static const _frMonths = [
     'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
@@ -484,6 +503,13 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Restore selection from provider on first build
+    if (!_initialized) {
+      _initialized = true;
+      final saved = ref.read(planMealSelectionsProvider)[_slotKey];
+      if (saved != null) _selected = saved;
+    }
+
     final allMeals = ref.watch(mealsProvider);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
     final fullDate = '${widget.day.day} ${_frMonths[widget.day.month - 1]} ${widget.day.year}';
@@ -615,7 +641,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                         itemBuilder: (_, i) => _MealPickCard(
                           meal: favoriteMeals[i],
                           isSelected: _selected?.id == favoriteMeals[i].id,
-                          onTap: () => setState(() => _selected = favoriteMeals[i]),
+                          onTap: () => _selectMeal(favoriteMeals[i]),
                         ),
                       ),
                     ),
@@ -633,7 +659,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                         itemBuilder: (_, i) => _MealPickCard(
                           meal: allMeals[i],
                           isSelected: _selected?.id == allMeals[i].id,
-                          onTap: () => setState(() => _selected = allMeals[i]),
+                          onTap: () => _selectMeal(allMeals[i]),
                         ),
                       ),
                     ),

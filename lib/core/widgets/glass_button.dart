@@ -90,13 +90,10 @@ class GlassButton extends StatelessWidget {
       ],
     );
 
+    final sized = SizedBox(height: h, width: fullWidth ? double.infinity : null, child: inner);
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
-        height: h,
-        width: fullWidth ? double.infinity : null,
-        child: inner,
-      ),
+      child: fullWidth ? sized : IntrinsicWidth(child: sized),
     );
   }
 

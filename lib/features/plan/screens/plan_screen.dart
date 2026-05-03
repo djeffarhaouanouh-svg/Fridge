@@ -150,6 +150,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     return Scaffold(
       backgroundColor: AppTokens.paper,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             Padding(
@@ -176,7 +177,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 110),
                 children: [
                   RichText(
                     text: TextSpan(children: [
@@ -304,13 +305,15 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  GlassButton(
-                    label: 'Générer ma semaine avec mon frigo',
+                  Center(
+                    child: GlassButton(
+                    label: 'Générer ma semaine',
                     icon: Icons.auto_awesome,
-                    color: GlassButtonColor.green,
-                    size: GlassButtonSize.lg,
-                    fullWidth: true,
+                    color: GlassButtonColor.coral,
+                    size: GlassButtonSize.md,
+                    fullWidth: false,
                     onTap: isLoading ? null : _generatePlan,
+                  ),
                   ),
 
                   if (isLoading)
@@ -453,7 +456,7 @@ class _MealRow extends StatelessWidget {
 
 // ─── Page détail d'un créneau ───────────────────────────────────────────────
 
-class PlanMealDetailScreen extends ConsumerWidget {
+class PlanMealDetailScreen extends ConsumerStatefulWidget {
   final DateTime day;
   final String dayLabel;
   final String mealType;
@@ -467,23 +470,32 @@ class PlanMealDetailScreen extends ConsumerWidget {
     required this.mealName,
   });
 
+  @override
+  ConsumerState<PlanMealDetailScreen> createState() => _PlanMealDetailScreenState();
+}
+
+class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
+  Meal? _selected;
+
   static const _frMonths = [
     'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
     'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final allMeals = ref.watch(mealsProvider);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
-    final fullDate = '${day.day} ${_frMonths[day.month - 1]} ${day.year}';
-    final hasMeal = mealName.isNotEmpty;
+    final fullDate = '${widget.day.day} ${_frMonths[widget.day.month - 1]} ${widget.day.year}';
+    final meal = _selected;
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
+            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
               child: Row(
@@ -496,7 +508,7 @@ class PlanMealDetailScreen extends ConsumerWidget {
                     child: Center(
                       child: Column(
                         children: [
-                          Text(mealType,
+                          Text(widget.mealType,
                             style: GoogleFonts.fraunces(
                               fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink,
                             ),
@@ -517,69 +529,78 @@ class PlanMealDetailScreen extends ConsumerWidget {
 
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
+                padding: const EdgeInsets.fromLTRB(18, 4, 18, 110),
                 children: [
-                  // Créneau actuel
-                  Container(
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: AppTokens.surface,
-                      borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                    ),
-                    child: hasMeal
-                        ? Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                                child: Container(
-                                  color: AppTokens.placeholder,
-                                  child: const Center(
-                                    child: Icon(Icons.restaurant_outlined,
-                                      color: AppTokens.placeholderDeep, size: 40),
-                                  ),
+                  // Emplacement photo
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: meal != null
+                          ? SizedBox(
+                              key: ValueKey(meal.id),
+                              height: 200,
+                              width: double.infinity,
+                              child: meal.photo.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: meal.photo,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => Container(color: AppTokens.placeholder),
+                                      errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
+                                    )
+                                  : Container(
+                                      color: AppTokens.placeholder,
+                                      child: const Center(child: Icon(
+                                        Icons.restaurant_outlined,
+                                        color: AppTokens.placeholderDeep, size: 48,
+                                      )),
+                                    ),
+                            )
+                          : Container(
+                              key: const ValueKey('empty'),
+                              height: 200,
+                              color: AppTokens.surface,
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.add_circle_outline,
+                                      color: AppTokens.muted, size: 36),
+                                    const SizedBox(height: 10),
+                                    Text('Choisis un plat ci-dessous',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13.5, color: AppTokens.muted,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Positioned(
-                                left: 0, right: 0, bottom: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 14),
-                                  decoration: const BoxDecoration(
-                                    borderRadius: BorderRadius.vertical(
-                                      bottom: Radius.circular(AppTokens.radiusLg),
-                                    ),
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [Colors.transparent, Color(0xCC000000)],
-                                    ),
-                                  ),
-                                  child: Text(mealName,
-                                    style: GoogleFonts.fraunces(
-                                      fontSize: 18, fontWeight: FontWeight.w600,
-                                      color: Colors.white, height: 1.2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.add_circle_outline,
-                                  color: AppTokens.muted, size: 36),
-                                const SizedBox(height: 10),
-                                Text('Rien de prévu',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14, color: AppTokens.muted,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
                             ),
-                          ),
+                    ),
                   ),
+
+                  // Données du plat sélectionné
+                  if (meal != null) ...[
+                    const SizedBox(height: 16),
+                    Text(meal.title,
+                      style: GoogleFonts.fraunces(
+                        fontSize: 20, fontWeight: FontWeight.w700, color: AppTokens.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _InfoChip(icon: Icons.schedule_outlined, label: meal.time),
+                        const SizedBox(width: 10),
+                        _InfoChip(icon: Icons.local_fire_department_outlined, label: '${meal.kcal} kcal'),
+                        const SizedBox(width: 10),
+                        _InfoChip(icon: Icons.bar_chart_outlined, label: meal.difficulty),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    _InfoChip(icon: Icons.fitness_center_outlined, label: 'Protéines ${meal.protein}'),
+                  ],
 
                   const SizedBox(height: 28),
 
@@ -593,7 +614,8 @@ class PlanMealDetailScreen extends ConsumerWidget {
                         itemCount: favoriteMeals.length,
                         itemBuilder: (_, i) => _MealPickCard(
                           meal: favoriteMeals[i],
-                          onTap: () => Navigator.pop(context),
+                          isSelected: _selected?.id == favoriteMeals[i].id,
+                          onTap: () => setState(() => _selected = favoriteMeals[i]),
                         ),
                       ),
                     ),
@@ -610,7 +632,8 @@ class PlanMealDetailScreen extends ConsumerWidget {
                         itemCount: allMeals.length,
                         itemBuilder: (_, i) => _MealPickCard(
                           meal: allMeals[i],
-                          onTap: () => Navigator.pop(context),
+                          isSelected: _selected?.id == allMeals[i].id,
+                          onTap: () => setState(() => _selected = allMeals[i]),
                         ),
                       ),
                     ),
@@ -623,9 +646,7 @@ class PlanMealDetailScreen extends ConsumerWidget {
                       child: Center(
                         child: Text(
                           'Scanne ton frigo pour voir des plats ici',
-                          style: GoogleFonts.inter(
-                            fontSize: 13.5, color: AppTokens.muted,
-                          ),
+                          style: GoogleFonts.inter(fontSize: 13.5, color: AppTokens.muted),
                         ),
                       ),
                     ),
@@ -653,10 +674,40 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _InfoChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppTokens.surface,
+        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppTokens.muted),
+          const SizedBox(width: 5),
+          Text(label,
+            style: GoogleFonts.inter(
+              fontSize: 12, fontWeight: FontWeight.w500, color: AppTokens.inkSoft,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MealPickCard extends StatelessWidget {
   final Meal meal;
+  final bool isSelected;
   final VoidCallback onTap;
-  const _MealPickCard({required this.meal, required this.onTap});
+  const _MealPickCard({required this.meal, required this.onTap, this.isSelected = false});
 
   @override
   Widget build(BuildContext context) {
@@ -666,8 +717,11 @@ class _MealPickCard extends StatelessWidget {
         width: 130,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: AppTokens.surface,
+          color: isSelected ? AppTokens.coralSoft : AppTokens.surface,
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          border: isSelected
+              ? Border.all(color: AppTokens.coral, width: 1.5)
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -18,6 +18,7 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTokens.paper,
       body: SafeArea(
+        bottom: false,
         child: ListView(
           children: [
             // Title

@@ -9,6 +9,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
+import '../../meals/screens/results_screen.dart';
 
 class CameraScreen extends ConsumerStatefulWidget {
   const CameraScreen({super.key});
@@ -158,7 +159,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
       ref.read(scanStatusProvider.notifier).state = ScanStatus.done;
       setState(() => _photos.clear());
-      if (mounted) ref.read(selectedTabProvider.notifier).state = 1;
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ResultsScreen()),
+        );
+      }
     } catch (e) {
       _showError('Erreur : $e');
       ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;

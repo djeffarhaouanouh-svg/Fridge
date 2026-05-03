@@ -4,7 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../../core/services/claude_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../meals/providers/meals_provider.dart';
+import '../../meals/models/meal.dart';
 
 class PlanScreen extends ConsumerStatefulWidget {
   const PlanScreen({super.key});
@@ -167,14 +169,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       ),
                     ),
                   ),
-                  Container(
-                    width: 32, height: 32,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: AppTokens.coralSoft, shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.tune_rounded, size: 16, color: AppTokens.coral),
-                  ),
+                  const SizedBox(width: 32),
                 ],
               ),
             ),
@@ -258,6 +253,14 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     meals: List.generate(days.length, (i) => _breakfasts[i % _breakfasts.length]),
                     scrollController: _breakfastScrollController,
                     selectedDayIndex: _selectedDayIndex,
+                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => PlanMealDetailScreen(
+                        day: days[i],
+                        dayLabel: '${frDays[i]} ${days[i].day}',
+                        mealType: 'Petit-déj',
+                        mealName: _breakfasts[i % _breakfasts.length],
+                      ),
+                    )),
                   ),
                   const SizedBox(height: 20),
 
@@ -270,6 +273,14 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     }),
                     scrollController: _lunchScrollController,
                     selectedDayIndex: _selectedDayIndex,
+                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => PlanMealDetailScreen(
+                        day: days[i],
+                        dayLabel: '${frDays[i]} ${days[i].day}',
+                        mealType: 'Déjeuner',
+                        mealName: planMap[_isoDate(days[i])]?.lunch.name ?? '',
+                      ),
+                    )),
                   ),
                   const SizedBox(height: 20),
 
@@ -282,6 +293,14 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     }),
                     scrollController: _dinnerScrollController,
                     selectedDayIndex: _selectedDayIndex,
+                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => PlanMealDetailScreen(
+                        day: days[i],
+                        dayLabel: '${frDays[i]} ${days[i].day}',
+                        mealType: 'Dîner',
+                        mealName: planMap[_isoDate(days[i])]?.dinner.name ?? '',
+                      ),
+                    )),
                   ),
                   const SizedBox(height: 28),
 
@@ -316,6 +335,7 @@ class _MealRow extends StatelessWidget {
   final List<String> meals;
   final ScrollController scrollController;
   final int selectedDayIndex;
+  final void Function(int)? onCardTap;
 
   const _MealRow({
     required this.label,
@@ -324,6 +344,7 @@ class _MealRow extends StatelessWidget {
     required this.meals,
     required this.scrollController,
     required this.selectedDayIndex,
+    this.onCardTap,
   });
 
   @override
@@ -367,7 +388,9 @@ class _MealRow extends StatelessWidget {
               final mealName = meals[i];
               final dayLabel = '${frDays[i].toUpperCase()} ${days[i].day}';
 
-              return AnimatedContainer(
+              return GestureDetector(
+                onTap: () => onCardTap?.call(i),
+                child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 110,
                 margin: const EdgeInsets.only(right: 10),
@@ -418,11 +441,292 @@ class _MealRow extends StatelessWidget {
                     ),
                   ],
                 ),
-              );
+              ),
+            );
             },
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Page détail d'un créneau ───────────────────────────────────────────────
+
+class PlanMealDetailScreen extends ConsumerWidget {
+  final DateTime day;
+  final String dayLabel;
+  final String mealType;
+  final String mealName;
+
+  const PlanMealDetailScreen({
+    super.key,
+    required this.day,
+    required this.dayLabel,
+    required this.mealType,
+    required this.mealName,
+  });
+
+  static const _frMonths = [
+    'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
+    'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allMeals = ref.watch(mealsProvider);
+    final favoriteMeals = ref.watch(favoriteMealsProvider);
+    final fullDate = '${day.day} ${_frMonths[day.month - 1]} ${day.year}';
+    final hasMeal = mealName.isNotEmpty;
+
+    return Scaffold(
+      backgroundColor: AppTokens.paper,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.arrow_back_ios_new, size: 18, color: AppTokens.ink),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Text(mealType,
+                            style: GoogleFonts.fraunces(
+                              fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink,
+                            ),
+                          ),
+                          Text(fullDate,
+                            style: GoogleFonts.inter(
+                              fontSize: 11.5, color: AppTokens.muted, fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 32),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
+                children: [
+                  // Créneau actuel
+                  Container(
+                    height: 180,
+                    decoration: BoxDecoration(
+                      color: AppTokens.surface,
+                      borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                    ),
+                    child: hasMeal
+                        ? Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                                child: Container(
+                                  color: AppTokens.placeholder,
+                                  child: const Center(
+                                    child: Icon(Icons.restaurant_outlined,
+                                      color: AppTokens.placeholderDeep, size: 40),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                left: 0, right: 0, bottom: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 14),
+                                  decoration: const BoxDecoration(
+                                    borderRadius: BorderRadius.vertical(
+                                      bottom: Radius.circular(AppTokens.radiusLg),
+                                    ),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [Colors.transparent, Color(0xCC000000)],
+                                    ),
+                                  ),
+                                  child: Text(mealName,
+                                    style: GoogleFonts.fraunces(
+                                      fontSize: 18, fontWeight: FontWeight.w600,
+                                      color: Colors.white, height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.add_circle_outline,
+                                  color: AppTokens.muted, size: 36),
+                                const SizedBox(height: 10),
+                                Text('Rien de prévu',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14, color: AppTokens.muted,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  if (favoriteMeals.isNotEmpty) ...[
+                    _SectionTitle(title: 'Mes favoris'),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 160,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: favoriteMeals.length,
+                        itemBuilder: (_, i) => _MealPickCard(
+                          meal: favoriteMeals[i],
+                          onTap: () => Navigator.pop(context),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  if (allMeals.isNotEmpty) ...[
+                    _SectionTitle(title: 'Plats de mon frigo'),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 160,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: allMeals.length,
+                        itemBuilder: (_, i) => _MealPickCard(
+                          meal: allMeals[i],
+                          onTap: () => Navigator.pop(context),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  if (favoriteMeals.isEmpty && allMeals.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Center(
+                        child: Text(
+                          'Scanne ton frigo pour voir des plats ici',
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5, color: AppTokens.muted,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(title,
+      style: GoogleFonts.fraunces(
+        fontSize: 17, fontWeight: FontWeight.w600, color: AppTokens.ink,
+      ),
+    );
+  }
+}
+
+class _MealPickCard extends StatelessWidget {
+  final Meal meal;
+  final VoidCallback onTap;
+  const _MealPickCard({required this.meal, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 130,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: AppTokens.surface,
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppTokens.radiusMd),
+              ),
+              child: SizedBox(
+                height: 100, width: 130,
+                child: meal.photo.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: meal.photo,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(color: AppTokens.placeholder),
+                        errorWidget: (_, __, ___) => Container(
+                          color: AppTokens.placeholder,
+                          child: const Center(child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: AppTokens.placeholderDeep, size: 20,
+                          )),
+                        ),
+                      )
+                    : Container(
+                        color: AppTokens.placeholder,
+                        child: const Center(child: Icon(
+                          Icons.restaurant_outlined,
+                          color: AppTokens.placeholderDeep, size: 24,
+                        )),
+                      ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(meal.title,
+                    style: GoogleFonts.inter(
+                      fontSize: 11.5, fontWeight: FontWeight.w600, color: AppTokens.ink,
+                    ),
+                    maxLines: 2, overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(Icons.schedule_outlined, size: 10, color: AppTokens.muted),
+                      const SizedBox(width: 3),
+                      Text(meal.time,
+                        style: GoogleFonts.inter(fontSize: 10.5, color: AppTokens.muted),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

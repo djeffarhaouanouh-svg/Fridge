@@ -188,145 +188,119 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     final hasPhotos = _photos.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF080D08),
+      backgroundColor: const Color(0xFF1C1816),
       body: SafeArea(
         child: Stack(
           children: [
-            // Viewfinder remplit tout l'espace
+            // Viewfinder plein écran
             Positioned.fill(
               child: Container(
                 key: _viewfinderKey,
-                color: const Color(0xFF0A1A0A),
-                child: Stack(
+                color: const Color(0xFF1C1816),
+              ),
+            ),
+
+            // 4 coins coral du viewfinder
+            const Positioned(top: 72, left: 24, child: _Corner(topLeft: true)),
+            const Positioned(top: 72, right: 24, child: _Corner(topRight: true)),
+            const Positioned(bottom: 130, left: 24, child: _Corner(bottomLeft: true)),
+            const Positioned(bottom: 130, right: 24, child: _Corner(bottomRight: true)),
+
+            // Analyse en cours
+            if (isScanning)
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Positioned(
-                        top: 80, left: 20, child: _Corner(topLeft: true)),
-                    const Positioned(
-                        top: 80, right: 20, child: _Corner(topRight: true)),
-                    const Positioned(
-                        bottom: 110,
-                        left: 20,
-                        child: _Corner(bottomLeft: true)),
-                    const Positioned(
-                        bottom: 110,
-                        right: 20,
-                        child: _Corner(bottomRight: true)),
-                    if (isScanning)
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(
-                                color: AppTokens.accent, strokeWidth: 2),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Analyse en cours…',
-                              style: GoogleFonts.dmSans(
-                                  color: AppTokens.accent, fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-                    // Flash shutter effect
-                    AnimatedBuilder(
-                      animation: _flashAnim,
-                      builder: (_, __) => _flashAnim.value > 0
-                          ? Positioned.fill(
-                              child: ColoredBox(
-                                color: Colors.white
-                                    .withOpacity(_flashAnim.value),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
+                    CircularProgressIndicator(color: AppTokens.coral, strokeWidth: 2),
+                    const SizedBox(height: 16),
+                    Text('Analyse en cours…',
+                      style: GoogleFonts.inter(color: Colors.white70, fontSize: 14),
                     ),
                   ],
                 ),
               ),
+
+            // Flash shutter
+            AnimatedBuilder(
+              animation: _flashAnim,
+              builder: (_, __) => _flashAnim.value > 0
+                  ? Positioned.fill(
+                      child: ColoredBox(color: Colors.white.withOpacity(_flashAnim.value)),
+                    )
+                  : const SizedBox.shrink(),
             ),
 
-            // Filtres en overlay en haut
+            // Header : X + titre
             Positioned(
-              top: 16,
-              left: 16,
-              right: 16,
+              top: 12, left: 16, right: 16,
               child: Row(
                 children: [
-                  _FilterChip(
-                    value: _selectedSpeed,
-                    options: const ['Rapide', 'Moyen', 'Lent'],
-                    onChanged: (v) => setState(() => _selectedSpeed = v),
+                  GestureDetector(
+                    onTap: () => ref.read(selectedTabProvider.notifier).state = 0,
+                    child: Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close, color: Colors.white, size: 20),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  _FilterChip(
-                    value: _selectedDiet,
-                    options: const ['Sportif', 'Vegan', 'Léger'],
-                    onChanged: (v) => setState(() => _selectedDiet = v),
+                  const Expanded(
+                    child: Center(
+                      child: Text('Scanner mon frigo',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 36),
                 ],
               ),
             ),
 
-            // Controles en overlay en bas
+            // Contrôles bas : miniature + bouton capture
             Positioned(
-              bottom: 24,
-              left: 32,
-              right: 32,
+              bottom: 36, left: 32, right: 32,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Miniature
+                  // Miniature / envoyer
                   GestureDetector(
-                    onTap: isScanning
-                        ? null
-                        : (hasPhotos ? _analyzePhotos : null),
+                    onTap: isScanning ? null : (hasPhotos ? _analyzePhotos : null),
                     child: Container(
                       key: _thumbnailKey,
-                      width: 56,
-                      height: 56,
+                      width: 56, height: 56,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: hasPhotos ? AppTokens.accent : Colors.white12,
+                          color: hasPhotos ? AppTokens.coral : Colors.white24,
                           width: hasPhotos ? 2 : 1,
                         ),
-                        color: const Color(0xFF1A2A1A),
+                        color: Colors.white10,
                       ),
                       child: Stack(
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: hasPhotos
-                                ? Image.memory(
-                                    _photos.last,
-                                    width: 56,
-                                    height: 56,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Center(
-                                    child: Icon(Icons.grid_view_rounded,
-                                        color: AppTokens.muted, size: 22),
-                                  ),
+                                ? Image.memory(_photos.last, width: 56, height: 56, fit: BoxFit.cover)
+                                : Center(child: Icon(Icons.grid_view_rounded, color: Colors.white38, size: 22)),
                           ),
                           if (hasPhotos)
                             Positioned(
-                              top: 4,
-                              right: 4,
+                              top: 4, right: 4,
                               child: Container(
-                                width: 18,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  color: AppTokens.accent,
-                                  shape: BoxShape.circle,
-                                ),
+                                width: 18, height: 18,
+                                decoration: BoxDecoration(color: AppTokens.coral, shape: BoxShape.circle),
                                 child: Center(
-                                  child: Text(
-                                    '${_photos.length}',
-                                    style: GoogleFonts.dmSans(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTokens.bg,
-                                    ),
+                                  child: Text('${_photos.length}',
+                                    style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
                                   ),
                                 ),
                               ),
@@ -338,10 +312,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                                   borderRadius: BorderRadius.circular(10),
                                   color: Colors.black.withOpacity(0.35),
                                 ),
-                                child: const Center(
-                                  child: Icon(Icons.send_rounded,
-                                      color: Colors.white, size: 20),
-                                ),
+                                child: const Center(child: Icon(Icons.send_rounded, color: Colors.white, size: 20)),
                               ),
                             ),
                         ],
@@ -353,23 +324,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   GestureDetector(
                     onTap: (isScanning || _isAnimating) ? null : _takePhoto,
                     child: Container(
-                      width: 80,
-                      height: 80,
+                      width: 80, height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.transparent,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 4,
-                        ),
+                        border: Border.all(color: Colors.white, width: 4),
                       ),
                       child: isScanning
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            )
+                          ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                           : null,
                     ),
                   ),
@@ -511,7 +473,7 @@ class _CornerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white54
+      ..color = const Color(0xFFEE5C42)
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;

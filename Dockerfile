@@ -9,6 +9,7 @@ RUN flutter pub get
 
 COPY . .
 RUN flutter build web --release \
+  --pwa-strategy=none \
   --dart-define=ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 
 FROM nginx:alpine

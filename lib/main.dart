@@ -57,11 +57,10 @@ class MainScreen extends ConsumerWidget {
       body: IndexedStack(
         index: selectedTab,
         children: const [
-          ResultsScreen(),         // 0 — Home (Recettes)
-          PlanScreen(),            // 1 — Plan
-          CameraScreen(),          // 2 — Scanner (FAB)
-          _FavoritesPlaceholder(), // 3 — Favoris
-          ProfileScreen(),         // 4 — Profil
+          ResultsScreen(), // 0 — Home
+          PlanScreen(),    // 1 — Plan de la semaine
+          CameraScreen(),  // 2 — Scanner
+          ProfileScreen(), // 3 — Profil
         ],
       ),
       bottomNavigationBar: const BottomNav(),
@@ -69,23 +68,3 @@ class MainScreen extends ConsumerWidget {
   }
 }
 
-class _FavoritesPlaceholder extends StatelessWidget {
-  const _FavoritesPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTokens.paper,
-      body: Center(
-        child: Text(
-          'Favoris',
-          style: GoogleFonts.fraunces(
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-            color: AppTokens.ink,
-          ),
-        ),
-      ),
-    );
-  }
-}

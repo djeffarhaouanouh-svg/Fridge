@@ -13,85 +13,42 @@ class BottomNav extends ConsumerWidget {
     final selected = ref.watch(selectedTabProvider);
 
     return Container(
-      height: 82,
+      height: 72,
       decoration: BoxDecoration(
         color: AppTokens.paper.withOpacity(0.95),
         border: Border(top: BorderSide(color: AppTokens.hairline, width: 0.5)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Row(
-          children: [
-            _NavItem(
-              icon: Icons.restaurant_menu_outlined,
-              label: 'Recettes',
-              index: 0,
-              active: selected == 0,
-              onTap: () => ref.read(selectedTabProvider.notifier).state = 0,
-            ),
-            _NavItem(
-              icon: Icons.calendar_month_outlined,
-              label: 'Plan',
-              index: 1,
-              active: selected == 1,
-              onTap: () => ref.read(selectedTabProvider.notifier).state = 1,
-            ),
-            _ScannerFab(
-              onTap: () => ref.read(selectedTabProvider.notifier).state = 2,
-            ),
-            _NavItem(
-              icon: Icons.favorite_border,
-              label: 'Favoris',
-              index: 3,
-              active: selected == 3,
-              onTap: () => ref.read(selectedTabProvider.notifier).state = 3,
-            ),
-            _NavItem(
-              icon: Icons.person_outline,
-              label: 'Profil',
-              index: 4,
-              active: selected == 4,
-              onTap: () => ref.read(selectedTabProvider.notifier).state = 4,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ScannerFab extends StatelessWidget {
-  final VoidCallback onTap;
-  const _ScannerFab({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Center(
-          child: Transform.translate(
-            offset: const Offset(0, -34),
-            child: Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: AppTokens.coral,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppTokens.paper, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTokens.coral.withOpacity(0.45),
-                    blurRadius: 22,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.camera_alt, color: Colors.white, size: 28),
-            ),
+      child: Row(
+        children: [
+          _NavItem(
+            icon: Icons.home_outlined,
+            label: 'Home',
+            index: 0,
+            active: selected == 0,
+            onTap: () => ref.read(selectedTabProvider.notifier).state = 0,
           ),
-        ),
+          _NavItem(
+            icon: Icons.calendar_month_outlined,
+            label: 'Plan semaine',
+            index: 1,
+            active: selected == 1,
+            onTap: () => ref.read(selectedTabProvider.notifier).state = 1,
+          ),
+          _NavItem(
+            icon: Icons.camera_alt_outlined,
+            label: 'Scanner',
+            index: 2,
+            active: selected == 2,
+            onTap: () => ref.read(selectedTabProvider.notifier).state = 2,
+          ),
+          _NavItem(
+            icon: Icons.person_outline,
+            label: 'Profil',
+            index: 3,
+            active: selected == 3,
+            onTap: () => ref.read(selectedTabProvider.notifier).state = 3,
+          ),
+        ],
       ),
     );
   }

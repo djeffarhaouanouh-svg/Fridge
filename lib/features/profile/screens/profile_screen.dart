@@ -1,74 +1,95 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../meals/providers/meals_provider.dart';
+import '../../meals/models/meal.dart';
+import '../../meals/screens/recipe_screen.dart';
 
-class ProfileScreen extends ConsumerStatefulWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  final List<String> goals = ['Rapide', 'Sain', 'Fitness', 'Stylé'];
-  final List<String> diets = ['Aucun', 'Vegan', 'Végé', 'Sans gluten'];
-
-  String selectedGoal = 'Rapide';
-  String selectedDiet = 'Aucun';
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final favoriteMeals = ref.watch(favoriteMealsProvider);
+    final allMeals = ref.watch(mealsProvider);
 
     return Scaffold(
-      backgroundColor: AppTokens.bg,
+      backgroundColor: AppTokens.paper,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
+        child: ListView(
+          children: [
+            // Title
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+              child: Center(
+                child: Text('Profil',
+                  style: GoogleFonts.inter(
+                    fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink,
+                  ),
+                ),
+              ),
+            ),
 
-              // Avatar & name
-              Row(
+            // User card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: 58, height: 58,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        colors: [AppTokens.accent, AppTokens.warm],
-                      ),
+                      color: AppTokens.coralSoft,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTokens.coral, width: 1.5),
                     ),
-                    child: const Center(
-                      child: Text(
-                        '👤',
-                        style: TextStyle(fontSize: 26),
+                    child: Center(
+                      child: Text('L',
+                        style: GoogleFonts.fraunces(
+                          fontSize: 24, fontWeight: FontWeight.w700, color: AppTokens.coral,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Mon profil',
-                          style: GoogleFonts.syne(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: AppTokens.text,
+                        Text('Louis Dubois',
+                          style: GoogleFonts.inter(
+                            fontSize: 17, fontWeight: FontWeight.w700, color: AppTokens.ink,
                           ),
                         ),
-                        Text(
-                          '7 repas cuisinés · ${favoriteMeals.length} favoris',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
-                            color: AppTokens.muted,
+                        const SizedBox(height: 2),
+                        Text('louis@fridge.ai',
+                          style: GoogleFonts.inter(
+                            fontSize: 13, color: AppTokens.muted,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTokens.coral, width: 1),
+                              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.edit_outlined, size: 13, color: AppTokens.coral),
+                                const SizedBox(width: 5),
+                                Text('Modifier',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13, fontWeight: FontWeight.w600, color: AppTokens.coral,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -76,272 +97,189 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 ],
               ),
+            ),
 
-              const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-              // Goals
-              _ProfileSection(
-                title: 'Mon objectif',
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: goals.map((goal) {
-                    final isSelected = goal == selectedGoal;
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedGoal = goal),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTokens.accentDim
-                              : AppTokens.card,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppTokens.accent
-                                : AppTokens.border,
-                          ),
-                        ),
-                        child: Text(
-                          goal,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color:
-                                isSelected ? AppTokens.accent : AppTokens.muted,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+            // Stats
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Row(
+                children: [
+                  _Stat(value: '${allMeals.length}', label: 'Recettes'),
+                  _Stat(value: '${favoriteMeals.length}', label: 'Favoris'),
+                  _Stat(value: '0', label: 'Scans'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 22),
+            const Divider(height: 1, thickness: 1, color: AppTokens.hairline),
+            const SizedBox(height: 20),
+
+            // Mes favoris
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+              child: Text('Mes favoris',
+                style: GoogleFonts.fraunces(
+                  fontSize: 18, fontWeight: FontWeight.w600, color: AppTokens.ink,
                 ),
               ),
+            ),
 
-              const SizedBox(height: 24),
-
-              // Diet
-              _ProfileSection(
-                title: 'Régime alimentaire',
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: diets.map((diet) {
-                    final isSelected = diet == selectedDiet;
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedDiet = diet),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTokens.warm.withOpacity(0.15)
-                              : AppTokens.card,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color:
-                                isSelected ? AppTokens.warm : AppTokens.border,
-                          ),
-                        ),
-                        child: Text(
-                          diet,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color:
-                                isSelected ? AppTokens.warm : AppTokens.muted,
-                          ),
+            SizedBox(
+              height: 148,
+              child: favoriteMeals.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: Center(
+                        child: Text('Aucun favori pour le moment',
+                          style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted),
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Favorites
-              _ProfileSection(
-                title: 'Mes favoris',
-                child: Column(
-                  children: favoriteMeals.isEmpty
-                      ? [
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppTokens.card,
-                              borderRadius:
-                                  BorderRadius.circular(AppTokens.radiusMd),
-                              border: Border.all(color: AppTokens.border),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Aucun favori pour le moment',
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 13,
-                                  color: AppTokens.muted,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ]
-                      : favoriteMeals.map((meal) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppTokens.card,
-                                borderRadius: BorderRadius.circular(
-                                    AppTokens.radiusMd),
-                                border: Border.all(color: AppTokens.border),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    meal.emoji,
-                                    style: const TextStyle(fontSize: 20),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          meal.title,
-                                          style: GoogleFonts.syne(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppTokens.text,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${meal.time} · ${meal.difficulty}',
-                                          style: GoogleFonts.dmSans(
-                                            fontSize: 12,
-                                            color: AppTokens.muted,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.star,
-                                    size: 14,
-                                    color: AppTokens.warm,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Premium CTA
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1A2820), Color(0xFF1A1A2A)],
-                  ),
-                  border: Border.all(
-                    color: AppTokens.accent.withOpacity(0.25),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '✨ Passer à Premium',
-                      style: GoogleFonts.syne(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppTokens.text,
-                      ),
+                    )
+                  : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                      itemCount: favoriteMeals.length,
+                      itemBuilder: (_, i) => _FavoriteCard(meal: favoriteMeals[i]),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Scans illimités · Plan semaine · Recettes exclusives',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 13,
-                        color: AppTokens.muted,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 46,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Navigate to premium paywall
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTokens.accent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppTokens.radiusMd),
-                          ),
-                          elevation: 0,
-                          shadowColor: AppTokens.accent.withOpacity(0.4),
-                        ),
-                        child: Text(
-                          'Essai gratuit 7 jours',
-                          style: GoogleFonts.syne(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppTokens.bg,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            ),
 
-              const SizedBox(height: 100),
-            ],
-          ),
+            const SizedBox(height: 20),
+            const Divider(height: 1, thickness: 1, color: AppTokens.hairline),
+
+            // Settings rows
+            _SettingRow(label: 'Préférences alimentaires', value: 'Végé · Sans lactose'),
+            _SettingRow(label: 'Mon frigo', value: '8 ingrédients'),
+            _SettingRow(label: 'Liste de courses', value: '12 articles'),
+            _SettingRow(label: 'Notifications'),
+            _SettingRow(label: 'Aide', isLast: true),
+
+            const SizedBox(height: 110),
+          ],
         ),
       ),
     );
   }
 }
 
-class _ProfileSection extends StatelessWidget {
-  final String title;
-  final Widget child;
+class _Stat extends StatelessWidget {
+  final String value;
+  final String label;
+  const _Stat({required this.value, required this.label});
 
-  const _ProfileSection({
-    required this.title,
-    required this.child,
-  });
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(value,
+            style: GoogleFonts.fraunces(
+              fontSize: 28, fontWeight: FontWeight.w700, color: AppTokens.coral,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(label,
+            style: GoogleFonts.inter(
+              fontSize: 12, color: AppTokens.muted, fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FavoriteCard extends StatelessWidget {
+  final Meal meal;
+  const _FavoriteCard({required this.meal});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(
+        builder: (_) => RecipeScreen(meal: meal),
+      )),
+      child: Container(
+        width: 118,
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+              child: SizedBox(
+                height: 96, width: 118,
+                child: meal.photo.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: meal.photo,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(color: AppTokens.placeholder),
+                        errorWidget: (_, __, ___) => Container(
+                          color: AppTokens.placeholder,
+                          child: Center(child: Icon(Icons.image_not_supported_outlined,
+                            color: AppTokens.placeholderDeep, size: 20)),
+                        ),
+                      )
+                    : Container(
+                        color: AppTokens.placeholder,
+                        child: Center(child: Icon(Icons.image_not_supported_outlined,
+                          color: AppTokens.placeholderDeep, size: 20)),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(meal.title,
+              style: GoogleFonts.inter(
+                fontSize: 12, fontWeight: FontWeight.w600, color: AppTokens.ink,
+              ),
+              maxLines: 2, overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(meal.time,
+              style: GoogleFonts.inter(fontSize: 11, color: AppTokens.muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingRow extends StatelessWidget {
+  final String label;
+  final String? value;
+  final bool isLast;
+  const _SettingRow({required this.label, this.value, this.isLast = false});
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title.toUpperCase(),
-          style: GoogleFonts.syne(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: AppTokens.muted,
-            letterSpacing: 0.5,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(label,
+                  style: GoogleFonts.inter(
+                    fontSize: 14.5, fontWeight: FontWeight.w500, color: AppTokens.ink,
+                  ),
+                ),
+              ),
+              if (value != null && value!.isNotEmpty)
+                Text(value!,
+                  style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: 10),
-        child,
+        if (!isLast)
+          const Divider(
+            height: 1, thickness: 1, color: AppTokens.hairline,
+            indent: 18, endIndent: 18,
+          ),
       ],
     );
   }

@@ -189,8 +189,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFF1C1816),
-      body: SafeArea(
-        child: Stack(
+      body: Stack(
           children: [
             // Viewfinder plein écran
             Positioned.fill(
@@ -233,7 +232,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
             // Header : X + titre
             Positioned(
-              top: 12, left: 16, right: 16,
+              top: MediaQuery.of(context).padding.top + 12, left: 16, right: 16,
               child: Row(
                 children: [
                   GestureDetector(
@@ -265,7 +264,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
             // Contrôles bas : miniature + bouton capture
             Positioned(
-              bottom: 36, left: 32, right: 32,
+              bottom: MediaQuery.of(context).padding.bottom + 36, left: 32, right: 32,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -342,7 +341,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             ),
           ],
         ),
-      ),
     );
   }
 }

@@ -64,7 +64,7 @@ class MainScreen extends ConsumerWidget {
           ProfileScreen(), // 3 — Profil
         ],
       ),
-      bottomNavigationBar: const BottomNav(),
+      bottomNavigationBar: selectedTab == 2 ? null : const BottomNav(),
     );
   }
 }

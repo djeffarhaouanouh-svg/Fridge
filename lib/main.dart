@@ -54,16 +54,24 @@ class MainScreen extends ConsumerWidget {
     final selectedTab = ref.watch(selectedTabProvider);
 
     return Scaffold(
-      body: IndexedStack(
-        index: selectedTab,
-        children: const [
-          HomeScreen(),    // 0 — Home
-          PlanScreen(),    // 1 — Plan de la semaine
-          CameraScreen(),  // 2 — Scanner
-          ProfileScreen(), // 3 — Profil
+      extendBody: true,
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: selectedTab,
+            children: const [
+              HomeScreen(),    // 0 — Home
+              PlanScreen(),    // 1 — Plan de la semaine
+              CameraScreen(),  // 2 — Scanner
+              ProfileScreen(), // 3 — Profil
+            ],
+          ),
+          const Positioned(
+            left: 0, right: 0, bottom: 0,
+            child: BottomNav(),
+          ),
         ],
       ),
-      bottomNavigationBar: const BottomNav(),
     );
   }
 }

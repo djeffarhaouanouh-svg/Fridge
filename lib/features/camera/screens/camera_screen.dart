@@ -22,9 +22,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     with TickerProviderStateMixin {
   final _picker = ImagePicker();
   final List<Uint8List> _photos = [];
-  String _selectedSpeed = 'Rapide';
-  String _selectedDiet = 'Sportif';
-
   final _viewfinderKey = GlobalKey();
   final _thumbnailKey = GlobalKey();
 
@@ -66,11 +63,52 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     super.dispose();
   }
 
-  Future<void> _takePhoto() async {
+  Future<void> _showSourcePicker() async {
     if (_isAnimating) return;
 
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF2A2420),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _SourceOption(
+              icon: Icons.camera_alt_outlined,
+              label: 'Prendre une photo',
+              onTap: () => Navigator.pop(_, ImageSource.camera),
+            ),
+            const SizedBox(height: 12),
+            _SourceOption(
+              icon: Icons.photo_library_outlined,
+              label: 'Choisir dans la galerie',
+              onTap: () => Navigator.pop(_, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null || !mounted) return;
+    await _pickAndProcess(source);
+  }
+
+  Future<void> _pickAndProcess(ImageSource source) async {
     final photo = await _picker.pickImage(
-      source: ImageSource.camera,
+      source: source,
       imageQuality: 85,
     );
     if (photo == null) return;
@@ -133,6 +171,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
     }
   }
+
 
   Future<void> _analyzePhotos() async {
     if (_photos.isEmpty) return;
@@ -199,11 +238,21 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               ),
             ),
 
-            // 4 coins coral du viewfinder
-            const Positioned(top: 72, left: 24, child: _Corner(topLeft: true)),
-            const Positioned(top: 72, right: 24, child: _Corner(topRight: true)),
-            const Positioned(bottom: 130, left: 24, child: _Corner(bottomLeft: true)),
-            const Positioned(bottom: 130, right: 24, child: _Corner(bottomRight: true)),
+            // Frame de scan centré
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Center(
+                  child: Transform.translate(
+                    offset: const Offset(0, -60),
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width - 64,
+                      height: MediaQuery.of(context).size.height * 0.52,
+                      child: const CustomPaint(painter: _ScanFramePainter()),
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
             // Analyse en cours
             if (isScanning)
@@ -248,7 +297,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   ),
                   const Expanded(
                     child: Center(
-                      child: Text('Scanner mon frigo',
+                      child: Text('Scanner',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 15,
@@ -321,7 +370,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
                   // Bouton capture
                   GestureDetector(
-                    onTap: (isScanning || _isAnimating) ? null : _takePhoto,
+                    onTap: (isScanning || _isAnimating) ? null : _showSourcePicker,
                     child: Container(
                       width: 80, height: 80,
                       decoration: BoxDecoration(
@@ -428,6 +477,99 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _SourceOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _SourceOption({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white12, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTokens.coral, size: 22),
+            const SizedBox(width: 14),
+            Text(label,
+              style: GoogleFonts.inter(
+                fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ScanFramePainter extends CustomPainter {
+  const _ScanFramePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFEE5C42)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    const arm = 28.0;
+    const r = 6.0;
+    final w = size.width;
+    final h = size.height;
+
+    // Top-left
+    _drawCorner(canvas, paint, 0, 0, arm, r, _CornerType.topLeft);
+    // Top-right
+    _drawCorner(canvas, paint, w, 0, arm, r, _CornerType.topRight);
+    // Bottom-left
+    _drawCorner(canvas, paint, 0, h, arm, r, _CornerType.bottomLeft);
+    // Bottom-right
+    _drawCorner(canvas, paint, w, h, arm, r, _CornerType.bottomRight);
+  }
+
+  void _drawCorner(Canvas canvas, Paint paint, double x, double y,
+      double arm, double r, _CornerType type) {
+    final path = Path();
+    switch (type) {
+      case _CornerType.topLeft:
+        path.moveTo(x, y + arm);
+        path.lineTo(x, y + r);
+        path.arcToPoint(Offset(x + r, y), radius: Radius.circular(r));
+        path.lineTo(x + arm, y);
+      case _CornerType.topRight:
+        path.moveTo(x - arm, y);
+        path.lineTo(x - r, y);
+        path.arcToPoint(Offset(x, y + r), radius: Radius.circular(r));
+        path.lineTo(x, y + arm);
+      case _CornerType.bottomLeft:
+        path.moveTo(x, y - arm);
+        path.lineTo(x, y - r);
+        path.arcToPoint(Offset(x + r, y), radius: Radius.circular(r), clockwise: false);
+        path.lineTo(x + arm, y);
+      case _CornerType.bottomRight:
+        path.moveTo(x - arm, y);
+        path.lineTo(x - r, y);
+        path.arcToPoint(Offset(x, y - r), radius: Radius.circular(r), clockwise: false);
+        path.lineTo(x, y - arm);
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_ScanFramePainter old) => false;
+}
+
+enum _CornerType { topLeft, topRight, bottomLeft, bottomRight }
+
 class _Corner extends StatelessWidget {
   final bool topLeft;
   final bool topRight;
@@ -484,23 +626,23 @@ class _CornerPainter extends CustomPainter {
     if (topLeft) {
       path.moveTo(0, h);
       path.lineTo(0, r);
-      path.arcToPoint(Offset(r, 0), radius: const Radius.circular(r));
+      path.arcToPoint(Offset(r, 0), radius: Radius.circular(r));
       path.lineTo(w, 0);
     } else if (topRight) {
       path.moveTo(0, 0);
       path.lineTo(w - r, 0);
-      path.arcToPoint(Offset(w, r), radius: const Radius.circular(r));
+      path.arcToPoint(Offset(w, r), radius: Radius.circular(r));
       path.lineTo(w, h);
     } else if (bottomLeft) {
       path.moveTo(w, h);
       path.lineTo(r, h);
-      path.arcToPoint(Offset(0, h - r), radius: const Radius.circular(r));
+      path.arcToPoint(Offset(0, h - r), radius: Radius.circular(r));
       path.lineTo(0, 0);
     } else if (bottomRight) {
       path.moveTo(0, h);
       path.lineTo(w - r, h);
       path.arcToPoint(Offset(w, h - r),
-          radius: const Radius.circular(r), clockwise: false);
+          radius: Radius.circular(r), clockwise: false);
       path.lineTo(w, 0);
     }
 

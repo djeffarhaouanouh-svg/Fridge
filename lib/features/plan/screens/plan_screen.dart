@@ -5,7 +5,6 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../../core/services/claude_service.dart';
 import '../../meals/providers/meals_provider.dart';
-import '../models/day_plan.dart';
 
 class PlanScreen extends ConsumerStatefulWidget {
   const PlanScreen({super.key});
@@ -15,22 +14,28 @@ class PlanScreen extends ConsumerStatefulWidget {
 }
 
 class _PlanScreenState extends ConsumerState<PlanScreen> {
-  int _selectedDayIndex = () {
-    final wd = DateTime.now().weekday - 1;
-    return wd.clamp(0, 5);
-  }();
+  int _selectedDayIndex = 0;
 
-  static const _frDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  final _dayScrollController = ScrollController();
+  final _breakfastScrollController = ScrollController();
+  final _lunchScrollController = ScrollController();
+  final _dinnerScrollController = ScrollController();
+
+  static const _weekdayToFr = {
+    1: 'Lun', 2: 'Mar', 3: 'Mer', 4: 'Jeu', 5: 'Ven', 6: 'Sam', 7: 'Dim',
+  };
+
   static const _frMonths = [
     'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
     'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
   ];
-  static const _breakfasts = ['Granola', 'Tartines', 'Yaourt', 'Porridge', 'Smoothie', 'Œufs'];
 
-  List<DateTime> get _weekDays {
+  static const _breakfasts = ['Granola', 'Tartines', 'Yaourt', 'Porridge', 'Smoothie', 'Œufs', 'Crêpes'];
+
+  List<DateTime> get _days {
     final now = DateTime.now();
-    final monday = now.subtract(Duration(days: now.weekday - 1));
-    return List.generate(6, (i) => monday.add(Duration(days: i)));
+    final today = DateTime(now.year, now.month, now.day);
+    return List.generate(7, (i) => today.add(Duration(days: i)));
   }
 
   int _weekNumber(DateTime date) {
@@ -44,7 +49,44 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  // Logique de génération conservée intégralement
+  void _selectDay(int i) {
+    setState(() => _selectedDayIndex = i);
+    _scrollToDay(i);
+  }
+
+  void _scrollToDay(int i) {
+    final screenW = MediaQuery.of(context).size.width;
+    final contentW = screenW - 36;
+
+    // Day pill: ~58px wide + 8px gap
+    const pillW = 58.0;
+    const pillGap = 8.0;
+    final pillOffset = ((i * (pillW + pillGap)) - (contentW - pillW) / 2)
+        .clamp(0.0, double.maxFinite);
+
+    // Meal card: 110px wide + 10px gap
+    const cardW = 110.0;
+    const cardGap = 10.0;
+    final cardOffset = ((i * (cardW + cardGap)) - (contentW - cardW) / 2)
+        .clamp(0.0, double.maxFinite);
+
+    const dur = Duration(milliseconds: 300);
+    const curve = Curves.easeInOut;
+
+    if (_dayScrollController.hasClients) {
+      _dayScrollController.animateTo(pillOffset, duration: dur, curve: curve);
+    }
+    if (_breakfastScrollController.hasClients) {
+      _breakfastScrollController.animateTo(cardOffset, duration: dur, curve: curve);
+    }
+    if (_lunchScrollController.hasClients) {
+      _lunchScrollController.animateTo(cardOffset, duration: dur, curve: curve);
+    }
+    if (_dinnerScrollController.hasClients) {
+      _dinnerScrollController.animateTo(cardOffset, duration: dur, curve: curve);
+    }
+  }
+
   Future<void> _generatePlan() async {
     final photos = ref.read(capturedPhotosProvider);
     if (photos.isEmpty) {
@@ -79,32 +121,42 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
   }
 
   @override
+  void dispose() {
+    _dayScrollController.dispose();
+    _breakfastScrollController.dispose();
+    _lunchScrollController.dispose();
+    _dinnerScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final status = ref.watch(planStatusProvider);
     final weekPlan = ref.watch(weekPlanProvider);
     final isLoading = status == PlanStatus.loading;
-    final days = _weekDays;
+    final days = _days;
     final weekNum = _weekNumber(days.first);
     final planMap = {for (final d in weekPlan) d.date: d};
+    final frDays = days.map((d) => _weekdayToFr[d.weekday]!).toList();
 
-    final startDay = days.first;
-    final endDay = days.last;
-    final dateRange =
-        '${startDay.day} — ${endDay.day} ${_frMonths[startDay.month - 1]} ${startDay.year}';
+    final start = days.first;
+    final end = days.last;
+    final dateRange = start.month == end.month
+        ? '${start.day} — ${end.day} ${_frMonths[start.month - 1]} ${start.year}'
+        : '${start.day} ${_frMonths[start.month - 1]} — ${end.day} ${_frMonths[end.month - 1]} ${end.year}';
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
               child: Row(
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.maybePop(context),
-                    child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppTokens.ink),
+                    child: const Icon(Icons.arrow_back_ios_new, size: 18, color: AppTokens.ink),
                   ),
                   Expanded(
                     child: Center(
@@ -118,8 +170,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   Container(
                     width: 32, height: 32,
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(color: AppTokens.coralSoft, shape: BoxShape.circle),
-                    child: Icon(Icons.tune_rounded, size: 16, color: AppTokens.coral),
+                    decoration: const BoxDecoration(
+                      color: AppTokens.coralSoft, shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.tune_rounded, size: 16, color: AppTokens.coral),
                   ),
                 ],
               ),
@@ -129,7 +183,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
                 children: [
-                  // Sem. N
                   RichText(
                     text: TextSpan(children: [
                       TextSpan(
@@ -158,12 +211,13 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   SizedBox(
                     height: 64,
                     child: ListView.builder(
+                      controller: _dayScrollController,
                       scrollDirection: Axis.horizontal,
                       itemCount: days.length,
                       itemBuilder: (_, i) {
                         final isActive = i == _selectedDayIndex;
                         return GestureDetector(
-                          onTap: () => setState(() => _selectedDayIndex = i),
+                          onTap: () => _selectDay(i),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             margin: const EdgeInsets.only(right: 8),
@@ -175,7 +229,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(_frDays[i],
+                                Text(frDays[i],
                                   style: GoogleFonts.inter(
                                     fontSize: 11, fontWeight: FontWeight.w600,
                                     color: isActive ? Colors.white : AppTokens.muted,
@@ -197,40 +251,40 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // PETIT-DÉJ
                   _MealRow(
                     label: 'PETIT-DÉJ',
                     days: days,
-                    frDays: _frDays,
-                    meals: List.generate(
-                      days.length, (i) => _breakfasts[i % _breakfasts.length],
-                    ),
+                    frDays: frDays,
+                    meals: List.generate(days.length, (i) => _breakfasts[i % _breakfasts.length]),
+                    scrollController: _breakfastScrollController,
+                    selectedDayIndex: _selectedDayIndex,
                   ),
                   const SizedBox(height: 20),
 
-                  // DÉJEUNER
                   _MealRow(
                     label: 'DÉJEUNER',
                     days: days,
-                    frDays: _frDays,
+                    frDays: frDays,
                     meals: List.generate(days.length, (i) {
                       return planMap[_isoDate(days[i])]?.lunch.name ?? '';
                     }),
+                    scrollController: _lunchScrollController,
+                    selectedDayIndex: _selectedDayIndex,
                   ),
                   const SizedBox(height: 20),
 
-                  // DÎNER
                   _MealRow(
                     label: 'DÎNER',
                     days: days,
-                    frDays: _frDays,
+                    frDays: frDays,
                     meals: List.generate(days.length, (i) {
                       return planMap[_isoDate(days[i])]?.dinner.name ?? '';
                     }),
+                    scrollController: _dinnerScrollController,
+                    selectedDayIndex: _selectedDayIndex,
                   ),
                   const SizedBox(height: 28),
 
-                  // CTA
                   GlassButton(
                     label: 'Générer ma semaine avec mon frigo',
                     icon: Icons.auto_awesome,
@@ -260,12 +314,16 @@ class _MealRow extends StatelessWidget {
   final List<DateTime> days;
   final List<String> frDays;
   final List<String> meals;
+  final ScrollController scrollController;
+  final int selectedDayIndex;
 
   const _MealRow({
     required this.label,
     required this.days,
     required this.frDays,
     required this.meals,
+    required this.scrollController,
+    required this.selectedDayIndex,
   });
 
   @override
@@ -283,10 +341,10 @@ class _MealRow extends StatelessWidget {
         SizedBox(
           height: 138,
           child: ListView.builder(
+            controller: scrollController,
             scrollDirection: Axis.horizontal,
             itemCount: days.length + 1,
             itemBuilder: (_, i) {
-              // Carte "+ Ajouter"
               if (i == days.length) {
                 return Container(
                   width: 100,
@@ -305,20 +363,24 @@ class _MealRow extends StatelessWidget {
                 );
               }
 
+              final isSelected = i == selectedDayIndex;
               final mealName = meals[i];
               final dayLabel = '${frDays[i].toUpperCase()} ${days[i].day}';
 
-              return Container(
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 width: 110,
                 margin: const EdgeInsets.only(right: 10),
                 decoration: BoxDecoration(
-                  color: AppTokens.surface,
+                  color: isSelected ? AppTokens.coralSoft : AppTokens.surface,
                   borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                  border: isSelected
+                      ? Border.all(color: AppTokens.coral.withValues(alpha: 0.3), width: 1)
+                      : null,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Image placeholder
                     ClipRRect(
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(AppTokens.radiusMd),
@@ -339,13 +401,15 @@ class _MealRow extends StatelessWidget {
                         children: [
                           Text(dayLabel,
                             style: GoogleFonts.inter(
-                              fontSize: 9.5, fontWeight: FontWeight.w700, color: AppTokens.coral,
+                              fontSize: 9.5, fontWeight: FontWeight.w700,
+                              color: AppTokens.coral,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(mealName.isNotEmpty ? mealName : '—',
                             style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w600, color: AppTokens.ink,
+                              fontSize: 12, fontWeight: FontWeight.w600,
+                              color: AppTokens.ink,
                             ),
                             maxLines: 2, overflow: TextOverflow.ellipsis,
                           ),

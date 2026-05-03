@@ -128,7 +128,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
 
             SizedBox(
-              height: 148,
+              height: 160,
               child: favoriteMeals.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -150,9 +150,7 @@ class ProfileScreen extends ConsumerWidget {
             const Divider(height: 1, thickness: 1, color: AppTokens.hairline),
 
             // Settings rows
-            _SettingRow(label: 'Préférences alimentaires', value: 'Végé · Sans lactose'),
             _SettingRow(label: 'Mon frigo', value: '8 ingrédients'),
-            _SettingRow(label: 'Liste de courses', value: '12 articles'),
             _SettingRow(label: 'Notifications'),
             _SettingRow(label: 'Aide', isLast: true),
 

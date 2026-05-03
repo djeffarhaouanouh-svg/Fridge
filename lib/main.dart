@@ -1,16 +1,43 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'core/theme/app_tokens.dart';
+import 'features/meals/models/meal.dart';
 import 'features/navigation/widgets/bottom_nav.dart';
 import 'features/camera/screens/camera_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/plan/screens/plan_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
+import 'firebase_options.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    await Hive.initFlutter();
+    Hive.registerAdapter(MealAdapter());
+    Hive.registerAdapter(IngredientAdapter());
+
+    if (kIsWeb) {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
+    } else {
+      await Firebase.initializeApp();
+    }
+  } catch (e, stack) {
+    debugPrint('=== CRASH AU DEMARRAGE ===');
+    debugPrint(e.toString());
+    debugPrint(stack.toString());
+  }
+
+  FlutterError.onError = (details) {
+    debugPrint('=== FLUTTER ERROR ===');
+    debugPrint(details.exceptionAsString());
+    debugPrint(details.stack.toString());
+  };
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

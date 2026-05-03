@@ -15,86 +15,115 @@ class BottomNav extends ConsumerWidget {
     final bottom = MediaQuery.of(context).viewPadding.bottom;
 
     final items = [
-      _NavTab(icon: Icons.home_outlined, label: 'Home', index: 0),
-      _NavTab(icon: Icons.calendar_month_outlined, label: 'Plan', index: 1),
-      _NavTab(icon: Icons.camera_alt_outlined, label: 'Scanner', index: 2),
-      _NavTab(icon: Icons.person_outline, label: 'Profil', index: 3),
+      _NavItem(icon: Icons.home_rounded, label: 'Home', index: 0),
+      _NavItem(icon: Icons.calendar_month_rounded, label: 'Plan', index: 1),
+      _NavItem(icon: Icons.camera_alt_rounded, label: 'Scanner', index: 2),
+      _NavItem(icon: Icons.person_rounded, label: 'Profil', index: 3),
     ];
 
-    return Material(
-      type: MaterialType.transparency,
-      child: Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, bottom + 14),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 16),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+        borderRadius: BorderRadius.circular(999),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
           child: Container(
-            height: 56,
+            height: 60,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              border: Border.all(color: Colors.white.withOpacity(0.35), width: 0.5),
+              // background: rgba(255, 255, 255, 0.12)
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(999),
+              // border: 1px solid rgba(255, 255, 255, 0.2)
+              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+              // box-shadow: 0 4px 20px rgba(0,0,0,0.1)
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: Row(
-              children: items.map((tab) {
-                final isActive = selected == tab.index;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => ref.read(selectedTabProvider.notifier).state = tab.index,
-                    behavior: HitTestBehavior.opaque,
-                    child: Center(
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: isActive
-                            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 7)
-                            : const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? Colors.white.withOpacity(0.45)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(tab.icon, size: 18, color: AppTokens.coral),
-                            if (isActive) ...[
-                              const SizedBox(width: 6),
-                              Text(
-                                tab.label,
-                                style: GoogleFonts.inter(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTokens.ink,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
+            child: Stack(
+              children: [
+                // inset 0 1px 1px rgba(255,255,255,0.2) — inner top highlight
+                Positioned(
+                  top: 0, left: 0, right: 0,
+                  child: Container(
+                    height: 1,
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(999)),
+                      gradient: LinearGradient(colors: [
+                        Colors.white.withOpacity(0.2),
+                        Colors.white.withOpacity(0.0),
+                      ]),
                     ),
                   ),
-                );
-              }).toList(),
+                ),
+                // tabs
+                Positioned.fill(
+                  child: Row(
+                    children: items.map((item) {
+                      final isActive = selected == item.index;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => ref.read(selectedTabProvider.notifier).state = item.index,
+                          behavior: HitTestBehavior.opaque,
+                          child: _NavTab(item: item, isActive: isActive),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
-    ));
+    );
   }
 }
 
-class _NavTab {
+class _NavTab extends StatelessWidget {
+  final _NavItem item;
+  final bool isActive;
+  const _NavTab({required this.item, required this.isActive});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.symmetric(
+            horizontal: isActive ? 14 : 10,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white.withOpacity(0.18) : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                item.icon,
+                size: 19,
+                color: isActive ? AppTokens.coral : Colors.white.withOpacity(0.55),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NavItem {
   final IconData icon;
   final String label;
   final int index;
-  const _NavTab({required this.icon, required this.label, required this.index});
+  const _NavItem({required this.icon, required this.label, required this.index});
 }

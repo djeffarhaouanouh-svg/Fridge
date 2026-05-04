@@ -32,7 +32,7 @@ class GoogleImageService {
     try {
       final uri = Uri.https('api.pexels.com', '/v1/search', {
         'query': '$query food recipe',
-        'per_page': '1',
+        'per_page': '15',
         'orientation': 'square',
       });
       final resp = await http.get(uri, headers: {
@@ -42,7 +42,8 @@ class GoogleImageService {
         final data = jsonDecode(resp.body);
         final photos = data['photos'] as List?;
         if (photos != null && photos.isNotEmpty) {
-          return (photos.first['src']['medium'] as String?) ?? '';
+          final index = mealTitle.hashCode.abs() % photos.length;
+          return (photos[index]['src']['medium'] as String?) ?? '';
         }
       }
     } catch (_) {}

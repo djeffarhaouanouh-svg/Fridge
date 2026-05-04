@@ -11,7 +11,10 @@ RUN flutter pub get
 
 COPY . .
 RUN mkdir -p lib/core/config && \
-    printf "const kAnthropicKey = '${ANTHROPIC_API_KEY}';\nconst kSpoonacularKey = '${SPOONACULAR_KEY}';\nconst kGoogleCseKey = '${GOOGLE_CSE_KEY}';\n" > lib/core/config/app_secrets.dart
+    ANTHROPIC=$(printf '%s' "${ANTHROPIC_API_KEY}" | tr -d '\n\r') && \
+    SPOONACULAR=$(printf '%s' "${SPOONACULAR_KEY}" | tr -d '\n\r') && \
+    GOOGLE=$(printf '%s' "${GOOGLE_CSE_KEY}" | tr -d '\n\r') && \
+    printf "const kAnthropicKey = '${ANTHROPIC}';\nconst kSpoonacularKey = '${SPOONACULAR}';\nconst kGoogleCseKey = '${GOOGLE}';\n" > lib/core/config/app_secrets.dart
 RUN flutter build web --release --pwa-strategy=none
 
 FROM nginx:alpine

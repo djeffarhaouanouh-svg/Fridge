@@ -137,7 +137,7 @@ Suggest 3 recipes. Return ONLY a JSON array with this exact structure:
     "difficulty": "facile",
     "time": "25 min",
     "locked": false,
-    "photo": "",
+    "photo": "https://images.unsplash.com/photo-XXXXXXXXXXXXXXXXXXX?w=600&q=80",
     "ingredients": [{"name": "chicken", "qty": "200g", "photo": ""}],
     "steps": ["Étape 1", "Étape 2"]
   }
@@ -151,6 +151,7 @@ Rules:
 - 4-6 cooking steps in French
 - protein: "moyen" or "élevé"
 - difficulty: "facile" or "intermédiaire"
+- photo: a real images.unsplash.com URL with a valid photo ID matching the dish (e.g. pasta → photo-1621996346565-e3dbc646d9a9, chicken → photo-1598103442097-8b74394b95c1). Each recipe must have a different photo.
 - Return ONLY the JSON array, nothing else.''',
           },
         ],

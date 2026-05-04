@@ -151,7 +151,7 @@ class ResultsScreen extends ConsumerWidget {
                         )),
                         GestureDetector(
                           onTap: addIngredient,
-                          child: Text('+ Ajouter',
+                          child: Text('+ Ajouter ou modifier',
                             style: GoogleFonts.inter(
                               fontSize: 13, fontWeight: FontWeight.w500,
                               color: AppTokens.muted,

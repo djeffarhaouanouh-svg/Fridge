@@ -235,7 +235,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         final spoonacular = SpoonacularService();
         final enriched = await Future.wait(
           meals.map((meal) async {
-            final imageUrl = await spoonacular.searchRecipeImage(meal.title);
+            // Les ingrédients sont en anglais → bien meilleur résultat Spoonacular
+            final query = meal.ingredients
+                .take(3)
+                .map((i) => i.name)
+                .join(' ');
+            final imageUrl = await spoonacular.searchRecipeImage(query);
             if (imageUrl.isNotEmpty) return meal.copyWith(photo: imageUrl);
             final seed = Uri.encodeComponent(meal.title);
             return meal.copyWith(

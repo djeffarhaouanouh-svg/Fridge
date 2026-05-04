@@ -8,7 +8,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
-import '../../../core/services/spoonacular_service.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/screens/results_screen.dart';
@@ -232,21 +231,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
       final meals = await claude.findRecipes(ingredients);
       if (meals.isNotEmpty) {
-        final spoonacular = SpoonacularService();
-        final enriched = await Future.wait(
-          meals.map((meal) async {
-            // Les ingrédients sont en anglais → bien meilleur résultat Spoonacular
-            final query = meal.ingredients
-                .take(3)
-                .map((i) => i.name)
-                .join(' ');
-            final imageUrl = await spoonacular.searchRecipeImage(query);
-            if (imageUrl.isNotEmpty) return meal.copyWith(photo: imageUrl);
-            final seed = Uri.encodeComponent(meal.title);
-            return meal.copyWith(
-                photo: 'https://picsum.photos/seed/$seed/600/400');
-          }),
-        );
+        final enriched = meals.map((meal) {
+          final keywords = meal.ingredients
+              .take(2)
+              .map((i) => Uri.encodeComponent(i.name))
+              .join(',');
+          final photo = 'https://source.unsplash.com/600x400/?food,$keywords';
+          return meal.copyWith(photo: photo);
+        }).toList();
         ref.read(mealsProvider.notifier).setMeals(enriched);
       }
 

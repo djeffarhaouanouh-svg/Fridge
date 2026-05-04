@@ -16,89 +16,6 @@ class ResultsScreen extends ConsumerWidget {
     final meals = ref.watch(mealsProvider);
     final ingredients = ref.watch(detectedIngredientsProvider);
 
-    void editIngredient(int index) {
-      final ctrl = TextEditingController(text: ingredients[index]);
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: AppTokens.paper,
-          title: Text('Modifier',
-            style: GoogleFonts.fraunces(fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink),
-          ),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            style: GoogleFonts.inter(fontSize: 14, color: AppTokens.ink),
-            decoration: InputDecoration(
-              hintText: 'Nom de l\'ingrédient',
-              hintStyle: GoogleFonts.inter(color: AppTokens.muted),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                final list = List<String>.from(ref.read(detectedIngredientsProvider));
-                list.removeAt(index);
-                ref.read(detectedIngredientsProvider.notifier).state = list;
-                Navigator.pop(ctx);
-              },
-              child: Text('Supprimer', style: TextStyle(color: AppTokens.coral)),
-            ),
-            TextButton(
-              onPressed: () {
-                final val = ctrl.text.trim();
-                if (val.isEmpty) return;
-                final list = List<String>.from(ref.read(detectedIngredientsProvider));
-                list[index] = val;
-                ref.read(detectedIngredientsProvider.notifier).state = list;
-                Navigator.pop(ctx);
-              },
-              child: Text('OK', style: TextStyle(color: AppTokens.ink)),
-            ),
-          ],
-        ),
-      );
-    }
-
-    void addIngredient() {
-      final ctrl = TextEditingController();
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: AppTokens.paper,
-          title: Text('Ajouter un ingrédient',
-            style: GoogleFonts.fraunces(fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink),
-          ),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            style: GoogleFonts.inter(fontSize: 14, color: AppTokens.ink),
-            decoration: InputDecoration(
-              hintText: 'ex: tomates',
-              hintStyle: GoogleFonts.inter(color: AppTokens.muted),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Annuler', style: TextStyle(color: AppTokens.muted)),
-            ),
-            TextButton(
-              onPressed: () {
-                final val = ctrl.text.trim();
-                if (val.isEmpty) return;
-                final list = List<String>.from(ref.read(detectedIngredientsProvider));
-                list.add(val);
-                ref.read(detectedIngredientsProvider.notifier).state = list;
-                Navigator.pop(ctx);
-              },
-              child: Text('Ajouter', style: TextStyle(color: AppTokens.ink)),
-            ),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: AppTokens.paper,
       body: SafeArea(
@@ -145,12 +62,14 @@ class ResultsScreen extends ConsumerWidget {
                     Wrap(
                       spacing: 8, runSpacing: 8,
                       children: [
-                        ...ingredients.asMap().entries.map((e) => _IngredientTag(
-                          label: e.value,
-                          onTap: () => editIngredient(e.key),
-                        )),
+                        ...ingredients.map((ing) => _IngredientTag(label: ing)),
                         GestureDetector(
-                          onTap: addIngredient,
+                          onTap: () => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => const _IngredientsEditorSheet(),
+                          ),
                           child: Text('+ Ajouter ou modifier',
                             style: GoogleFonts.inter(
                               fontSize: 13, fontWeight: FontWeight.w500,
@@ -223,34 +142,222 @@ class ResultsScreen extends ConsumerWidget {
   }
 }
 
-class _IngredientTag extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-  const _IngredientTag({required this.label, this.onTap});
+// ── Bottom sheet édition ingrédients ────────────────────────────────────────
+
+class _IngredientsEditorSheet extends ConsumerStatefulWidget {
+  const _IngredientsEditorSheet();
+
+  @override
+  ConsumerState<_IngredientsEditorSheet> createState() =>
+      _IngredientsEditorSheetState();
+}
+
+class _IngredientsEditorSheetState
+    extends ConsumerState<_IngredientsEditorSheet> {
+  final _addCtrl = TextEditingController();
+  final _editCtrl = TextEditingController();
+  int? _editingIndex;
+
+  @override
+  void dispose() {
+    _addCtrl.dispose();
+    _editCtrl.dispose();
+    super.dispose();
+  }
+
+  void _startEdit(int index, String current) {
+    setState(() {
+      _editingIndex = index;
+      _editCtrl.text = current;
+    });
+  }
+
+  void _saveEdit(int index) {
+    final val = _editCtrl.text.trim();
+    if (val.isNotEmpty) {
+      final list = List<String>.from(ref.read(detectedIngredientsProvider));
+      list[index] = val;
+      ref.read(detectedIngredientsProvider.notifier).state = list;
+    }
+    setState(() => _editingIndex = null);
+  }
+
+  void _delete(int index) {
+    final list = List<String>.from(ref.read(detectedIngredientsProvider));
+    list.removeAt(index);
+    ref.read(detectedIngredientsProvider.notifier).state = list;
+    if (_editingIndex == index) setState(() => _editingIndex = null);
+  }
+
+  void _addIngredient() {
+    final val = _addCtrl.text.trim();
+    if (val.isEmpty) return;
+    final list = List<String>.from(ref.read(detectedIngredientsProvider));
+    list.add(val.toLowerCase());
+    ref.read(detectedIngredientsProvider.notifier).state = list;
+    _addCtrl.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    final ingredients = ref.watch(detectedIngredientsProvider);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppTokens.surface,
-          borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+        decoration: const BoxDecoration(
+          color: AppTokens.paper,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 5, height: 5,
-              decoration: const BoxDecoration(
-                color: AppTokens.ink, shape: BoxShape.circle,
+            // Handle
+            Center(
+              child: Container(
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: AppTokens.muted.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            const SizedBox(width: 6),
-            Text(label,
-              style: GoogleFonts.inter(
-                fontSize: 13, fontWeight: FontWeight.w500, color: AppTokens.ink,
+            const SizedBox(height: 16),
+            Text('Modifier les ingrédients',
+              style: GoogleFonts.fraunces(
+                fontSize: 18, fontWeight: FontWeight.w700, color: AppTokens.ink,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Liste éditable
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 320),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: ingredients.length,
+                itemBuilder: (_, i) {
+                  if (_editingIndex == i) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _editCtrl,
+                              autofocus: true,
+                              style: GoogleFonts.inter(fontSize: 14, color: AppTokens.ink),
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: AppTokens.coral),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: AppTokens.coral, width: 1.5),
+                                ),
+                              ),
+                              onSubmitted: (_) => _saveEdit(i),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () => _saveEdit(i),
+                            child: const Icon(Icons.check_circle, size: 22, color: AppTokens.coral),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 5, height: 5,
+                          decoration: const BoxDecoration(
+                            color: AppTokens.ink, shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(ingredients[i],
+                            style: GoogleFonts.inter(fontSize: 14, color: AppTokens.ink),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => _startEdit(i, ingredients[i]),
+                          child: Icon(Icons.edit_outlined, size: 18, color: AppTokens.muted),
+                        ),
+                        const SizedBox(width: 14),
+                        GestureDetector(
+                          onTap: () => _delete(i),
+                          child: const Icon(Icons.close, size: 18, color: AppTokens.coral),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 10),
+            Container(height: 1, color: AppTokens.hairlineSoft),
+            const SizedBox(height: 12),
+
+            // Champ ajouter
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _addCtrl,
+                    style: GoogleFonts.inter(fontSize: 14, color: AppTokens.ink),
+                    decoration: InputDecoration(
+                      hintText: 'Ajouter un ingrédient...',
+                      hintStyle: GoogleFonts.inter(color: AppTokens.muted, fontSize: 14),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: (_) => _addIngredient(),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _addIngredient,
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: const BoxDecoration(
+                      color: AppTokens.coral, shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add, size: 18, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Bouton valider
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppTokens.ink,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                ),
+                child: Center(
+                  child: Text('Valider',
+                    style: GoogleFonts.inter(
+                      fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -259,6 +366,43 @@ class _IngredientTag extends StatelessWidget {
     );
   }
 }
+
+// ── Chip ingrédient ──────────────────────────────────────────────────────────
+
+class _IngredientTag extends StatelessWidget {
+  final String label;
+  const _IngredientTag({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTokens.surface,
+        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 5, height: 5,
+            decoration: const BoxDecoration(
+              color: AppTokens.ink, shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(label,
+            style: GoogleFonts.inter(
+              fontSize: 13, fontWeight: FontWeight.w500, color: AppTokens.ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Ligne recette ────────────────────────────────────────────────────────────
 
 class _RecipeRow extends ConsumerWidget {
   final Meal meal;
@@ -359,7 +503,6 @@ class _RecipeRow extends ConsumerWidget {
               ],
             ),
           ),
-          // Séparateur coral
           Container(height: 1.5, color: AppTokens.coral.withOpacity(0.25)),
         ],
       ),

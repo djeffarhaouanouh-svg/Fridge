@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import '../../features/meals/models/meal.dart';
+import '../config/app_secrets.dart';
 
 class SpoonacularService {
-  // Clé gratuite depuis https://spoonacular.com/food-api (150 points/jour)
-  static const _apiKey = String.fromEnvironment('SPOONACULAR_KEY');
+  static const _apiKey = kSpoonacularKey;
 
   final _dio = Dio(BaseOptions(baseUrl: 'https://api.spoonacular.com'));
 

@@ -3,9 +3,10 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../../features/meals/models/meal.dart';
 import '../../features/plan/models/day_plan.dart';
+import '../config/app_secrets.dart';
 
 class ClaudeService {
-  static const _apiKey = String.fromEnvironment('ANTHROPIC_API_KEY');
+  static const _apiKey = kAnthropicKey;
   static const _baseUrl = 'https://api.anthropic.com/v1/messages';
   static const _model = 'claude-haiku-4-5-20251001';
 

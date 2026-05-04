@@ -10,7 +10,8 @@ COPY pubspec.yaml pubspec.lock* ./
 RUN flutter pub get
 
 COPY . .
-RUN printf "const kAnthropicKey = '${ANTHROPIC_API_KEY}';\nconst kSpoonacularKey = '${SPOONACULAR_KEY}';\nconst kGoogleCseKey = '${GOOGLE_CSE_KEY}';\n" > lib/core/config/app_secrets.dart
+RUN mkdir -p lib/core/config && \
+    printf "const kAnthropicKey = '${ANTHROPIC_API_KEY}';\nconst kSpoonacularKey = '${SPOONACULAR_KEY}';\nconst kGoogleCseKey = '${GOOGLE_CSE_KEY}';\n" > lib/core/config/app_secrets.dart
 RUN flutter build web --release --pwa-strategy=none
 
 FROM nginx:alpine

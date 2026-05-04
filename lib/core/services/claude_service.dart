@@ -139,12 +139,7 @@ Rules:
         .trim();
 
     final List<dynamic> recipes = jsonDecode(text);
-    return recipes.asMap().entries.map((e) {
-      final r = Map<String, dynamic>.from(e.value as Map);
-      final seed = Uri.encodeComponent(r['title'] ?? 'food${e.key}');
-      r['photo'] = 'https://picsum.photos/seed/$seed/600/400';
-      return Meal.fromJson(r);
-    }).toList();
+    return recipes.map((e) => Meal.fromJson(Map<String, dynamic>.from(e as Map))).toList();
   }
 
   Future<List<DayPlan>> generateWeekPlan(List<Uint8List> photos) async {

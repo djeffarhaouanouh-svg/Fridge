@@ -42,6 +42,25 @@ class SpoonacularService {
         .toList();
   }
 
+  Future<String> searchRecipeImage(String title) async {
+    if (title.isEmpty) return '';
+    try {
+      final resp = await _dio.get(
+        '/recipes/complexSearch',
+        queryParameters: {
+          'query': title,
+          'number': 1,
+          'apiKey': _apiKey,
+        },
+      );
+      final results = resp.data['results'] as List?;
+      if (results != null && results.isNotEmpty) {
+        return (results.first['image'] as String?) ?? '';
+      }
+    } catch (_) {}
+    return '';
+  }
+
   Meal _mapToMeal(Map<String, dynamic> r, int index) {
     final nutrients = (r['nutrition']?['nutrients'] as List? ?? []);
 

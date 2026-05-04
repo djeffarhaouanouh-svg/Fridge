@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../config/app_secrets.dart';
-
 class GoogleImageService {
   static const _frToEn = {
     'poulet': 'chicken', 'blanc de poulet': 'chicken', 'escalope': 'chicken',
@@ -20,33 +16,15 @@ class GoogleImageService {
 
   Future<String> searchFoodImage(String mealTitle) async {
     final titleLower = mealTitle.toLowerCase();
-    String query = mealTitle;
+    String keyword = mealTitle;
 
     for (final entry in _frToEn.entries) {
       if (titleLower.contains(entry.key)) {
-        query = entry.value;
+        keyword = entry.value;
         break;
       }
     }
 
-    try {
-      final uri = Uri.https('api.pexels.com', '/v1/search', {
-        'query': '$query food recipe',
-        'per_page': '1',
-        'orientation': 'square',
-      });
-      final resp = await http.get(uri, headers: {
-        'Authorization': kPexelsKey,
-      });
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body);
-        final photos = data['photos'] as List?;
-        if (photos != null && photos.isNotEmpty) {
-          return (photos.first['src']['medium'] as String?) ?? '';
-        }
-      }
-    } catch (_) {}
-
-    return 'https://picsum.photos/seed/${Uri.encodeComponent(mealTitle)}/600/400';
+    return 'https://source.unsplash.com/600x400/?food,${Uri.encodeComponent(keyword)}';
   }
 }

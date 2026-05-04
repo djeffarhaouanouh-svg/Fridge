@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../../features/meals/models/meal.dart';
 import '../../features/plan/models/day_plan.dart';
+import '../../features/profile/providers/profile_provider.dart';
 import '../config/app_secrets.dart';
 
 class ClaudeService {
@@ -83,7 +84,34 @@ class ClaudeService {
     return (jsonDecode(text) as List).cast<String>();
   }
 
-  Future<List<Meal>> findRecipes(List<String> ingredients) async {
+  String _buildProfileContext(UserProfile? p) {
+    if (p == null) return '';
+    final parts = <String>[];
+    if (p.objective != null) {
+      parts.add(switch (p.objective!) {
+        CookingObjective.weightLoss => 'The user wants to lose weight — prefer low-calorie, light recipes.',
+        CookingObjective.muscleGain => 'The user wants to gain muscle — prefer high-protein recipes.',
+        CookingObjective.family     => 'The user cooks for a family — prefer generous, family-friendly recipes.',
+        CookingObjective.passion    => 'The user loves cooking — feel free to suggest elaborate recipes.',
+      });
+    }
+    if (p.cookingLevel != null) {
+      parts.add(switch (p.cookingLevel!) {
+        CookingLevel.beginner     => 'Cooking level: beginner — keep steps simple.',
+        CookingLevel.intermediate => 'Cooking level: intermediate.',
+        CookingLevel.advanced     => 'Cooking level: advanced — complex techniques are welcome.',
+        CookingLevel.expert       => 'Cooking level: expert chef.',
+      });
+    }
+    if (p.diets.isNotEmpty) parts.add('Dietary preferences: ${p.diets.join(', ')}.');
+    if (p.allergies.isNotEmpty) parts.add('ALLERGIES to avoid: ${p.allergies.join(', ')}.');
+    if (p.targetCalories > 0) parts.add('Target: ~${p.targetCalories} kcal per meal.');
+    if (parts.isEmpty) return '';
+    return '\nUser context:\n${parts.map((s) => '- $s').join('\n')}\n';
+  }
+
+  Future<List<Meal>> findRecipes(List<String> ingredients, {UserProfile? profile}) async {
+    final profileContext = _buildProfileContext(profile);
     final response = await http.post(
       Uri.parse(_baseUrl),
       headers: _headers,
@@ -94,7 +122,7 @@ class ClaudeService {
           {
             'role': 'user',
             'content': '''Based on these ingredients: ${ingredients.join(', ')}
-
+$profileContext
 Suggest 3 recipes. Return ONLY a JSON array with this exact structure:
 [
   {

@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
 import '../../../core/services/google_image_service.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/screens/results_screen.dart';
@@ -230,7 +231,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
       ref.read(detectedIngredientsProvider.notifier).state = ingredients;
 
-      final meals = await claude.findRecipes(ingredients);
+      final profile = ref.read(userProfileProvider);
+      final meals = await claude.findRecipes(ingredients, profile: profile);
       if (meals.isNotEmpty) {
         final imageService = GoogleImageService();
         final enriched = await Future.wait(

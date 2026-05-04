@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -452,13 +453,14 @@ class _IngredientPill extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppTokens.surface2,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.eco_outlined, size: 18, color: AppTokens.coral),
+            child: buildIngredientIcon(name),
           ),
           const SizedBox(height: 6),
           Text(

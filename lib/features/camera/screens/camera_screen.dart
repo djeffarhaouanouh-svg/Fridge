@@ -231,10 +231,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
       final meals = await claude.findRecipes(ingredients);
       if (meals.isNotEmpty) {
-        final enriched = meals.map((meal) {
-          final q = Uri.encodeComponent(meal.title);
-          final photo = 'https://source.unsplash.com/600x400/?food,$q';
-          return meal.copyWith(photo: photo);
+        final enriched = meals.asMap().entries.map((e) {
+          final seed = Uri.encodeComponent(e.value.title);
+          final photo = 'https://picsum.photos/seed/$seed/600/400';
+          return e.value.copyWith(photo: photo);
         }).toList();
         ref.read(mealsProvider.notifier).setMeals(enriched);
       }

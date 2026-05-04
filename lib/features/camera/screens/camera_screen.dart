@@ -8,7 +8,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
-import '../../../core/services/google_image_service.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/screens/results_screen.dart';
@@ -232,13 +231,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
       final meals = await claude.findRecipes(ingredients);
       if (meals.isNotEmpty) {
-        final google = GoogleImageService();
-        final enriched = await Future.wait(
-          meals.map((meal) async {
-            final photo = await google.searchFoodImage(meal.title);
-            return meal.copyWith(photo: photo);
-          }),
-        );
+        final enriched = meals.map((meal) {
+          final q = Uri.encodeComponent(meal.title);
+          final photo = 'https://source.unsplash.com/600x400/?food,$q';
+          return meal.copyWith(photo: photo);
+        }).toList();
         ref.read(mealsProvider.notifier).setMeals(enriched);
       }
 

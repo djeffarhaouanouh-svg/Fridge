@@ -434,10 +434,11 @@ class _RecipeRow extends ConsumerWidget {
                   child: SizedBox(
                     width: 72, height: 72,
                     child: meal.photo.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: meal.photo, fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(color: AppTokens.placeholder),
-                            errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
+                        ? Image.network(
+                            meal.photo, fit: BoxFit.cover,
+                            loadingBuilder: (_, child, progress) =>
+                                progress == null ? child : Container(color: AppTokens.placeholder),
+                            errorBuilder: (_, __, ___) => Container(color: AppTokens.placeholder),
                           )
                         : Container(color: AppTokens.placeholder),
                   ),

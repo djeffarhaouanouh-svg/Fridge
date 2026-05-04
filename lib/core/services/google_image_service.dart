@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 class GoogleImageService {
   static const _frToEn = {
     'poulet': 'chicken', 'blanc de poulet': 'chicken', 'escalope': 'chicken',
@@ -11,20 +14,34 @@ class GoogleImageService {
     'fromage': 'cheese', 'tomate': 'tomato', 'œuf': 'egg', 'oeuf': 'egg',
     'omelette': 'omelette', 'jambon': 'ham', 'mortadelle': 'salami',
     'champignon': 'mushroom', 'curry': 'curry', 'soupe': 'soup',
-    'moutarde': 'mustard sauce', 'beurre': 'butter sauce',
+    'moutarde': 'mustard', 'beurre': 'butter',
   };
 
   Future<String> searchFoodImage(String mealTitle) async {
     final titleLower = mealTitle.toLowerCase();
-    String keyword = mealTitle;
+    String ingredient = 'chicken';
 
     for (final entry in _frToEn.entries) {
       if (titleLower.contains(entry.key)) {
-        keyword = entry.value;
+        ingredient = entry.value;
         break;
       }
     }
 
-    return 'https://source.unsplash.com/600x400/?food,${Uri.encodeComponent(keyword)}';
+    try {
+      final uri = Uri.https('www.themealdb.com', '/api/json/v1/1/filter.php', {
+        'i': ingredient,
+      });
+      final resp = await http.get(uri);
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        final meals = data['meals'] as List?;
+        if (meals != null && meals.isNotEmpty) {
+          return (meals.first['strMealThumb'] as String?) ?? '';
+        }
+      }
+    } catch (_) {}
+
+    return 'https://picsum.photos/seed/${Uri.encodeComponent(mealTitle)}/600/400';
   }
 }

@@ -234,9 +234,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       if (meals.isNotEmpty) {
         final imageService = GoogleImageService();
         final enriched = await Future.wait(
-          meals.map((meal) async {
-            final photo = await imageService.searchFoodImage(meal.title);
-            return meal.copyWith(photo: photo);
+          List.generate(meals.length, (i) async {
+            final photo = await imageService.searchFoodImage(meals[i].title, recipeIndex: i);
+            return meals[i].copyWith(photo: photo);
           }),
         );
         ref.read(mealsProvider.notifier).setMeals(enriched);

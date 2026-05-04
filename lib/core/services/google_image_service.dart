@@ -18,23 +18,20 @@ class GoogleImageService {
     'moutarde': 'mustard sauce', 'beurre': 'butter sauce',
   };
 
-  Future<String> searchFoodImage(String mealTitle) async {
+  Future<String> searchFoodImage(String mealTitle, {int recipeIndex = 0}) async {
     final titleLower = mealTitle.toLowerCase();
-    final keywords = <String>[];
+    String query = mealTitle;
 
     for (final entry in _frToEn.entries) {
-      if (titleLower.contains(entry.key) && !keywords.contains(entry.value)) {
-        keywords.add(entry.value);
-        if (keywords.length >= 2) break;
+      if (titleLower.contains(entry.key)) {
+        query = entry.value;
+        break;
       }
     }
 
-    final base = keywords.isNotEmpty ? keywords.join(' ') : 'homemade meal';
-    final query = '$base food dish';
-
     try {
       final uri = Uri.https('api.pexels.com', '/v1/search', {
-        'query': query,
+        'query': '$query food recipe',
         'per_page': '5',
         'orientation': 'square',
       });
@@ -45,7 +42,8 @@ class GoogleImageService {
         final data = jsonDecode(resp.body);
         final photos = data['photos'] as List?;
         if (photos != null && photos.isNotEmpty) {
-          return (photos.first['src']['medium'] as String?) ?? '';
+          final pick = recipeIndex % photos.length;
+          return (photos[pick]['src']['medium'] as String?) ?? '';
         }
       }
     } catch (_) {}

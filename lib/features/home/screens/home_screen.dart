@@ -214,7 +214,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
                       itemCount: detectedIngredients.length,
                       itemBuilder: (context, i) =>
-                          _IngredientPill(name: detectedIngredients[i]),
+                          _IngredientPill(name: detectedIngredients[i], index: i),
                     ),
                   ),
           ),
@@ -435,45 +435,243 @@ class _CompactCard extends ConsumerWidget {
   }
 }
 
-class _IngredientPill extends StatelessWidget {
+class _IngredientPill extends ConsumerWidget {
   final String name;
-  const _IngredientPill({required this.name});
+  final int index;
+  const _IngredientPill({required this.name, required this.index});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onLongPress: () => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _IngredientEditSheet(name: name, index: index),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(right: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppTokens.surface,
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          border: Border.all(color: AppTokens.hairline, width: 1),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppTokens.surface2,
+                shape: BoxShape.circle,
+              ),
+              child: buildIngredientIcon(name),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              name,
+              style: GoogleFonts.inter(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppTokens.ink,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _IngredientEditSheet extends ConsumerStatefulWidget {
+  final String name;
+  final int index;
+  const _IngredientEditSheet({required this.name, required this.index});
+
+  @override
+  ConsumerState<_IngredientEditSheet> createState() => _IngredientEditSheetState();
+}
+
+class _IngredientEditSheetState extends ConsumerState<_IngredientEditSheet> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.name);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final val = _ctrl.text.trim();
+    if (val.isEmpty) return;
+    final list = List<String>.from(ref.read(detectedIngredientsProvider));
+    list[widget.index] = val.toLowerCase();
+    ref.read(detectedIngredientsProvider.notifier).state = list;
+    Navigator.pop(context);
+  }
+
+  void _delete() {
+    final list = List<String>.from(ref.read(detectedIngredientsProvider));
+    list.removeAt(widget.index);
+    ref.read(detectedIngredientsProvider.notifier).state = list;
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTokens.surface,
-        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-        border: Border.all(color: AppTokens.hairline, width: 1),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppTokens.surface2,
-              shape: BoxShape.circle,
+    final previewName = _ctrl.text.isEmpty ? widget.name : _ctrl.text;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppTokens.paper,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTokens.muted.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
-            child: buildIngredientIcon(name),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            name,
-            style: GoogleFonts.inter(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: AppTokens.ink,
+            const SizedBox(height: 20),
+
+            // Emoji preview + nom
+            Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppTokens.surface2,
+                    shape: BoxShape.circle,
+                  ),
+                  child: buildIngredientIcon(previewName),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Modifier l\'ingrédient',
+                        style: GoogleFonts.fraunces(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppTokens.ink,
+                        ),
+                      ),
+                      Text(
+                        'L\'icône se met à jour automatiquement',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppTokens.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: 20),
+
+            // Champ texte
+            TextField(
+              controller: _ctrl,
+              autofocus: true,
+              style: GoogleFonts.inter(fontSize: 15, color: AppTokens.ink),
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Nom de l\'ingrédient',
+                hintStyle: GoogleFonts.inter(color: AppTokens.muted),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                  borderSide: const BorderSide(color: AppTokens.hairline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                  borderSide: const BorderSide(color: AppTokens.coral, width: 1.5),
+                ),
+              ),
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 16),
+
+            // Boutons
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _delete,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      decoration: BoxDecoration(
+                        color: AppTokens.coral.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                        border: Border.all(color: AppTokens.coral.withOpacity(0.3)),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Supprimer',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppTokens.coral,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _save,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      decoration: BoxDecoration(
+                        color: AppTokens.ink,
+                        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Sauvegarder',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

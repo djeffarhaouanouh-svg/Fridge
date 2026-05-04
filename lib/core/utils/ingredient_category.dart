@@ -20,6 +20,8 @@ String getIngredientCategory(String name) {
   }
 
   if (n.contains('poulet') ||
+      n.contains('poule') ||
+      n.contains('poitrine') ||
       n.contains('boeuf') ||
       n.contains('bœuf') ||
       n.contains('porc') ||
@@ -30,7 +32,13 @@ String getIngredientCategory(String name) {
       n.contains('saucisse') ||
       n.contains('jambon') ||
       n.contains('lardons') ||
-      n.contains('bacon')) {
+      n.contains('bacon') ||
+      n.contains('dinde') ||
+      n.contains('canard') ||
+      n.contains('lapin') ||
+      n.contains('côte') ||
+      n.contains('cote') ||
+      n.contains('filet')) {
     return 'viande';
   }
 

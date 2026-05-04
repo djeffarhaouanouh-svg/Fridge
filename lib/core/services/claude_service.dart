@@ -62,7 +62,7 @@ class ClaudeService {
               {
                 'type': 'text',
                 'text':
-                    'List all food ingredients visible in this image. Return ONLY a JSON array of strings in English, example: ["chicken","rice","tomatoes"]. Nothing else.',
+                    'Liste tous les aliments visibles dans cette image. Retourne UNIQUEMENT un tableau JSON de chaînes en français, exemple: ["poulet","riz","tomates"]. Rien d\'autre.',
               },
             ],
           },

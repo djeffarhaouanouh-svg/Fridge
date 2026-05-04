@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class GoogleImageService {
-  static const _apiKey = 'AIzaSyAfiTuxnQ74NwOJ3mzPs_szfcOshFPxkd0';
+  static const _apiKey = String.fromEnvironment('GOOGLE_CSE_KEY');
   static const _cx = '10b9ec3b63ff941f7';
 
   Future<String> searchFoodImage(String query) async {

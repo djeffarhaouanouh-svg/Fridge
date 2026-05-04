@@ -16,6 +16,89 @@ class ResultsScreen extends ConsumerWidget {
     final meals = ref.watch(mealsProvider);
     final ingredients = ref.watch(detectedIngredientsProvider);
 
+    void editIngredient(int index) {
+      final ctrl = TextEditingController(text: ingredients[index]);
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppTokens.paper,
+          title: Text('Modifier',
+            style: GoogleFonts.fraunces(fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink),
+          ),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            style: GoogleFonts.inter(fontSize: 14, color: AppTokens.ink),
+            decoration: InputDecoration(
+              hintText: 'Nom de l\'ingrédient',
+              hintStyle: GoogleFonts.inter(color: AppTokens.muted),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                final list = List<String>.from(ref.read(detectedIngredientsProvider));
+                list.removeAt(index);
+                ref.read(detectedIngredientsProvider.notifier).state = list;
+                Navigator.pop(ctx);
+              },
+              child: Text('Supprimer', style: TextStyle(color: AppTokens.coral)),
+            ),
+            TextButton(
+              onPressed: () {
+                final val = ctrl.text.trim();
+                if (val.isEmpty) return;
+                final list = List<String>.from(ref.read(detectedIngredientsProvider));
+                list[index] = val;
+                ref.read(detectedIngredientsProvider.notifier).state = list;
+                Navigator.pop(ctx);
+              },
+              child: Text('OK', style: TextStyle(color: AppTokens.ink)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    void addIngredient() {
+      final ctrl = TextEditingController();
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppTokens.paper,
+          title: Text('Ajouter un ingrédient',
+            style: GoogleFonts.fraunces(fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink),
+          ),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            style: GoogleFonts.inter(fontSize: 14, color: AppTokens.ink),
+            decoration: InputDecoration(
+              hintText: 'ex: tomates',
+              hintStyle: GoogleFonts.inter(color: AppTokens.muted),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Annuler', style: TextStyle(color: AppTokens.muted)),
+            ),
+            TextButton(
+              onPressed: () {
+                final val = ctrl.text.trim();
+                if (val.isEmpty) return;
+                final list = List<String>.from(ref.read(detectedIngredientsProvider));
+                list.add(val);
+                ref.read(detectedIngredientsProvider.notifier).state = list;
+                Navigator.pop(ctx);
+              },
+              child: Text('Ajouter', style: TextStyle(color: AppTokens.ink)),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTokens.paper,
       body: SafeArea(
@@ -62,9 +145,12 @@ class ResultsScreen extends ConsumerWidget {
                     Wrap(
                       spacing: 8, runSpacing: 8,
                       children: [
-                        ...ingredients.map((ing) => _IngredientTag(label: ing)),
+                        ...ingredients.asMap().entries.map((e) => _IngredientTag(
+                          label: e.value,
+                          onTap: () => editIngredient(e.key),
+                        )),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: addIngredient,
                           child: Text('+ Ajouter',
                             style: GoogleFonts.inter(
                               fontSize: 13, fontWeight: FontWeight.w500,
@@ -114,7 +200,6 @@ class ResultsScreen extends ConsumerWidget {
                   ...List.generate(meals.length, (i) => _RecipeRow(
                     meal: meals[i],
                     index: i,
-                    detectedCount: ingredients.isNotEmpty ? ingredients.length : meals[i].ingredients.length,
                   )),
 
                   const SizedBox(height: 28),
@@ -140,32 +225,36 @@ class ResultsScreen extends ConsumerWidget {
 
 class _IngredientTag extends StatelessWidget {
   final String label;
-  const _IngredientTag({required this.label});
+  final VoidCallback? onTap;
+  const _IngredientTag({required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppTokens.surface,
-        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 5, height: 5,
-            decoration: const BoxDecoration(
-              color: AppTokens.ink, shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppTokens.surface,
+          borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 5, height: 5,
+              decoration: const BoxDecoration(
+                color: AppTokens.ink, shape: BoxShape.circle,
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
-          Text(label,
-            style: GoogleFonts.inter(
-              fontSize: 13, fontWeight: FontWeight.w500, color: AppTokens.ink,
+            const SizedBox(width: 6),
+            Text(label,
+              style: GoogleFonts.inter(
+                fontSize: 13, fontWeight: FontWeight.w500, color: AppTokens.ink,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -174,13 +263,10 @@ class _IngredientTag extends StatelessWidget {
 class _RecipeRow extends ConsumerWidget {
   final Meal meal;
   final int index;
-  final int detectedCount;
-  const _RecipeRow({required this.meal, required this.index, required this.detectedCount});
+  const _RecipeRow({required this.meal, required this.index});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final total = meal.ingredients.length;
-    final have = total;
     final num = (index + 1).toString().padLeft(2, '0');
 
     return GestureDetector(
@@ -249,9 +335,20 @@ class _RecipeRow extends ConsumerWidget {
                               style: GoogleFonts.inter(fontSize: 12, color: AppTokens.muted),
                             ),
                           ),
-                          Text('$have/$total ✓',
+                          Text('${meal.kcal} kcal',
                             style: GoogleFonts.inter(
                               fontSize: 12, fontWeight: FontWeight.w600, color: AppTokens.muted,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Text('·',
+                              style: GoogleFonts.inter(fontSize: 12, color: AppTokens.muted),
+                            ),
+                          ),
+                          Text(meal.difficulty,
+                            style: GoogleFonts.inter(
+                              fontSize: 12, fontWeight: FontWeight.w500, color: AppTokens.muted,
                             ),
                           ),
                         ],

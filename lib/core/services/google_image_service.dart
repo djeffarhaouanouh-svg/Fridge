@@ -1,33 +1,51 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../config/app_secrets.dart';
 
 class GoogleImageService {
-  static const _apiKey = kGoogleCseKey;
-  static const _cx = '10b9ec3b63ff941f7';
+  static const _frToEn = {
+    'poulet': 'chicken', 'blanc de poulet': 'chicken', 'escalope': 'chicken',
+    'porc': 'pork', 'côtes de porc': 'pork', 'boeuf': 'beef', 'veau': 'veal',
+    'agneau': 'lamb', 'saumon': 'salmon', 'thon': 'tuna', 'crevettes': 'shrimp',
+    'pâtes': 'pasta', 'pasta': 'pasta', 'spaghetti': 'spaghetti',
+    'gnocchi': 'gnocchi', 'riz': 'rice', 'quiche': 'quiche',
+    'fromage': 'cheese', 'tomate': 'tomato', 'œuf': 'egg', 'oeuf': 'egg',
+    'jambon': 'ham', 'mortadelle': 'sausage', 'lardons': 'bacon',
+    'champignon': 'mushroom', 'épinards': 'spinach', 'courgette': 'zucchini',
+    'curry': 'curry', 'soupe': 'soup', 'tarte': 'pie', 'pizza': 'pizza',
+    'burger': 'burger', 'wrap': 'wrap', 'crêpe': 'crepe',
+  };
 
-  Future<String> searchFoodImage(String query) async {
-    if (_apiKey.isEmpty) return '';
+  Future<String> searchFoodImage(String mealTitle) async {
+    final titleLower = mealTitle.toLowerCase();
+    String searchTerm = '';
+
+    for (final entry in _frToEn.entries) {
+      if (titleLower.contains(entry.key)) {
+        searchTerm = entry.value;
+        break;
+      }
+    }
+
+    if (searchTerm.isEmpty) return _picsum(mealTitle);
+
     try {
-      final uri = Uri.https('www.googleapis.com', '/customsearch/v1', {
-        'q': '$query recette',
-        'searchType': 'image',
-        'cx': _cx,
-        'key': _apiKey,
-        'num': '1',
-        'imgSize': 'large',
-        'imgType': 'photo',
-        'safe': 'active',
-      });
-      final resp = await http.get(uri);
+      final resp = await http.get(Uri.parse(
+        'https://www.themealdb.com/api/json/v1/1/search.php?s=$searchTerm',
+      ));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
-        final items = data['items'] as List?;
-        if (items != null && items.isNotEmpty) {
-          return (items.first['link'] as String?) ?? '';
+        final meals = data['meals'] as List?;
+        if (meals != null && meals.isNotEmpty) {
+          return (meals.first['strMealThumb'] as String?) ?? _picsum(mealTitle);
         }
       }
     } catch (_) {}
-    return '';
+
+    return _picsum(mealTitle);
+  }
+
+  String _picsum(String title) {
+    final seed = Uri.encodeComponent(title);
+    return 'https://picsum.photos/seed/$seed/600/400';
   }
 }

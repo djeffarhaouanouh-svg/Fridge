@@ -213,7 +213,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 style: GoogleFonts.fraunces(
                   fontSize: 19,
                   fontWeight: FontWeight.w600,
-                  color: AppTokens.ink,
+                  color: titleColor,
                 ),
               ),
             ),
@@ -255,7 +255,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 style: GoogleFonts.fraunces(
                   fontSize: 19,
                   fontWeight: FontWeight.w600,
-                  color: AppTokens.ink,
+                  color: titleColor,
                 ),
               ),
             ),

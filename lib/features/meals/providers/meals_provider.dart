@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/meal.dart';
 import '../../../core/services/neon_service.dart';
@@ -27,23 +28,38 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
 
   MealsNotifier() : super([]);
 
-  /// Recettes persistées (Neon) + entrées locales pas encore en base (ex. dernier scan).
+  /// Catalogue Neon (favoris / plan / cuisiné) + recettes de scan persistées (`scan_meals_json`).
   Future<void> loadFromDatabase() async {
     try {
-      final dbMeals = await _db.loadUserRecipesCatalog();
-      final dbIds = dbMeals.map((m) => m.id).toSet();
-      final ephemeral = state.where((m) => !dbIds.contains(m.id)).toList();
-      state = [...dbMeals, ...ephemeral];
+      final catalog = await _db.loadUserRecipesCatalog();
+      final scanPersisted = await _db.loadScanMeals();
+      final byId = <String, Meal>{};
+      for (final m in scanPersisted) {
+        byId[m.id] = m;
+      }
+      for (final m in catalog) {
+        byId[m.id] = m;
+      }
+      final merged = byId.values.toList()
+        ..sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
+      state = merged;
     } catch (_) {}
   }
 
-  /// Fusionne les recettes proposées après scan sans effacer le catalogue chargé depuis la DB.
-  void mergeScanResults(List<Meal> incoming) {
+  /// Fusionne les recettes du scan en mémoire et les enregistre dans Neon.
+  Future<void> mergeScanResultsAndPersist(List<Meal> incoming) async {
     final map = {for (final m in state) m.id: m};
     for (final m in incoming) {
       map[m.id] = m;
     }
     state = map.values.toList();
+    try {
+      await _db.mergeAndSaveScanMeals(incoming);
+    } catch (e, st) {
+      debugPrint('mergeScanResultsAndPersist: $e\n$st');
+    }
   }
 
   Future<void> toggleFavorite(String mealId) async {

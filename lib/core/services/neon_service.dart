@@ -437,7 +437,46 @@ class NeonService {
       await execute(
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS login_streak INTEGER DEFAULT 0',
       );
+      await execute(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS scan_meals_json TEXT',
+      );
     } catch (_) {}
+  }
+
+  /// Recettes issues des scans (JSON), fusionnées par id à chaque nouveau scan.
+  Future<List<Meal>> loadScanMeals() async {
+    final rows = await query(
+      'SELECT scan_meals_json FROM users WHERE id = \$1',
+      [kUserId],
+    );
+    if (rows.isEmpty) return [];
+    final raw = rows.first['scan_meals_json'];
+    if (raw == null) return [];
+    final str = raw.toString();
+    if (str.isEmpty) return [];
+    final decoded = jsonDecode(str);
+    if (decoded is! List) return [];
+    return decoded
+        .map(
+          (e) => Meal.fromJson(
+            Map<String, dynamic>.from(e as Map<dynamic, dynamic>),
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> mergeAndSaveScanMeals(List<Meal> newMeals) async {
+    final existing = await loadScanMeals();
+    final map = {for (final m in existing) m.id: m};
+    for (final m in newMeals) {
+      map[m.id] = m;
+    }
+    final encoded =
+        jsonEncode(map.values.map((m) => m.toJson()).toList(growable: false));
+    await execute(
+      'UPDATE users SET scan_meals_json = \$1 WHERE id = \$2',
+      [encoded, kUserId],
+    );
   }
 
   Future<void> saveFridgeIngredients(List<String> items) async {

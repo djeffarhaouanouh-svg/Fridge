@@ -6,6 +6,7 @@ import '../../../core/services/neon_service.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../main.dart';
+import '../../../core/services/fridge_sync.dart';
 import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../meals/providers/meals_provider.dart';
@@ -92,6 +93,7 @@ Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) 
     }
     list.add(submitted);
     ref.read(detectedIngredientsProvider.notifier).state = list;
+    await persistFridgeToNeon(list);
   } finally {
     controller.dispose();
   }

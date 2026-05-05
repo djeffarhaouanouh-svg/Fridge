@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/services/fridge_sync.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/app_header.dart';
@@ -509,20 +510,22 @@ class _IngredientEditSheetState extends ConsumerState<_IngredientEditSheet> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     final val = _ctrl.text.trim();
     if (val.isEmpty) return;
     final list = List<String>.from(ref.read(detectedIngredientsProvider));
     list[widget.index] = val.toLowerCase();
     ref.read(detectedIngredientsProvider.notifier).state = list;
-    Navigator.pop(context);
+    await persistFridgeToNeon(list);
+    if (mounted) Navigator.pop(context);
   }
 
-  void _delete() {
+  Future<void> _delete() async {
     final list = List<String>.from(ref.read(detectedIngredientsProvider));
     list.removeAt(widget.index);
     ref.read(detectedIngredientsProvider.notifier).state = list;
-    Navigator.pop(context);
+    await persistFridgeToNeon(list);
+    if (mounted) Navigator.pop(context);
   }
 
   @override

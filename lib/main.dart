@@ -142,6 +142,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     try {
       final db = NeonService();
       await db.ensureUserSyncSchema();
+
+      final session = await AuthService.getSession();
+      if (session != null) {
+        await db.upsertUser(
+          session['name'] ?? 'Utilisateur',
+          session['email'] ?? '',
+        );
+      }
+
       final streak = await db.recordDailyLoginAndGetStreak();
       ref.read(loginStreakProvider.notifier).state = streak;
 

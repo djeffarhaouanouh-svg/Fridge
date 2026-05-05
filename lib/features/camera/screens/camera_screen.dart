@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
+import '../../../core/services/fridge_sync.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
@@ -229,11 +230,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       }
 
       ref.read(detectedIngredientsProvider.notifier).state = ingredients;
+      await persistFridgeToNeon(ingredients);
 
       final profile = ref.read(userProfileProvider);
       final meals = await claude.findRecipes(ingredients, profile: profile);
       if (meals.isNotEmpty) {
-        ref.read(mealsProvider.notifier).mergeScanResults(meals);
+        await ref.read(mealsProvider.notifier).mergeScanResultsAndPersist(meals);
       }
 
       ref.read(scanStatusProvider.notifier).state = ScanStatus.done;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/services/fridge_sync.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../core/widgets/glass_button.dart';
@@ -172,29 +173,32 @@ class _IngredientsEditorSheetState
     });
   }
 
-  void _saveEdit(int index) {
+  Future<void> _saveEdit(int index) async {
     final val = _editCtrl.text.trim();
     if (val.isNotEmpty) {
       final list = List<String>.from(ref.read(detectedIngredientsProvider));
       list[index] = val;
       ref.read(detectedIngredientsProvider.notifier).state = list;
+      await persistFridgeToNeon(list);
     }
     setState(() => _editingIndex = null);
   }
 
-  void _delete(int index) {
+  Future<void> _delete(int index) async {
     final list = List<String>.from(ref.read(detectedIngredientsProvider));
     list.removeAt(index);
     ref.read(detectedIngredientsProvider.notifier).state = list;
+    await persistFridgeToNeon(list);
     if (_editingIndex == index) setState(() => _editingIndex = null);
   }
 
-  void _addIngredient() {
+  Future<void> _addIngredient() async {
     final val = _addCtrl.text.trim();
     if (val.isEmpty) return;
     final list = List<String>.from(ref.read(detectedIngredientsProvider));
     list.add(val.toLowerCase());
     ref.read(detectedIngredientsProvider.notifier).state = list;
+    await persistFridgeToNeon(list);
     _addCtrl.clear();
   }
 

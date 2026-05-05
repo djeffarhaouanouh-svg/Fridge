@@ -113,7 +113,6 @@ class ProfileScreen extends ConsumerWidget {
     final selections = ref.watch(planMealSelectionsProvider);
     final recentlyViewed = ref.watch(recentlyViewedProvider);
     final loginStreak = ref.watch(loginStreakProvider);
-    final photosAsync = ref.watch(userPhotosProvider);
 
     final cookedCount = selections.length;
     final streak = loginStreak;
@@ -549,12 +548,63 @@ class ProfileScreen extends ConsumerWidget {
 
             _Divider(),
 
-            _Divider(),
+            // ── 9. Paramètres ────────────────────────────────────────
+            _SettingRow(label: 'Langue', value: 'Français', icon: Icons.language_outlined),
+            _SettingRow(
+              label: 'Mon compte',
+              value: profile.email,
+              icon: Icons.person_outline,
+              onTap: () => _showEditAccountDialog(
+                context,
+                profile.name,
+                profile.email,
+                notifier,
+              ),
+            ),
+            _SettingRow(
+              label: 'Mes photos',
+              icon: Icons.photo_library_outlined,
+              onTap: () => _showUserPhotosSheet(context, ref),
+            ),
+            _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
+            _SettingRow(
+              label: 'Se déconnecter',
+              icon: Icons.logout_outlined,
+              onTap: () async {
+                await AuthService.logout();
+                if (context.mounted) {
+                  ref.read(authStateProvider.notifier).state = false;
+                }
+              },
+            ),
+            _SettingRow(
+              label: 'Supprimer le compte',
+              icon: Icons.delete_outline,
+              danger: true,
+              isLast: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-            // ── 8. Mes photos ────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-              child: Column(
+void _showUserPhotosSheet(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppTokens.paper,
+    isScrollControlled: true,
+    builder: (_) {
+      return SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+          child: Consumer(
+            builder: (context, ref, _) {
+              final photosAsync = ref.watch(userPhotosProvider);
+              return Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _SectionTitle(title: 'Mes photos'),
@@ -602,51 +652,18 @@ class ProfileScreen extends ConsumerWidget {
                       'Erreur chargement photos: $e',
                       style: GoogleFonts.inter(
                         fontSize: 12.5,
-                        color: Colors.red.shade700,
+                        color: Colors.red,
                       ),
                     ),
                   ),
                 ],
-              ),
-            ),
-
-            _Divider(),
-
-            // ── 9. Paramètres ────────────────────────────────────────
-            _SettingRow(label: 'Langue', value: 'Français', icon: Icons.language_outlined),
-            _SettingRow(
-              label: 'Mon compte',
-              value: profile.email,
-              icon: Icons.person_outline,
-              onTap: () => _showEditAccountDialog(
-                context,
-                profile.name,
-                profile.email,
-                notifier,
-              ),
-            ),
-            _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
-            _SettingRow(
-              label: 'Se déconnecter',
-              icon: Icons.logout_outlined,
-              onTap: () async {
-                await AuthService.logout();
-                if (context.mounted) {
-                  ref.read(authStateProvider.notifier).state = false;
-                }
-              },
-            ),
-            _SettingRow(
-              label: 'Supprimer le compte',
-              icon: Icons.delete_outline,
-              danger: true,
-              isLast: true,
-            ),
-          ],
+              );
+            },
+          ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
 }
 
 void _showEditAccountDialog(

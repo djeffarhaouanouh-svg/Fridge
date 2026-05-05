@@ -150,14 +150,15 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
-      body: Column(
-        children: [
-          const AppHeader(brand: true),
-
-          Expanded(
-            child: ListView(
+      body: CustomScrollView(
+        slivers: [
+          const SliverToBoxAdapter(child: AppHeader(brand: true)),
+          SliverToBoxAdapter(
+            child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 110),
-              children: [
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   RichText(
                     text: TextSpan(children: [
                       TextSpan(
@@ -314,7 +315,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       padding: EdgeInsets.only(top: 16),
                       child: Center(child: CircularProgressIndicator(color: AppTokens.coral)),
                     ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

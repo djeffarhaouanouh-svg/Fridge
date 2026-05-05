@@ -47,7 +47,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
     _flyController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 260),
+      duration: const Duration(milliseconds: 800),
     );
     _flyAnim = CurvedAnimation(
       parent: _flyController,

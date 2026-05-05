@@ -373,6 +373,7 @@ class _CompactCard extends ConsumerWidget {
                       top: 8,
                       right: 8,
                       child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
                         onTap: () => ref
                             .read(mealsProvider.notifier)
                             .toggleFavorite(meal.id),

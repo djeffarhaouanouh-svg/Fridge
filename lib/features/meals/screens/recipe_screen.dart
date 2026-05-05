@@ -158,6 +158,7 @@ class RecipeScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.only(right: 16, top: 8),
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
                   child: Container(
                     width: 36, height: 36,

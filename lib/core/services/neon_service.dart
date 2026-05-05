@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:http/http.dart' as http;
 import '../../features/meals/models/meal.dart';
 import '../config/app_secrets.dart';
+import '../utils/recipe_ids.dart';
 
 class NeonService {
   static const _host = 'ep-dawn-night-abd29yl2-pooler.eu-west-2.aws.neon.tech';
@@ -189,6 +190,7 @@ class NeonService {
   // ── RECIPES ────────────────────────────────────────────────────────────────
 
   Future<void> upsertRecipe(Meal meal) async {
+    final rid = normalizeRecipeId(meal.id);
     final duration =
         int.tryParse(meal.time.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
     final difficulty =
@@ -203,7 +205,7 @@ class NeonService {
         title     = EXCLUDED.title,
         image_url = EXCLUDED.image_url
     ''', [
-      meal.id,
+      rid,
       meal.title,
       meal.photo,
       duration,
@@ -217,16 +219,16 @@ class NeonService {
     ]);
 
     await execute(
-        'DELETE FROM recipe_steps WHERE recipe_id = \$1', [meal.id]);
+        'DELETE FROM recipe_steps WHERE recipe_id = \$1', [rid]);
     for (int i = 0; i < meal.steps.length; i++) {
       await execute(
         'INSERT INTO recipe_steps (recipe_id, step_order, instruction) VALUES (\$1, \$2, \$3)',
-        [meal.id, i + 1, meal.steps[i]],
+        [rid, i + 1, meal.steps[i]],
       );
     }
 
     await execute(
-        'DELETE FROM recipe_ingredients WHERE recipe_id = \$1', [meal.id]);
+        'DELETE FROM recipe_ingredients WHERE recipe_id = \$1', [rid]);
     for (final ing in meal.ingredients) {
       await execute(
         'INSERT INTO ingredients (name) VALUES (\$1) ON CONFLICT (name) DO NOTHING',
@@ -238,7 +240,7 @@ class NeonService {
       await execute('''
         INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit)
         SELECT \$1, id, \$3, \$4 FROM ingredients WHERE name = \$2
-      ''', [meal.id, ing.name, qty, unit]);
+      ''', [rid, ing.name, qty, unit]);
     }
   }
 
@@ -360,17 +362,18 @@ class NeonService {
 
   Future<void> saveFavorite(Meal meal) async {
     await upsertRecipe(meal);
+    final rid = normalizeRecipeId(meal.id);
     await execute('''
       INSERT INTO favorites (user_id, recipe_id)
       VALUES (\$1, \$2)
       ON CONFLICT DO NOTHING
-    ''', [kUserId, meal.id]);
+    ''', [kUserId, rid]);
   }
 
   Future<void> removeFavorite(String mealId) async {
     await execute(
       'DELETE FROM favorites WHERE user_id = \$1 AND recipe_id = \$2',
-      [kUserId, mealId],
+      [kUserId, normalizeRecipeId(mealId)],
     );
   }
 
@@ -388,7 +391,7 @@ class NeonService {
     await upsertRecipe(meal);
     await execute(
       'INSERT INTO cooked_recipes (user_id, recipe_id) VALUES (\$1, \$2)',
-      [kUserId, meal.id],
+      [kUserId, normalizeRecipeId(meal.id)],
     );
   }
 
@@ -411,7 +414,7 @@ class NeonService {
     );
     await execute(
       'INSERT INTO meal_plans (user_id, date, meal_type, recipe_id) VALUES (\$1, \$2, \$3, \$4)',
-      [kUserId, date, mealType, meal.id],
+      [kUserId, date, mealType, normalizeRecipeId(meal.id)],
     );
   }
 
@@ -617,9 +620,14 @@ CREATE TABLE IF NOT EXISTS meal_plans (
 
   Future<void> mergeAndSaveScanMeals(List<Meal> newMeals) async {
     final existing = await loadScanMeals();
-    final map = {for (final m in existing) m.id: m};
+    final map = <String, Meal>{};
+    for (final m in existing) {
+      final id = normalizeRecipeId(m.id);
+      map[id] = m.copyWith(id: id);
+    }
     for (final m in newMeals) {
-      map[m.id] = m;
+      final id = normalizeRecipeId(m.id);
+      map[id] = m.copyWith(id: id);
     }
     final encoded =
         jsonEncode(map.values.map((m) => m.toJson()).toList(growable: false));

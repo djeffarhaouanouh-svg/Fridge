@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../features/meals/models/meal.dart';
 import '../config/app_secrets.dart';
+import '../utils/recipe_ids.dart';
 
 class SpoonacularService {
   static const _apiKey = kSpoonacularKey;
@@ -82,7 +83,7 @@ class SpoonacularService {
     }
 
     return Meal(
-      id: r['id'].toString(),
+      id: normalizeRecipeId(r['id'].toString()),
       type: type,
       typeLabel: typeLabel,
       emoji: emoji,

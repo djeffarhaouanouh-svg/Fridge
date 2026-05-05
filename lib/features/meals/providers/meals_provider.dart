@@ -1,6 +1,6 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/recipe_ids.dart';
 import '../models/meal.dart';
 import '../../../core/services/neon_service.dart';
 import '../../plan/models/day_plan.dart';
@@ -35,45 +35,56 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
       final scanPersisted = await _db.loadScanMeals();
       final byId = <String, Meal>{};
       for (final m in scanPersisted) {
-        byId[m.id] = m;
+        final id = normalizeRecipeId(m.id);
+        byId[id] = m.copyWith(id: id);
       }
       for (final m in catalog) {
-        byId[m.id] = m;
+        final id = normalizeRecipeId(m.id);
+        byId[id] = m.copyWith(id: id);
       }
       final merged = byId.values.toList()
         ..sort(
           (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
         );
       state = merged;
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('MealsNotifier loadFromDatabase: $e\n$st');
+    }
   }
 
   /// Fusionne les recettes du scan en mémoire et les enregistre dans Neon.
   Future<void> mergeScanResultsAndPersist(List<Meal> incoming) async {
     final map = {for (final m in state) m.id: m};
     for (final m in incoming) {
-      map[m.id] = m;
+      final id = normalizeRecipeId(m.id);
+      map[id] = m.copyWith(id: id);
     }
     state = map.values.toList();
     try {
-      await _db.mergeAndSaveScanMeals(incoming);
+      final normalized = incoming
+          .map((m) => m.copyWith(id: normalizeRecipeId(m.id)))
+          .toList();
+      await _db.mergeAndSaveScanMeals(normalized);
     } catch (e, st) {
       debugPrint('mergeScanResultsAndPersist: $e\n$st');
     }
   }
 
   Future<void> toggleFavorite(String mealId) async {
-    final current = state.where((m) => m.id == mealId).firstOrNull;
+    final nid = normalizeRecipeId(mealId);
+    final current = state.where((m) => m.id == nid).firstOrNull;
     if (current == null) return;
     final becomingFavorite = !current.isFavorite;
     try {
       if (becomingFavorite) {
         await _db.saveFavorite(current.copyWith(isFavorite: true));
       } else {
-        await _db.removeFavorite(mealId);
+        await _db.removeFavorite(nid);
       }
       await loadFromDatabase();
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('MealsNotifier toggleFavorite: $e\n$st');
+    }
   }
 
   List<Meal> getFavorites() {

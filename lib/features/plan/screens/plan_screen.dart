@@ -507,8 +507,17 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
     final allMeals = ref.watch(mealsProvider);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
+    final selections = ref.watch(planMealSelectionsProvider);
     final fullDate = '${widget.day.day} ${_frMonths[widget.day.month - 1]} ${widget.day.year}';
     final meal = _selected;
+    final takenIds = selections.entries
+        .where((e) => e.key != _slotKey)
+        .map((e) => e.value.id)
+        .toSet();
+    final availableFavorites =
+        favoriteMeals.where((m) => !takenIds.contains(m.id)).toList();
+    final availableAllMeals =
+        allMeals.where((m) => !takenIds.contains(m.id)).toList();
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
@@ -612,48 +621,48 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
                   const SizedBox(height: 28),
 
-                  if (favoriteMeals.isNotEmpty) ...[
+                  if (availableFavorites.isNotEmpty) ...[
                     _SectionTitle(title: 'Mes favoris'),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 160,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: favoriteMeals.length,
+                        itemCount: availableFavorites.length,
                         itemBuilder: (_, i) => _MealPickCard(
-                          meal: favoriteMeals[i],
-                          isSelected: _selected?.id == favoriteMeals[i].id,
-                          onTap: () => _selectMeal(favoriteMeals[i]),
+                          meal: availableFavorites[i],
+                          isSelected: _selected?.id == availableFavorites[i].id,
+                          onTap: () => _selectMeal(availableFavorites[i]),
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
                   ],
 
-                  if (allMeals.isNotEmpty) ...[
+                  if (availableAllMeals.isNotEmpty) ...[
                     _SectionTitle(title: 'Plats de mon frigo'),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 160,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: allMeals.length,
+                        itemCount: availableAllMeals.length,
                         itemBuilder: (_, i) => _MealPickCard(
-                          meal: allMeals[i],
-                          isSelected: _selected?.id == allMeals[i].id,
-                          onTap: () => _selectMeal(allMeals[i]),
+                          meal: availableAllMeals[i],
+                          isSelected: _selected?.id == availableAllMeals[i].id,
+                          onTap: () => _selectMeal(availableAllMeals[i]),
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
                   ],
 
-                  if (favoriteMeals.isEmpty && allMeals.isEmpty)
+                  if (availableFavorites.isEmpty && availableAllMeals.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 16),
                       child: Center(
                         child: Text(
-                          'Scanne ton frigo pour voir des plats ici',
+                          'Toutes les recettes sont deja planifiees',
                           style: GoogleFonts.inter(fontSize: 13.5, color: AppTokens.muted),
                         ),
                       ),

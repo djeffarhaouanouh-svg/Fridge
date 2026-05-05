@@ -113,9 +113,6 @@ class ProfileScreen extends ConsumerWidget {
     final selections = ref.watch(planMealSelectionsProvider);
     final recentlyViewed = ref.watch(recentlyViewedProvider);
     final loginStreak = ref.watch(loginStreakProvider);
-    final aiTone = ref.watch(aiToneProvider);
-    final themePref = ref.watch(themePreferenceProvider);
-
     final cookedCount = selections.length;
     final streak = loginStreak;
 
@@ -149,31 +146,6 @@ class ProfileScreen extends ConsumerWidget {
 
                   const SizedBox(height: 22),
 
-                  _SettingRow(
-                    label: 'Objectif',
-                    value: _objectiveLabel(profile.objective),
-                    icon: Icons.flag_outlined,
-                    onTap: () => _showObjectiveSheet(context, notifier),
-                  ),
-                  _SettingRow(
-                    label: 'Niveau de cuisine',
-                    value: _cookingLevelLabel(profile.cookingLevel),
-                    icon: Icons.auto_awesome_outlined,
-                    onTap: () => _showCookingLevelSheet(context, notifier),
-                  ),
-                  _SettingRow(
-                    label: 'Allergies',
-                    value: _joinOrNone(profile.allergies),
-                    icon: Icons.warning_amber_outlined,
-                    onTap: () => _showAllergiesSheet(context, ref, notifier),
-                  ),
-                  _SettingRow(
-                    label: 'Regime',
-                    value: _joinOrNone(profile.diets),
-                    icon: Icons.restaurant_menu_outlined,
-                    isLast: true,
-                    onTap: () => _showDietsSheet(context, ref, notifier),
-                  ),
                 ],
               ),
             ),
@@ -455,17 +427,9 @@ class ProfileScreen extends ConsumerWidget {
             _Divider(),
 
             // ── 9. Paramètres ────────────────────────────────────────
-            _SettingRow(label: 'Langue', value: 'Français', icon: Icons.language_outlined),
-            _SettingRow(
-              label: 'Mon compte',
-              value: profile.email,
-              icon: Icons.person_outline,
-              onTap: () => _showEditAccountDialog(
-                context,
-                profile.name,
-                profile.email,
-                notifier,
-              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+              child: _SectionTitle(title: 'Paramètres'),
             ),
             _SettingRow(
               label: 'Mes photos',
@@ -473,32 +437,9 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () => _showUserPhotosSheet(context, ref),
             ),
             _SettingRow(
-              label: 'Ton de l’IA',
-              value: _aiToneLabel(aiTone),
-              icon: Icons.record_voice_over_outlined,
-              onTap: () => _showAiToneSheet(context, ref),
-            ),
-            _SettingRow(
-              label: 'Thème',
-              value: _themeLabel(themePref),
-              icon: Icons.dark_mode_outlined,
-              onTap: () => _showThemeSheet(context, ref),
-            ),
-            _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
-            _SettingRow(
-              label: 'Se déconnecter',
-              icon: Icons.logout_outlined,
-              onTap: () async {
-                await AuthService.logout();
-                if (context.mounted) {
-                  ref.read(authStateProvider.notifier).state = false;
-                }
-              },
-            ),
-            _SettingRow(
-              label: 'Supprimer le compte',
-              icon: Icons.delete_outline,
-              danger: true,
+              label: 'Paramètres',
+              icon: Icons.settings_outlined,
+              onTap: () => _showSettingsSheet(context, ref, profile, notifier),
               isLast: true,
             ),
           ],
@@ -577,6 +518,120 @@ void _showUserPhotosSheet(BuildContext context, WidgetRef ref) {
                 ],
               );
             },
+          ),
+        ),
+      );
+    },
+  );
+}
+
+void _showSettingsSheet(
+  BuildContext rootContext,
+  WidgetRef ref,
+  UserProfile profile,
+  UserProfileNotifier notifier,
+) {
+  showModalBottomSheet(
+    context: rootContext,
+    backgroundColor: AppTokens.paper,
+    isScrollControlled: true,
+    builder: (sheetContext) {
+      return SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SettingRow(label: 'Langue', value: 'Français', icon: Icons.language_outlined),
+              _SettingRow(
+                label: 'Mon compte',
+                value: profile.email,
+                icon: Icons.person_outline,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showEditAccountDialog(
+                    rootContext,
+                    profile.name,
+                    profile.email,
+                    notifier,
+                  );
+                },
+              ),
+              _SettingRow(
+                label: 'Ton de l’IA',
+                value: _aiToneLabel(ref.read(aiToneProvider)),
+                icon: Icons.record_voice_over_outlined,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showAiToneSheet(rootContext, ref);
+                },
+              ),
+              _SettingRow(
+                label: 'Thème',
+                value: _themeLabel(ref.read(themePreferenceProvider)),
+                icon: Icons.dark_mode_outlined,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showThemeSheet(rootContext, ref);
+                },
+              ),
+              _SettingRow(
+                label: 'Objectif',
+                value: _objectiveLabel(profile.objective),
+                icon: Icons.flag_outlined,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showObjectiveSheet(rootContext, notifier);
+                },
+              ),
+              _SettingRow(
+                label: 'Niveau de cuisine',
+                value: _cookingLevelLabel(profile.cookingLevel),
+                icon: Icons.auto_awesome_outlined,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showCookingLevelSheet(rootContext, notifier);
+                },
+              ),
+              _SettingRow(
+                label: 'Allergies',
+                value: _joinOrNone(profile.allergies),
+                icon: Icons.warning_amber_outlined,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showAllergiesSheet(rootContext, ref, notifier);
+                },
+              ),
+              _SettingRow(
+                label: 'Regime',
+                value: _joinOrNone(profile.diets),
+                icon: Icons.restaurant_menu_outlined,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showDietsSheet(rootContext, ref, notifier);
+                },
+              ),
+              _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
+              _SettingRow(
+                label: 'Se déconnecter',
+                icon: Icons.logout_outlined,
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await AuthService.logout();
+                  if (rootContext.mounted) {
+                    ref.read(authStateProvider.notifier).state = false;
+                  }
+                },
+              ),
+              const SizedBox(height: 6),
+              _SettingRow(
+                label: 'Supprimer le compte',
+                icon: Icons.delete_outline,
+                danger: true,
+                isLast: true,
+              ),
+            ],
           ),
         ),
       );
@@ -1037,16 +1092,6 @@ class _SectionTitle extends StatelessWidget {
   );
 }
 
-class _Label extends StatelessWidget {
-  final String text;
-  const _Label({required this.text});
-  @override
-  Widget build(BuildContext context) => Text(text,
-    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700,
-      color: AppTokens.muted, letterSpacing: 0.5),
-  );
-}
-
 class _Stat extends StatelessWidget {
   final String value;
   final String label;
@@ -1095,86 +1140,6 @@ class _MacroCard extends StatelessWidget {
   );
 }
 
-class _ObjectivePill extends StatelessWidget {
-  final String emoji, label;
-  final bool active;
-  final VoidCallback onTap;
-  const _ObjectivePill({required this.emoji, required this.label, required this.active, required this.onTap});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: active ? AppTokens.coralSoft : AppTokens.surface,
-        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-        border: Border.all(color: active ? AppTokens.coral : AppTokens.hairline, width: 1.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 6),
-          Text(label, style: GoogleFonts.inter(
-            fontSize: 12.5, fontWeight: FontWeight.w600,
-            color: active ? AppTokens.coral : AppTokens.inkSoft)),
-        ],
-      ),
-    ),
-  );
-}
-
-class _LevelPill extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-  const _LevelPill({required this.label, required this.active, required this.onTap});
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        decoration: BoxDecoration(
-          color: active ? AppTokens.coral : AppTokens.surface,
-          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-        ),
-        child: Center(
-          child: Text(label, style: GoogleFonts.inter(
-            fontSize: 11.5, fontWeight: FontWeight.w600,
-            color: active ? Colors.white : AppTokens.muted)),
-        ),
-      ),
-    ),
-  );
-}
-
-class _ToggleChip extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-  final Color activeColor;
-  const _ToggleChip({required this.label, required this.active, required this.onTap, required this.activeColor});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: active ? activeColor.withValues(alpha: 0.1) : AppTokens.surface,
-        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-        border: Border.all(color: active ? activeColor : AppTokens.hairline, width: 1.5),
-      ),
-      child: Text(label, style: GoogleFonts.inter(
-        fontSize: 12.5, fontWeight: FontWeight.w600,
-        color: active ? activeColor : AppTokens.inkSoft)),
-    ),
-  );
-}
-
 class _SwitchRow extends StatelessWidget {
   final String label;
   final String? subtitle;
@@ -1206,7 +1171,7 @@ class _SwitchRow extends StatelessWidget {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: AppTokens.coral,
+              activeThumbColor: AppTokens.coral,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ],

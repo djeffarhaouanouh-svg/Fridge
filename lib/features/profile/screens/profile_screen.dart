@@ -146,6 +146,31 @@ class ProfileScreen extends ConsumerWidget {
 
                   const SizedBox(height: 22),
 
+                  _SettingRow(
+                    label: 'Objectif',
+                    value: _objectiveLabel(profile.objective),
+                    icon: Icons.flag_outlined,
+                    onTap: () => _showObjectiveSheet(context, notifier),
+                  ),
+                  _SettingRow(
+                    label: 'Niveau de cuisine',
+                    value: _cookingLevelLabel(profile.cookingLevel),
+                    icon: Icons.auto_awesome_outlined,
+                    onTap: () => _showCookingLevelSheet(context, notifier),
+                  ),
+                  _SettingRow(
+                    label: 'Allergies',
+                    value: _joinOrNone(profile.allergies),
+                    icon: Icons.warning_amber_outlined,
+                    onTap: () => _showAllergiesSheet(context, ref, notifier),
+                  ),
+                  _SettingRow(
+                    label: 'Regime',
+                    value: _joinOrNone(profile.diets),
+                    icon: Icons.restaurant_menu_outlined,
+                    isLast: true,
+                    onTap: () => _showDietsSheet(context, ref, notifier),
+                  ),
                 ],
               ),
             ),
@@ -438,7 +463,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             _SettingRow(
               label: 'Paramètres',
-              icon: Icons.settings_outlined,
+              icon: Icons.settings,
               onTap: () => _showSettingsSheet(context, ref, profile, notifier),
               isLast: true,
             ),
@@ -574,42 +599,6 @@ void _showSettingsSheet(
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _showThemeSheet(rootContext, ref);
-                },
-              ),
-              _SettingRow(
-                label: 'Objectif',
-                value: _objectiveLabel(profile.objective),
-                icon: Icons.flag_outlined,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showObjectiveSheet(rootContext, notifier);
-                },
-              ),
-              _SettingRow(
-                label: 'Niveau de cuisine',
-                value: _cookingLevelLabel(profile.cookingLevel),
-                icon: Icons.auto_awesome_outlined,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showCookingLevelSheet(rootContext, notifier);
-                },
-              ),
-              _SettingRow(
-                label: 'Allergies',
-                value: _joinOrNone(profile.allergies),
-                icon: Icons.warning_amber_outlined,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showAllergiesSheet(rootContext, ref, notifier);
-                },
-              ),
-              _SettingRow(
-                label: 'Regime',
-                value: _joinOrNone(profile.diets),
-                icon: Icons.restaurant_menu_outlined,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showDietsSheet(rootContext, ref, notifier);
                 },
               ),
               _SettingRow(label: 'Aide & support', icon: Icons.help_outline),

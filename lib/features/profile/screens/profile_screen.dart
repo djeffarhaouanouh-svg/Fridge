@@ -564,11 +564,14 @@ class SettingsScreen extends ConsumerWidget {
     final notifier = ref.read(userProfileProvider.notifier);
     final aiTone = ref.watch(aiToneProvider);
     final themePreference = ref.watch(themePreferenceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF151515) : AppTokens.paper;
+    final titleColor = isDark ? Colors.white : AppTokens.ink;
 
     return Scaffold(
-      backgroundColor: AppTokens.paper,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: AppTokens.paper,
+        backgroundColor: bgColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
@@ -576,7 +579,7 @@ class SettingsScreen extends ConsumerWidget {
           style: GoogleFonts.fraunces(
             fontSize: 22,
             fontWeight: FontWeight.w700,
-            color: AppTokens.ink,
+            color: titleColor,
           ),
         ),
       ),
@@ -650,9 +653,10 @@ String _themeLabel(ThemePreference p) => switch (p) {
     };
 
 void _showAiToneSheet(BuildContext context, WidgetRef ref) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
   showModalBottomSheet(
     context: context,
-    backgroundColor: AppTokens.paper,
+    backgroundColor: isDark ? const Color(0xFF1E1E1E) : AppTokens.paper,
     builder: (_) => SafeArea(
       top: false,
       child: Consumer(
@@ -700,9 +704,10 @@ void _showAiToneSheet(BuildContext context, WidgetRef ref) {
 }
 
 void _showThemeSheet(BuildContext context, WidgetRef ref) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
   showModalBottomSheet(
     context: context,
-    backgroundColor: AppTokens.paper,
+    backgroundColor: isDark ? const Color(0xFF1E1E1E) : AppTokens.paper,
     builder: (_) => SafeArea(
       top: false,
       child: Consumer(
@@ -1191,35 +1196,42 @@ class _SettingRow extends StatelessWidget {
   final VoidCallback? onTap;
   const _SettingRow({required this.label, this.value, this.icon, this.isLast = false, this.danger = false, this.onTap});
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      GestureDetector(
-        onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-        child: Row(
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 18, color: danger ? Colors.red.shade400 : AppTokens.muted),
-              const SizedBox(width: 12),
-            ],
-            Expanded(
-              child: Text(label, style: GoogleFonts.inter(
-                fontSize: 14.5, fontWeight: FontWeight.w500,
-                color: danger ? Colors.red.shade400 : AppTokens.ink)),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppTokens.ink;
+    final mutedColor = isDark ? Colors.white70 : AppTokens.muted;
+    final dividerColor = isDark ? Colors.white12 : AppTokens.hairline;
+
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 18, color: danger ? Colors.red.shade400 : mutedColor),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(label, style: GoogleFonts.inter(
+                    fontSize: 14.5, fontWeight: FontWeight.w500,
+                    color: danger ? Colors.red.shade400 : textColor)),
+                ),
+                if (value != null)
+                  Text(value!, style: GoogleFonts.inter(fontSize: 13, color: mutedColor)),
+                if (!danger)
+                  Icon(Icons.chevron_right, size: 18, color: mutedColor),
+              ],
             ),
-            if (value != null)
-              Text(value!, style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted)),
-            if (!danger)
-              const Icon(Icons.chevron_right, size: 18, color: AppTokens.muted),
-          ],
+          ),
         ),
-      ),
-      ),
-      if (!isLast)
-        const Divider(height: 1, thickness: 1, color: AppTokens.hairline, indent: 18, endIndent: 18),
-    ],
-  );
+        if (!isLast)
+          Divider(height: 1, thickness: 1, color: dividerColor, indent: 18, endIndent: 18),
+      ],
+    );
+  }
 }
 
 class _MealCard extends StatelessWidget {

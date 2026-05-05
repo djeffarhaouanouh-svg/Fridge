@@ -17,6 +17,7 @@ import 'features/camera/screens/camera_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/plan/screens/plan_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
+import 'features/profile/providers/profile_provider.dart';
 import 'firebase_options.dart';
 import 'core/services/neon_service.dart';
 
@@ -71,11 +72,16 @@ void main() async {
   runApp(const ProviderScope(child: FridgeApp()));
 }
 
-class FridgeApp extends StatelessWidget {
+class FridgeApp extends ConsumerWidget {
   const FridgeApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themePreference = ref.watch(themePreferenceProvider);
+    final themeMode = themePreference == ThemePreference.dark
+        ? ThemeMode.dark
+        : ThemeMode.light;
+
     return MaterialApp(
       title: 'Fridge',
       debugShowCheckedModeBanner: false,
@@ -88,6 +94,15 @@ class FridgeApp extends StatelessWidget {
         ),
         textTheme: GoogleFonts.interTextTheme(),
       ),
+      darkTheme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF151515),
+        colorScheme: const ColorScheme.dark(
+          primary: AppTokens.coral,
+          surface: Color(0xFF1E1E1E),
+        ),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+      ),
+      themeMode: themeMode,
       home: const AuthGate(),
     );
   }

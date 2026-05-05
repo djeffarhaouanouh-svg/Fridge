@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/recipe_ids.dart';
+import '../data/mock_meals.dart';
 import '../models/meal.dart';
 import '../../../core/services/neon_service.dart';
 import '../../plan/models/day_plan.dart';
@@ -46,9 +47,16 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
         ..sort(
           (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
         );
-      state = merged;
+      state = merged.isEmpty
+          ? kDefaultMockMeals
+              .map((m) => m.copyWith(id: normalizeRecipeId(m.id)))
+              .toList(growable: false)
+          : merged;
     } catch (e, st) {
       debugPrint('MealsNotifier loadFromDatabase: $e\n$st');
+      state = kDefaultMockMeals
+          .map((m) => m.copyWith(id: normalizeRecipeId(m.id)))
+          .toList(growable: false);
     }
   }
 

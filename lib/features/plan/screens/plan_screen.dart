@@ -557,19 +557,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(
-                    width: 32,
-                    child: meal != null
-                        ? GestureDetector(
-                            onTap: _removeMeal,
-                            child: const Icon(
-                              Icons.delete_outline,
-                              size: 19,
-                              color: AppTokens.coral,
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
+                  const SizedBox(width: 32),
                 ],
               ),
             ),
@@ -581,36 +569,61 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                   // Emplacement photo
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: meal != null
-                          ? SizedBox(
-                              key: ValueKey(meal.id),
-                              height: 200,
-                              width: double.infinity,
-                              child: MealImage(photo: meal.photo),
-                            )
-                          : Container(
-                              key: const ValueKey('empty'),
-                              height: 200,
-                              color: AppTokens.surface,
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.add_circle_outline,
-                                      color: AppTokens.muted, size: 36),
-                                    const SizedBox(height: 10),
-                                    Text('Choisis un plat ci-dessous',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 13.5, color: AppTokens.muted,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                    child: Stack(
+                      children: [
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: meal != null
+                              ? SizedBox(
+                                  key: ValueKey(meal.id),
+                                  height: 200,
+                                  width: double.infinity,
+                                  child: MealImage(photo: meal.photo),
+                                )
+                              : Container(
+                                  key: const ValueKey('empty'),
+                                  height: 200,
+                                  color: AppTokens.surface,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.add_circle_outline,
+                                          color: AppTokens.muted, size: 36),
+                                        const SizedBox(height: 10),
+                                        Text('Choisis un plat ci-dessous',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 13.5, color: AppTokens.muted,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
+                                ),
+                        ),
+                        if (meal != null)
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: GestureDetector(
+                              onTap: _removeMeal,
+                              child: Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade600,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.delete_outline,
+                                  size: 22,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
+                          ),
+                      ],
                     ),
                   ),
 

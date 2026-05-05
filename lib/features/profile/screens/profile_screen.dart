@@ -105,6 +105,87 @@ Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) 
   }
 }
 
+Future<void> showRemoveFridgeIngredientDialog(BuildContext context, WidgetRef ref) async {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final list = List<String>.from(ref.read(detectedIngredientsProvider));
+  if (list.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Aucun ingrédient à supprimer.',
+          style: GoogleFonts.inter(color: Colors.white),
+        ),
+        backgroundColor: AppTokens.inkSoft,
+      ),
+    );
+    return;
+  }
+
+  final selected = await showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: isDark ? const Color(0xFF1E1E1E) : AppTokens.paper,
+    isScrollControlled: true,
+    builder: (sheetContext) => SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Supprimer un ingrédient',
+              style: GoogleFonts.fraunces(
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppTokens.ink,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 260,
+              child: ListView.separated(
+                itemCount: list.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  color: isDark ? Colors.white12 : AppTokens.hairline,
+                ),
+                itemBuilder: (_, i) {
+                  final ing = list[i];
+                  return ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: Center(child: buildIngredientIcon(ing, emojiSize: 15)),
+                    ),
+                    title: Text(
+                      ing,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: isDark ? Colors.white : AppTokens.ink,
+                      ),
+                    ),
+                    trailing: Icon(Icons.delete_outline, color: Colors.red.shade400),
+                    onTap: () => Navigator.pop(sheetContext, ing),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  if (selected == null) return;
+  final updated = List<String>.from(ref.read(detectedIngredientsProvider));
+  updated.remove(selected);
+  ref.read(detectedIngredientsProvider.notifier).state = updated;
+  await persistFridgeToNeon(updated);
+}
+
 final fridgeSectionExpandedProvider = StateProvider<bool>((ref) => false);
 
 Color _sheetBg(BuildContext context) {
@@ -338,20 +419,20 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => ref.read(selectedTabProvider.notifier).state = 2,
+                          onTap: () => showRemoveFridgeIngredientDialog(context, ref),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             decoration: BoxDecoration(
-                              color: AppTokens.coralSoft,
+                              color: isDark ? const Color(0xFFFFEEEE) : AppTokens.coralSoft,
                               borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.camera_alt_outlined, size: 16, color: AppTokens.coral),
+                                Icon(Icons.delete_outline, size: 16, color: Colors.red.shade400),
                                 const SizedBox(width: 7),
-                                Text('Scanner',
-                                  style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppTokens.coral),
+                                Text('Supprimer',
+                                  style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: Colors.red.shade400),
                                 ),
                               ],
                             ),
@@ -376,7 +457,7 @@ class ProfileScreen extends ConsumerWidget {
                               children: [
                                 const Icon(Icons.add, size: 16, color: AppTokens.inkSoft),
                                 const SizedBox(width: 7),
-                                Text('Ajouter',
+                                Text('+ Ajouter',
                                   style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppTokens.inkSoft),
                                 ),
                               ],

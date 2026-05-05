@@ -33,8 +33,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
   ];
 
-  static const _breakfasts = ['Granola', 'Tartines', 'Yaourt', 'Porridge', 'Smoothie', 'Œufs', 'Crêpes'];
-
   List<DateTime> get _days {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -235,7 +233,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     frDays: frDays,
                     meals: List.generate(days.length, (i) {
                       final key = '${_isoDate(days[i])}_Petit-déj';
-                      return selections[key]?.title ?? _breakfasts[i % _breakfasts.length];
+                      return selections[key]?.title ?? '';
                     }),
                     selectedMeals: List.generate(days.length, (i) {
                       return selections['${_isoDate(days[i])}_Petit-déj'];
@@ -247,7 +245,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                         day: days[i],
                         dayLabel: '${frDays[i]} ${days[i].day}',
                         mealType: 'Petit-déj',
-                        mealName: _breakfasts[i % _breakfasts.length],
+                        mealName: '',
                       ),
                     )),
                   ),
@@ -491,6 +489,13 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
     ref.read(planMealSelectionsProvider.notifier).state = current;
   }
 
+  void _removeMeal() {
+    setState(() => _selected = null);
+    final current = Map<String, Meal>.from(ref.read(planMealSelectionsProvider));
+    current.remove(_slotKey);
+    ref.read(planMealSelectionsProvider.notifier).state = current;
+  }
+
   static const _frMonths = [
     'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
     'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
@@ -552,7 +557,19 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 32),
+                  SizedBox(
+                    width: 32,
+                    child: meal != null
+                        ? GestureDetector(
+                            onTap: _removeMeal,
+                            child: const Icon(
+                              Icons.delete_outline,
+                              size: 19,
+                              color: AppTokens.coral,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
                 ],
               ),
             ),

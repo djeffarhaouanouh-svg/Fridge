@@ -40,6 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(child: AppHeader(brand: true)),
+          const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
           SliverToBoxAdapter(
             child: Padding(
@@ -125,7 +126,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 children: [
                   SizedBox(
-                    height: 230,
+                    height: 280,
                     child: PageView.builder(
                       controller: _heroController,
                       onPageChanged: (i) => setState(() => _heroPage = i),
@@ -198,7 +199,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 : SizedBox(
                     height: 215,
                     child: ListView.builder(
+                      primary: false,
                       scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
                       padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
                       itemCount: meals.length,
                       itemBuilder: (context, i) =>
@@ -226,7 +231,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 : SizedBox(
                     height: 88,
                     child: ListView.builder(
+                      primary: false,
                       scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
                       padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
                       itemCount: detectedIngredients.length,
                       itemBuilder: (context, i) =>

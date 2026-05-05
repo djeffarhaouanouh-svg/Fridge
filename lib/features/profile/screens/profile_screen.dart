@@ -105,7 +105,7 @@ Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) 
   }
 }
 
-final fridgeSectionExpandedProvider = StateProvider<bool>((ref) => true);
+final fridgeSectionExpandedProvider = StateProvider<bool>((ref) => false);
 
 Color _sheetBg(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -134,6 +134,9 @@ class ProfileScreen extends ConsumerWidget {
     final streak = loginStreak;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isFridgeExpanded = ref.watch(fridgeSectionExpandedProvider);
+    final hasMoreFridgeItems = detectedIngredients.length > 5;
+    final visibleFridgeItems =
+        isFridgeExpanded ? detectedIngredients : detectedIngredients.take(5).toList();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -243,138 +246,145 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      ref.read(fridgeSectionExpandedProvider.notifier).state =
-                          !isFridgeExpanded;
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Row(
+                  const _SectionTitle(title: 'Mon frigo actuel'),
+                  const SizedBox(height: 14),
+                  if (detectedIngredients.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFFFDFBF8) : AppTokens.surface,
+                        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                      ),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.kitchen_outlined, color: AppTokens.muted, size: 32),
+                          const SizedBox(height: 8),
+                          Text('Ton frigo est vide',
+                            style: GoogleFonts.inter(fontSize: 13.5, color: AppTokens.muted, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: 8, runSpacing: 8,
                       children: [
-                        const Expanded(child: _SectionTitle(title: 'Mon frigo actuel')),
-                        Icon(
-                          isFridgeExpanded
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                          color: isDark ? Colors.white70 : AppTokens.muted,
-                        ),
+                        ...visibleFridgeItems.map((ing) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFFFFFCF8) : AppTokens.surface,
+                            borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFFEDE5DA) : AppTokens.hairline,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: Center(
+                                  child: buildIngredientIcon(ing, emojiSize: 15),
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(ing,
+                                style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w500, color: AppTokens.ink),
+                              ),
+                            ],
+                          ),
+                        )),
+                        if (hasMoreFridgeItems)
+                          GestureDetector(
+                            onTap: () => ref.read(fridgeSectionExpandedProvider.notifier).state = !isFridgeExpanded,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                                borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                                border: Border.all(color: isDark ? Colors.white24 : AppTokens.hairline),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isFridgeExpanded
+                                        ? Icons.keyboard_arrow_up_rounded
+                                        : Icons.keyboard_arrow_down_rounded,
+                                    size: 18,
+                                    color: isDark ? Colors.white70 : AppTokens.inkSoft,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isFridgeExpanded
+                                        ? 'Réduire'
+                                        : 'Voir +${detectedIngredients.length - 5}',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white70 : AppTokens.inkSoft,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
-                  ),
                   const SizedBox(height: 14),
-                  AnimatedCrossFade(
-                    firstChild: const SizedBox.shrink(),
-                    secondChild: Column(
-                      children: [
-                        if (detectedIngredients.isEmpty)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => ref.read(selectedTabProvider.notifier).state = 2,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFFFDFBF8) : AppTokens.surface,
+                              color: AppTokens.coralSoft,
                               borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                             ),
-                            child: Column(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.kitchen_outlined, color: AppTokens.muted, size: 32),
-                                const SizedBox(height: 8),
-                                Text('Ton frigo est vide',
-                                  style: GoogleFonts.inter(fontSize: 13.5, color: AppTokens.muted, fontWeight: FontWeight.w500),
+                                const Icon(Icons.camera_alt_outlined, size: 16, color: AppTokens.coral),
+                                const SizedBox(width: 7),
+                                Text('Scanner',
+                                  style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppTokens.coral),
                                 ),
                               ],
                             ),
-                          )
-                        else
-                          Wrap(
-                            spacing: 8, runSpacing: 8,
-                            children: detectedIngredients.map((ing) =>
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFFFFFCF8) : AppTokens.surface,
-                                  borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                                  border: Border.all(
-                                    color: isDark ? const Color(0xFFEDE5DA) : AppTokens.hairline,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: Center(
-                                        child: buildIngredientIcon(ing, emojiSize: 15),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Text(ing,
-                                      style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w500, color: AppTokens.ink),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ).toList(),
                           ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => ref.read(selectedTabProvider.notifier).state = 2,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 13),
-                                  decoration: BoxDecoration(
-                                    color: AppTokens.coralSoft,
-                                    borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.camera_alt_outlined, size: 16, color: AppTokens.coral),
-                                      const SizedBox(width: 7),
-                                      Text('Scanner',
-                                        style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppTokens.coral),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => showAddFridgeIngredientDialog(context, ref),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 13),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFFFFFCF8) : AppTokens.surface,
-                                    borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                                    border: Border.all(
-                                      color: isDark ? const Color(0xFFEDE5DA) : AppTokens.hairline,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.add, size: 16, color: AppTokens.inkSoft),
-                                      const SizedBox(width: 7),
-                                      Text('Ajouter',
-                                        style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppTokens.inkSoft),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
-                      ],
-                    ),
-                    crossFadeState: isFridgeExpanded
-                        ? CrossFadeState.showSecond
-                        : CrossFadeState.showFirst,
-                    duration: const Duration(milliseconds: 220),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => showAddFridgeIngredientDialog(context, ref),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFFFFFCF8) : AppTokens.surface,
+                              borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                              border: Border.all(
+                                color: isDark ? const Color(0xFFEDE5DA) : AppTokens.hairline,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.add, size: 16, color: AppTokens.inkSoft),
+                                const SizedBox(width: 7),
+                                Text('Ajouter',
+                                  style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppTokens.inkSoft),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

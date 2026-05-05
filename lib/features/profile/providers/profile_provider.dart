@@ -7,6 +7,18 @@ import '../../../core/services/user_service.dart';
 enum CookingObjective { weightLoss, muscleGain, family, passion }
 enum CookingLevel { beginner, intermediate, advanced, expert }
 
+class UserPhotoEntry {
+  final String id;
+  final String base64;
+  final String? createdAt;
+
+  const UserPhotoEntry({
+    required this.id,
+    required this.base64,
+    this.createdAt,
+  });
+}
+
 class UserProfile {
   final String name;
   final String email;
@@ -269,3 +281,17 @@ final userProfileProvider =
     StateNotifierProvider<UserProfileNotifier, UserProfile>(
   (ref) => UserProfileNotifier(),
 );
+
+final userPhotosProvider = FutureProvider<List<UserPhotoEntry>>((ref) async {
+  final rows = await NeonService().loadUserPhotos();
+  return rows
+      .map(
+        (r) => UserPhotoEntry(
+          id: (r['id'] as String?) ?? '',
+          base64: (r['photo_base64'] as String?) ?? '',
+          createdAt: r['created_at'] as String?,
+        ),
+      )
+      .where((p) => p.id.isNotEmpty && p.base64.isNotEmpty)
+      .toList(growable: false);
+});

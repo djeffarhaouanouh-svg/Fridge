@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
 import '../../../core/services/fridge_sync.dart';
+import '../../../core/services/neon_service.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
@@ -160,6 +161,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       _isAnimating = true;
     });
     ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
+    try {
+      await NeonService().saveUserPhotoBytes(bytes);
+    } catch (e, st) {
+      debugPrint('saveUserPhotoBytes: $e\n$st');
+    }
 
     // Animation fly (cosmétique uniquement, en parallèle)
     final vfBox = _viewfinderKey.currentContext?.findRenderObject() as RenderBox?;

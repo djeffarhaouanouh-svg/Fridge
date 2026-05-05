@@ -95,6 +95,14 @@ CREATE TABLE IF NOT EXISTS user_fridge_ingredients (
   PRIMARY KEY (user_id, ingredient_name)
 );
 
+-- Photos envoyees par l'utilisateur (scan frigo, etc.)
+CREATE TABLE IF NOT EXISTS user_photos (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  photo_base64 TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS recipes (
   id UUID PRIMARY KEY,
   title TEXT NOT NULL,

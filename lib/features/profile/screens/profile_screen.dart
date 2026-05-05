@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/neon_service.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../main.dart';
@@ -111,6 +113,7 @@ class ProfileScreen extends ConsumerWidget {
     final selections = ref.watch(planMealSelectionsProvider);
     final recentlyViewed = ref.watch(recentlyViewedProvider);
     final loginStreak = ref.watch(loginStreakProvider);
+    final photosAsync = ref.watch(userPhotosProvider);
 
     final cookedCount = selections.length;
     final streak = loginStreak;
@@ -585,7 +588,70 @@ class ProfileScreen extends ConsumerWidget {
 
             _Divider(),
 
-            // ── 8. Paramètres ────────────────────────────────────────
+            _Divider(),
+
+            // ── 8. Mes photos ────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionTitle(title: 'Mes photos'),
+                  const SizedBox(height: 12),
+                  photosAsync.when(
+                    data: (photos) {
+                      if (photos.isEmpty) {
+                        return Text(
+                          'Aucune photo envoyee pour le moment.',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: AppTokens.muted,
+                          ),
+                        );
+                      }
+                      return SizedBox(
+                        height: 124,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: photos.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 10),
+                          itemBuilder: (_, i) {
+                            final p = photos[i];
+                            return _UserPhotoCard(
+                              base64: p.base64,
+                              onDelete: () async {
+                                await NeonService().deleteUserPhoto(p.id);
+                                ref.invalidate(userPhotosProvider);
+                              },
+                            );
+                          },
+                        ),
+                      );
+                    },
+                    loading: () => const SizedBox(
+                      height: 42,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppTokens.coral,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+                    error: (e, _) => Text(
+                      'Erreur chargement photos: $e',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.5,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            _Divider(),
+
+            // ── 9. Paramètres ────────────────────────────────────────
             _SettingRow(label: 'Langue', value: 'Français', icon: Icons.language_outlined),
             _SettingRow(
               label: 'Mon compte',
@@ -726,6 +792,55 @@ void _showEditAccountDialog(
 }
 
 // ─── Widgets helpers ────────────────────────────────────────────────────────
+
+class _UserPhotoCard extends StatelessWidget {
+  final String base64;
+  final Future<void> Function() onDelete;
+
+  const _UserPhotoCard({
+    required this.base64,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = base64Decode(base64);
+    return Container(
+      width: 120,
+      decoration: BoxDecoration(
+        color: AppTokens.surface,
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        border: Border.all(color: AppTokens.hairline),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+              child: Image.memory(bytes, fit: BoxFit.cover),
+            ),
+          ),
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: onDelete,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.delete_outline, size: 14, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _Divider extends StatelessWidget {
   @override

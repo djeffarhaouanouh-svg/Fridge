@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
@@ -203,6 +204,38 @@ class NeonService {
       WHERE token = \$1
       ''',
       [token],
+    );
+  }
+
+  // ── USER PHOTOS ────────────────────────────────────────────────────────────
+
+  Future<void> saveUserPhotoBytes(Uint8List bytes) async {
+    await _ensureUserRowExists();
+    await execute(
+      '''
+      INSERT INTO user_photos (id, user_id, photo_base64)
+      VALUES (\$1::uuid, \$2::uuid, \$3)
+      ''',
+      [_uuid.v4(), kUserId, base64Encode(bytes)],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> loadUserPhotos() async {
+    return query(
+      '''
+      SELECT id::text, photo_base64, created_at::text
+      FROM user_photos
+      WHERE user_id = \$1::uuid
+      ORDER BY created_at DESC
+      ''',
+      [kUserId],
+    );
+  }
+
+  Future<void> deleteUserPhoto(String photoId) async {
+    await execute(
+      'DELETE FROM user_photos WHERE id = \$1::uuid AND user_id = \$2::uuid',
+      [photoId, kUserId],
     );
   }
 
@@ -561,6 +594,15 @@ CREATE TABLE IF NOT EXISTS user_fridge_ingredients (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   ingredient_name TEXT NOT NULL,
   PRIMARY KEY (user_id, ingredient_name)
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_photos (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  photo_base64 TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )
 ''');
 

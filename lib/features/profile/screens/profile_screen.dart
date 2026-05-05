@@ -137,36 +137,21 @@ class ProfileScreen extends ConsumerWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Stack(
-                        children: [
-                          Container(
-                            width: 68, height: 68,
-                            decoration: BoxDecoration(
-                              color: AppTokens.coralSoft,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppTokens.coral, width: 2),
-                            ),
-                            child: Center(
-                              child: Text(
-                                profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
-                                style: GoogleFonts.fraunces(
-                                  fontSize: 26, fontWeight: FontWeight.w700, color: AppTokens.coral,
-                                ),
-                              ),
+                      Container(
+                        width: 68, height: 68,
+                        decoration: BoxDecoration(
+                          color: AppTokens.coralSoft,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppTokens.coral, width: 2),
+                        ),
+                        child: Center(
+                          child: Text(
+                            profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
+                            style: GoogleFonts.fraunces(
+                              fontSize: 26, fontWeight: FontWeight.w700, color: AppTokens.coral,
                             ),
                           ),
-                          Positioned(
-                            bottom: 0, right: 0,
-                            child: Container(
-                              width: 22, height: 22,
-                              decoration: BoxDecoration(
-                                color: AppTokens.coral, shape: BoxShape.circle,
-                                border: Border.all(color: AppTokens.paper, width: 1.5),
-                              ),
-                              child: const Icon(Icons.camera_alt, size: 11, color: Colors.white),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(

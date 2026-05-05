@@ -40,7 +40,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: AppTokens.paper,
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: AppHeader(brand: true)),
+          SliverToBoxAdapter(
+            child: Stack(
+              children: [
+                const AppHeader(brand: true),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    tooltip: 'Basculer le thème',
+                    onPressed: () {
+                      final next = themePreference == ThemePreference.dark
+                          ? ThemePreference.light
+                          : ThemePreference.dark;
+                      ref.read(themePreferenceProvider.notifier).state = next;
+                    },
+                    icon: Icon(
+                      themePreference == ThemePreference.dark
+                          ? Icons.light_mode_rounded
+                          : Icons.dark_mode_rounded,
+                      color: Colors.amber.shade400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
           SliverToBoxAdapter(
@@ -48,100 +73,78 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
               child: Stack(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 44),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Bonjour ',
-                                style: GoogleFonts.fraunces(
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w400,
-                                  color: AppTokens.inkSoft,
-                                ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Bonjour ',
+                              style: GoogleFonts.fraunces(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w400,
+                                color: AppTokens.inkSoft,
                               ),
-                              TextSpan(
-                                text: firstName,
-                                style: GoogleFonts.fraunces(
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTokens.coral,
-                                ),
+                            ),
+                            TextSpan(
+                              text: firstName,
+                              style: GoogleFonts.fraunces(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w600,
+                                color: AppTokens.coral,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Qu\'est-ce qu\'on mange ',
-                                style: GoogleFonts.fraunces(
-                                  fontSize: 27,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTokens.ink,
-                                  height: 1.2,
-                                ),
-                              ),
-                              TextSpan(
-                                text: 'ce soir',
-                                style: GoogleFonts.fraunces(
-                                  fontSize: 27,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTokens.coral,
-                                  fontStyle: FontStyle.italic,
-                                  height: 1.2,
-                                ),
-                              ),
-                              TextSpan(
-                                text: ' ?',
-                                style: GoogleFonts.fraunces(
-                                  fontSize: 27,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTokens.ink,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          meals.isEmpty
-                              ? 'Scanne ton frigo ou ajoute des recettes en favoris pour les voir ici'
-                              : '${meals.length} recette${meals.length > 1 ? 's' : ''} dans ton app',
-                          style: GoogleFonts.inter(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w500,
-                            color: AppTokens.muted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    top: -2,
-                    right: -2,
-                    child: IconButton(
-                      tooltip: 'Basculer le thème',
-                      onPressed: () {
-                        final next = themePreference == ThemePreference.dark
-                            ? ThemePreference.light
-                            : ThemePreference.dark;
-                        ref.read(themePreferenceProvider.notifier).state = next;
-                      },
-                      icon: Icon(
-                        themePreference == ThemePreference.dark
-                            ? Icons.light_mode_rounded
-                            : Icons.dark_mode_rounded,
-                        color: Colors.amber.shade400,
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Qu\'est-ce qu\'on mange ',
+                              style: GoogleFonts.fraunces(
+                                fontSize: 27,
+                                fontWeight: FontWeight.w700,
+                                color: AppTokens.ink,
+                                height: 1.2,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'ce soir',
+                              style: GoogleFonts.fraunces(
+                                fontSize: 27,
+                                fontWeight: FontWeight.w700,
+                                color: AppTokens.coral,
+                                fontStyle: FontStyle.italic,
+                                height: 1.2,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' ?',
+                              style: GoogleFonts.fraunces(
+                                fontSize: 27,
+                                fontWeight: FontWeight.w700,
+                                color: AppTokens.ink,
+                                height: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        meals.isEmpty
+                            ? 'Scanne ton frigo ou ajoute des recettes en favoris pour les voir ici'
+                            : '${meals.length} recette${meals.length > 1 ? 's' : ''} dans ton app',
+                        style: GoogleFonts.inter(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                          color: AppTokens.muted,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

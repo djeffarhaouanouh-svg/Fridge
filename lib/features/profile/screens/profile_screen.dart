@@ -464,7 +464,12 @@ class ProfileScreen extends ConsumerWidget {
             _SettingRow(
               label: 'Paramètres',
               icon: Icons.settings,
-              onTap: () => _showSettingsSheet(context, ref, profile, notifier),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              ),
               isLast: true,
             ),
           ],
@@ -550,82 +555,85 @@ void _showUserPhotosSheet(BuildContext context, WidgetRef ref) {
   );
 }
 
-void _showSettingsSheet(
-  BuildContext rootContext,
-  WidgetRef ref,
-  UserProfile profile,
-  UserProfileNotifier notifier,
-) {
-  showModalBottomSheet(
-    context: rootContext,
-    backgroundColor: AppTokens.paper,
-    isScrollControlled: true,
-    builder: (sheetContext) {
-      return SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _SettingRow(label: 'Langue', value: 'Français', icon: Icons.language_outlined),
-              _SettingRow(
-                label: 'Mon compte',
-                value: profile.email,
-                icon: Icons.person_outline,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showEditAccountDialog(
-                    rootContext,
-                    profile.name,
-                    profile.email,
-                    notifier,
-                  );
-                },
-              ),
-              _SettingRow(
-                label: 'Ton de l’IA',
-                value: _aiToneLabel(ref.read(aiToneProvider)),
-                icon: Icons.record_voice_over_outlined,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showAiToneSheet(rootContext, ref);
-                },
-              ),
-              _SettingRow(
-                label: 'Thème',
-                value: _themeLabel(ref.read(themePreferenceProvider)),
-                icon: Icons.dark_mode_outlined,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showThemeSheet(rootContext, ref);
-                },
-              ),
-              _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
-              _SettingRow(
-                label: 'Se déconnecter',
-                icon: Icons.logout_outlined,
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await AuthService.logout();
-                  if (rootContext.mounted) {
-                    ref.read(authStateProvider.notifier).state = false;
-                  }
-                },
-              ),
-              const SizedBox(height: 6),
-              _SettingRow(
-                label: 'Supprimer le compte',
-                icon: Icons.delete_outline,
-                danger: true,
-                isLast: true,
-              ),
-            ],
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(userProfileProvider);
+    final notifier = ref.read(userProfileProvider.notifier);
+
+    return Scaffold(
+      backgroundColor: AppTokens.paper,
+      appBar: AppBar(
+        backgroundColor: AppTokens.paper,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'Paramètres',
+          style: GoogleFonts.fraunces(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppTokens.ink,
           ),
         ),
-      );
-    },
-  );
+      ),
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 16),
+          children: [
+            _SettingRow(
+              label: 'Langue',
+              value: 'Français',
+              icon: Icons.language_outlined,
+            ),
+            _SettingRow(
+              label: 'Mon compte',
+              value: profile.email,
+              icon: Icons.person_outline,
+              onTap: () => _showEditAccountDialog(
+                context,
+                profile.name,
+                profile.email,
+                notifier,
+              ),
+            ),
+            _SettingRow(
+              label: 'Ton de l’IA',
+              value: _aiToneLabel(ref.read(aiToneProvider)),
+              icon: Icons.record_voice_over_outlined,
+              onTap: () => _showAiToneSheet(context, ref),
+            ),
+            _SettingRow(
+              label: 'Thème',
+              value: _themeLabel(ref.read(themePreferenceProvider)),
+              icon: Icons.dark_mode_outlined,
+              onTap: () => _showThemeSheet(context, ref),
+            ),
+            _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
+            _SettingRow(
+              label: 'Se déconnecter',
+              icon: Icons.logout_outlined,
+              onTap: () async {
+                await AuthService.logout();
+                if (context.mounted) {
+                  ref.read(authStateProvider.notifier).state = false;
+                }
+              },
+            ),
+            const SizedBox(height: 6),
+            _SettingRow(
+              label: 'Supprimer le compte',
+              icon: Icons.delete_outline,
+              danger: true,
+              isLast: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 String _aiToneLabel(AiTone tone) => switch (tone) {

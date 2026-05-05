@@ -113,6 +113,8 @@ class ProfileScreen extends ConsumerWidget {
     final selections = ref.watch(planMealSelectionsProvider);
     final recentlyViewed = ref.watch(recentlyViewedProvider);
     final loginStreak = ref.watch(loginStreakProvider);
+    final aiTone = ref.watch(aiToneProvider);
+    final themePref = ref.watch(themePreferenceProvider);
 
     final cookedCount = selections.length;
     final streak = loginStreak;
@@ -125,6 +127,7 @@ class ProfileScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 110),
           children: [
             const AppHeader(brand: true),
+            const SizedBox(height: 12),
 
             // ── 1. Identité ─────────────────────────────────────────
             Padding(
@@ -566,6 +569,72 @@ class ProfileScreen extends ConsumerWidget {
               icon: Icons.photo_library_outlined,
               onTap: () => _showUserPhotosSheet(context, ref),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ton de l’IA :',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppTokens.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _SimpleChoiceChip(
+                        label: 'Coach',
+                        selected: aiTone == AiTone.coach,
+                        onTap: () => ref.read(aiToneProvider.notifier).state = AiTone.coach,
+                      ),
+                      _SimpleChoiceChip(
+                        label: 'Chef',
+                        selected: aiTone == AiTone.chef,
+                        onTap: () => ref.read(aiToneProvider.notifier).state = AiTone.chef,
+                      ),
+                      _SimpleChoiceChip(
+                        label: 'Ami',
+                        selected: aiTone == AiTone.ami,
+                        onTap: () => ref.read(aiToneProvider.notifier).state = AiTone.ami,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Thème :',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppTokens.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _SimpleChoiceChip(
+                        label: 'Light',
+                        selected: themePref == ThemePreference.light,
+                        onTap: () => ref.read(themePreferenceProvider.notifier).state =
+                            ThemePreference.light,
+                      ),
+                      _SimpleChoiceChip(
+                        label: 'Dark',
+                        selected: themePref == ThemePreference.dark,
+                        onTap: () => ref.read(themePreferenceProvider.notifier).state =
+                            ThemePreference.dark,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
             _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
             _SettingRow(
               label: 'Se déconnecter',
@@ -826,6 +895,43 @@ class _Divider extends StatelessWidget {
     padding: EdgeInsets.symmetric(vertical: 20),
     child: Divider(height: 1, thickness: 1, color: AppTokens.hairline),
   );
+}
+
+class _SimpleChoiceChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SimpleChoiceChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected ? AppTokens.coralSoft : AppTokens.surface,
+          borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+          border: Border.all(
+            color: selected ? AppTokens.coral : AppTokens.hairline,
+          ),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: selected ? AppTokens.coral : AppTokens.inkSoft,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _SectionTitle extends StatelessWidget {

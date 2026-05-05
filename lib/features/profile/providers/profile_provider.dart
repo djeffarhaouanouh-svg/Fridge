@@ -6,6 +6,8 @@ import '../../../core/services/user_service.dart';
 
 enum CookingObjective { weightLoss, muscleGain, family, passion }
 enum CookingLevel { beginner, intermediate, advanced, expert }
+enum AiTone { coach, chef, ami }
+enum ThemePreference { light, dark }
 
 class UserPhotoEntry {
   final String id;
@@ -281,6 +283,10 @@ final userProfileProvider =
     StateNotifierProvider<UserProfileNotifier, UserProfile>(
   (ref) => UserProfileNotifier(),
 );
+
+final aiToneProvider = StateProvider<AiTone>((ref) => AiTone.coach);
+final themePreferenceProvider =
+    StateProvider<ThemePreference>((ref) => ThemePreference.light);
 
 final userPhotosProvider = FutureProvider<List<UserPhotoEntry>>((ref) async {
   final rows = await NeonService().loadUserPhotos();

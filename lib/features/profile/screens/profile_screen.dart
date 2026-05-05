@@ -501,7 +501,7 @@ class ProfileScreen extends ConsumerWidget {
                               children: [
                                 const Icon(Icons.add, size: 16, color: AppTokens.inkSoft),
                                 const SizedBox(width: 7),
-                                Text('+ Ajouter/Supprimer',
+                                Text('Ajouter/Supprimer',
                                   style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppTokens.inkSoft),
                                 ),
                               ],

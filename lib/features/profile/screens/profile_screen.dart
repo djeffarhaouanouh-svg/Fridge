@@ -144,91 +144,35 @@ class ProfileScreen extends ConsumerWidget {
                           fontSize: 18, fontWeight: FontWeight.w700, color: AppTokens.ink,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(profile.email,
-                        style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted),
-                      ),
-                      const SizedBox(height: 10),
-                      GestureDetector(
-                        onTap: () => _showEditAccountDialog(
-                          context,
-                          profile.name,
-                          profile.email,
-                          notifier,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppTokens.coral, width: 1),
-                            borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.edit_outlined, size: 12, color: AppTokens.coral),
-                              const SizedBox(width: 5),
-                              Text('Modifier',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12.5, fontWeight: FontWeight.w600, color: AppTokens.coral,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                     ],
                   ),
 
                   const SizedBox(height: 22),
 
-                  // Objectif
-                  _Label(text: 'Objectif'),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8, runSpacing: 8,
-                    children: [
-                      _ObjectivePill(
-                        emoji: '🔥', label: 'Perte de poids',
-                        active: profile.objective == CookingObjective.weightLoss,
-                        onTap: () => notifier.setObjective(CookingObjective.weightLoss),
-                      ),
-                      _ObjectivePill(
-                        emoji: '💪', label: 'Prise de masse',
-                        active: profile.objective == CookingObjective.muscleGain,
-                        onTap: () => notifier.setObjective(CookingObjective.muscleGain),
-                      ),
-                      _ObjectivePill(
-                        emoji: '👨‍👩‍👧', label: 'Famille',
-                        active: profile.objective == CookingObjective.family,
-                        onTap: () => notifier.setObjective(CookingObjective.family),
-                      ),
-                      _ObjectivePill(
-                        emoji: '🍳', label: 'Passion cuisine',
-                        active: profile.objective == CookingObjective.passion,
-                        onTap: () => notifier.setObjective(CookingObjective.passion),
-                      ),
-                    ],
+                  _SettingRow(
+                    label: 'Objectif',
+                    value: _objectiveLabel(profile.objective),
+                    icon: Icons.flag_outlined,
+                    onTap: () => _showObjectiveSheet(context, notifier),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Niveau
-                  _Label(text: 'Niveau cuisine'),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      _LevelPill(label: 'Débutant', active: profile.cookingLevel == CookingLevel.beginner,
-                        onTap: () => notifier.setCookingLevel(CookingLevel.beginner)),
-                      const SizedBox(width: 6),
-                      _LevelPill(label: 'Inter.', active: profile.cookingLevel == CookingLevel.intermediate,
-                        onTap: () => notifier.setCookingLevel(CookingLevel.intermediate)),
-                      const SizedBox(width: 6),
-                      _LevelPill(label: 'Avancé', active: profile.cookingLevel == CookingLevel.advanced,
-                        onTap: () => notifier.setCookingLevel(CookingLevel.advanced)),
-                      const SizedBox(width: 6),
-                      _LevelPill(label: 'Expert', active: profile.cookingLevel == CookingLevel.expert,
-                        onTap: () => notifier.setCookingLevel(CookingLevel.expert)),
-                    ],
+                  _SettingRow(
+                    label: 'Niveau de cuisine',
+                    value: _cookingLevelLabel(profile.cookingLevel),
+                    icon: Icons.auto_awesome_outlined,
+                    onTap: () => _showCookingLevelSheet(context, notifier),
+                  ),
+                  _SettingRow(
+                    label: 'Allergies',
+                    value: _joinOrNone(profile.allergies),
+                    icon: Icons.warning_amber_outlined,
+                    onTap: () => _showAllergiesSheet(context, ref, notifier),
+                  ),
+                  _SettingRow(
+                    label: 'Regime',
+                    value: _joinOrNone(profile.diets),
+                    icon: Icons.restaurant_menu_outlined,
+                    isLast: true,
+                    onTap: () => _showDietsSheet(context, ref, notifier),
                   ),
                 ],
               ),
@@ -268,47 +212,6 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(width: 10),
                       _MacroCard(value: '${profile.targetFats}g', unit: '', label: 'Lipides', color: const Color(0xFFFF9800)),
                     ],
-                  ),
-                ],
-              ),
-            ),
-
-            _Divider(),
-
-            // ── 2. Préférences alimentaires ──────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionTitle(title: 'Préférences alimentaires'),
-                  const SizedBox(height: 14),
-                  _Label(text: 'Allergies'),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8, runSpacing: 8,
-                    children: ['Gluten', 'Lactose', 'Noix', 'Œufs', 'Fruits de mer', 'Soja'].map((a) =>
-                      _ToggleChip(
-                        label: a,
-                        active: profile.allergies.contains(a),
-                        onTap: () => notifier.toggleAllergy(a),
-                        activeColor: const Color(0xFFFF5252),
-                      ),
-                    ).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  _Label(text: 'Régime'),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8, runSpacing: 8,
-                    children: ['Végétarien', 'Végétalien', 'Halal', 'Keto', 'Sans gluten', 'Sans lactose'].map((d) =>
-                      _ToggleChip(
-                        label: d,
-                        active: profile.diets.contains(d),
-                        onTap: () => notifier.toggleDiet(d),
-                        activeColor: AppTokens.coral,
-                      ),
-                    ).toList(),
                   ),
                 ],
               ),
@@ -776,6 +679,185 @@ void _showThemeSheet(BuildContext context, WidgetRef ref) {
                   Navigator.pop(context);
                 },
               ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
+
+String _objectiveLabel(CookingObjective? objective) => switch (objective) {
+      CookingObjective.weightLoss => 'Perte de poids',
+      CookingObjective.muscleGain => 'Prise de masse',
+      CookingObjective.family => 'Famille',
+      CookingObjective.passion => 'Passion cuisine',
+      null => 'Non défini',
+    };
+
+String _cookingLevelLabel(CookingLevel? level) => switch (level) {
+      CookingLevel.beginner => 'Débutant',
+      CookingLevel.intermediate => 'Intermédiaire',
+      CookingLevel.advanced => 'Avancé',
+      CookingLevel.expert => 'Expert',
+      null => 'Non défini',
+    };
+
+String _joinOrNone(Set<String> values) {
+  if (values.isEmpty) return 'Aucun';
+  return values.take(2).join(', ') + (values.length > 2 ? '…' : '');
+}
+
+void _showObjectiveSheet(
+  BuildContext context,
+  UserProfileNotifier notifier,
+) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppTokens.paper,
+    builder: (_) => SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text('Perte de poids'),
+            onTap: () {
+              notifier.setObjective(CookingObjective.weightLoss);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text('Prise de masse'),
+            onTap: () {
+              notifier.setObjective(CookingObjective.muscleGain);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text('Famille'),
+            onTap: () {
+              notifier.setObjective(CookingObjective.family);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text('Passion cuisine'),
+            onTap: () {
+              notifier.setObjective(CookingObjective.passion);
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showCookingLevelSheet(
+  BuildContext context,
+  UserProfileNotifier notifier,
+) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppTokens.paper,
+    builder: (_) => SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text('Débutant'),
+            onTap: () {
+              notifier.setCookingLevel(CookingLevel.beginner);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text('Intermédiaire'),
+            onTap: () {
+              notifier.setCookingLevel(CookingLevel.intermediate);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text('Avancé'),
+            onTap: () {
+              notifier.setCookingLevel(CookingLevel.advanced);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text('Expert'),
+            onTap: () {
+              notifier.setCookingLevel(CookingLevel.expert);
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showAllergiesSheet(
+  BuildContext context,
+  WidgetRef ref,
+  UserProfileNotifier notifier,
+) {
+  const options = ['Gluten', 'Lactose', 'Noix', 'Œufs', 'Fruits de mer', 'Soja'];
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppTokens.paper,
+    isScrollControlled: true,
+    builder: (_) => SafeArea(
+      top: false,
+      child: Consumer(
+        builder: (context, ref, _) {
+          final selected = ref.watch(userProfileProvider).allergies;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final a in options)
+                CheckboxListTile(
+                  value: selected.contains(a),
+                  onChanged: (_) => notifier.toggleAllergy(a),
+                  title: Text(a),
+                  activeColor: AppTokens.coral,
+                ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
+
+void _showDietsSheet(
+  BuildContext context,
+  WidgetRef ref,
+  UserProfileNotifier notifier,
+) {
+  const options = ['Végétarien', 'Végétalien', 'Halal', 'Keto', 'Sans gluten', 'Sans lactose'];
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppTokens.paper,
+    isScrollControlled: true,
+    builder: (_) => SafeArea(
+      top: false,
+      child: Consumer(
+        builder: (context, ref, _) {
+          final selected = ref.watch(userProfileProvider).diets;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final d in options)
+                CheckboxListTile(
+                  value: selected.contains(d),
+                  onChanged: (_) => notifier.toggleDiet(d),
+                  title: Text(d),
+                  activeColor: AppTokens.coral,
+                ),
             ],
           );
         },

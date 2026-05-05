@@ -184,6 +184,34 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     }
   }
 
+  Future<String?> updateEmail(String email) async {
+    final nextEmail = email.trim().toLowerCase();
+    if (nextEmail.isEmpty) return 'Email invalide.';
+    try {
+      final exists = await _db.query(
+        '''
+        SELECT id::text
+        FROM users
+        WHERE lower(email) = lower(\$1)
+          AND id <> \$2::uuid
+        LIMIT 1
+        ''',
+        [nextEmail, NeonService.kUserId],
+      );
+      if (exists.isNotEmpty) {
+        return 'Cet email est deja utilise.';
+      }
+
+      state = state.copyWith(email: nextEmail);
+      await _db.upsertUser(state.name, nextEmail);
+      await AuthService.updateEmail(NeonService.kUserId, nextEmail);
+      return null;
+    } catch (e, st) {
+      debugPrint('UserProfile updateEmail: $e\n$st');
+      return 'Impossible de modifier l\'email.';
+    }
+  }
+
   Future<void> setNutrition({int? calories, int? protein, int? carbs, int? fats}) async {
     state = state.copyWith(
       targetCalories: calories,

@@ -112,4 +112,9 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kUserName, name);
   }
+
+  static Future<void> updateEmail(String userId, String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kUserEmail, email);
+  }
 }

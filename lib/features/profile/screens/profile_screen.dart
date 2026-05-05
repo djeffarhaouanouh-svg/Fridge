@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../core/services/neon_service.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../main.dart';
@@ -182,7 +181,12 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             GestureDetector(
-                              onTap: () => _showEditNameDialog(context, profile.name, notifier),
+                              onTap: () => _showEditAccountDialog(
+                                context,
+                                profile.name,
+                                profile.email,
+                                notifier,
+                              ),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                 decoration: BoxDecoration(
@@ -589,7 +593,17 @@ class ProfileScreen extends ConsumerWidget {
 
             // ── 8. Paramètres ────────────────────────────────────────
             _SettingRow(label: 'Langue', value: 'Français', icon: Icons.language_outlined),
-            _SettingRow(label: 'Mon compte', value: profile.email, icon: Icons.person_outline),
+            _SettingRow(
+              label: 'Mon compte',
+              value: profile.email,
+              icon: Icons.person_outline,
+              onTap: () => _showEditAccountDialog(
+                context,
+                profile.name,
+                profile.email,
+                notifier,
+              ),
+            ),
             _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
             _SettingRow(
               label: 'Se déconnecter',
@@ -614,40 +628,76 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-void _showEditNameDialog(
-    BuildContext context, String current, UserProfileNotifier notifier) {
-  final ctrl = TextEditingController(text: current);
+void _showEditAccountDialog(
+  BuildContext context,
+  String currentName,
+  String currentEmail,
+  UserProfileNotifier notifier,
+) {
+  final nameCtrl = TextEditingController(text: currentName);
+  final emailCtrl = TextEditingController(text: currentEmail);
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: AppTokens.paper,
-      title: Text('Modifier le prénom',
+      title: Text('Modifier le compte',
           style: GoogleFonts.fraunces(
               fontWeight: FontWeight.w600, color: AppTokens.ink)),
-      content: TextField(
-        controller: ctrl,
-        autofocus: true,
-        style: GoogleFonts.inter(fontSize: 14.5, color: AppTokens.ink),
-        decoration: InputDecoration(
-          hintText: 'Ton prénom',
-          hintStyle: GoogleFonts.inter(color: AppTokens.muted),
-          filled: true,
-          fillColor: AppTokens.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-            borderSide: const BorderSide(color: AppTokens.hairline),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: nameCtrl,
+            autofocus: true,
+            style: GoogleFonts.inter(fontSize: 14.5, color: AppTokens.ink),
+            decoration: InputDecoration(
+              hintText: 'Ton prenom',
+              hintStyle: GoogleFonts.inter(color: AppTokens.muted),
+              filled: true,
+              fillColor: AppTokens.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                borderSide: const BorderSide(color: AppTokens.hairline),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                borderSide: const BorderSide(color: AppTokens.hairline),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                borderSide: const BorderSide(color: AppTokens.coral, width: 1.5),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-            borderSide: const BorderSide(color: AppTokens.hairline),
+          const SizedBox(height: 10),
+          TextField(
+            controller: emailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            style: GoogleFonts.inter(fontSize: 14.5, color: AppTokens.ink),
+            decoration: InputDecoration(
+              hintText: 'Ton email',
+              hintStyle: GoogleFonts.inter(color: AppTokens.muted),
+              filled: true,
+              fillColor: AppTokens.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                borderSide: const BorderSide(color: AppTokens.hairline),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                borderSide: const BorderSide(color: AppTokens.hairline),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                borderSide: const BorderSide(color: AppTokens.coral, width: 1.5),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-            borderSide: const BorderSide(color: AppTokens.coral, width: 1.5),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        ),
+        ],
       ),
       actions: [
         TextButton(
@@ -657,10 +707,18 @@ void _showEditNameDialog(
         ),
         TextButton(
           onPressed: () async {
-            final name = ctrl.text.trim();
+            final name = nameCtrl.text.trim();
+            final email = emailCtrl.text.trim();
             if (name.isNotEmpty) {
-              notifier.updateName(name);
-              await AuthService.updateName(NeonService.kUserId, name);
+              await notifier.updateName(name);
+            }
+            if (email.isNotEmpty && email != currentEmail) {
+              final err = await notifier.updateEmail(email);
+              if (err != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(err)),
+                );
+              }
             }
             if (ctx.mounted) Navigator.pop(ctx);
           },

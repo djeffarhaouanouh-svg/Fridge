@@ -740,6 +740,27 @@ CREATE TABLE IF NOT EXISTS meal_plans (
   }
 
   Future<void> savePlanSelections(Map<String, Meal> selections) async {
+    await _ensureUserRowExists();
+    await execute('DELETE FROM meal_plans WHERE user_id = \$1::uuid', [kUserId]);
+    for (final entry in selections.entries) {
+      final sep = entry.key.indexOf('_');
+      if (sep <= 0 || sep >= entry.key.length - 1) continue;
+      final date = entry.key.substring(0, sep);
+      final mealType = entry.key.substring(sep + 1);
+      final meal = entry.value;
+      await upsertRecipe(meal);
+      await execute(
+        '''
+        INSERT INTO meal_plans (user_id, date, meal_type, recipe_id)
+        VALUES (\$1::uuid, \$2::date, \$3, \$4::uuid)
+        ON CONFLICT (user_id, date, meal_type) DO UPDATE SET
+          recipe_id = EXCLUDED.recipe_id
+        ''',
+        [kUserId, date, mealType, normalizeRecipeId(meal.id)],
+      );
+    }
+
+    // Compat ancien stockage JSON.
     final payload = jsonEncode(
       selections.map((k, v) => MapEntry(k, v.toJson())),
     );
@@ -750,6 +771,31 @@ CREATE TABLE IF NOT EXISTS meal_plans (
   }
 
   Future<Map<String, Meal>?> loadPlanSelections() async {
+    final planRows = await query(
+      '''
+      SELECT date::text AS date, meal_type, recipe_id::text AS recipe_id
+      FROM meal_plans
+      WHERE user_id = \$1::uuid
+      ORDER BY date, meal_type
+      ''',
+      [kUserId],
+    );
+    if (planRows.isNotEmpty) {
+      final favSet = (await getFavoriteIds()).toSet();
+      final out = <String, Meal>{};
+      for (final row in planRows) {
+        final date = row['date'] as String?;
+        final mealType = row['meal_type'] as String?;
+        final recipeId = row['recipe_id'] as String?;
+        if (date == null || mealType == null || recipeId == null) continue;
+        final meal = await _loadRecipeMeal(recipeId, favSet.contains(recipeId));
+        if (meal == null) continue;
+        out['${date}_$mealType'] = meal;
+      }
+      return out;
+    }
+
+    // Fallback JSON ancien format.
     final rows = await query(
       'SELECT plan_selections_json FROM users WHERE id = \$1',
       [kUserId],

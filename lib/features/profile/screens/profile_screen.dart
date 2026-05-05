@@ -569,71 +569,17 @@ class ProfileScreen extends ConsumerWidget {
               icon: Icons.photo_library_outlined,
               onTap: () => _showUserPhotosSheet(context, ref),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Ton de l’IA :',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppTokens.muted,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _SimpleChoiceChip(
-                        label: 'Coach',
-                        selected: aiTone == AiTone.coach,
-                        onTap: () => ref.read(aiToneProvider.notifier).state = AiTone.coach,
-                      ),
-                      _SimpleChoiceChip(
-                        label: 'Chef',
-                        selected: aiTone == AiTone.chef,
-                        onTap: () => ref.read(aiToneProvider.notifier).state = AiTone.chef,
-                      ),
-                      _SimpleChoiceChip(
-                        label: 'Ami',
-                        selected: aiTone == AiTone.ami,
-                        onTap: () => ref.read(aiToneProvider.notifier).state = AiTone.ami,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Thème :',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppTokens.muted,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _SimpleChoiceChip(
-                        label: 'Light',
-                        selected: themePref == ThemePreference.light,
-                        onTap: () => ref.read(themePreferenceProvider.notifier).state =
-                            ThemePreference.light,
-                      ),
-                      _SimpleChoiceChip(
-                        label: 'Dark',
-                        selected: themePref == ThemePreference.dark,
-                        onTap: () => ref.read(themePreferenceProvider.notifier).state =
-                            ThemePreference.dark,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            _SettingRow(
+              label: 'Ton de l’IA',
+              value: _aiToneLabel(aiTone),
+              icon: Icons.record_voice_over_outlined,
+              onTap: () => _showAiToneSheet(context, ref),
+            ),
+            _SettingRow(
+              label: 'Thème',
+              value: _themeLabel(themePref),
+              icon: Icons.dark_mode_outlined,
+              onTap: () => _showThemeSheet(context, ref),
             ),
             _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
             _SettingRow(
@@ -732,6 +678,109 @@ void _showUserPhotosSheet(BuildContext context, WidgetRef ref) {
         ),
       );
     },
+  );
+}
+
+String _aiToneLabel(AiTone tone) => switch (tone) {
+      AiTone.coach => 'Coach',
+      AiTone.chef => 'Chef',
+      AiTone.ami => 'Ami',
+    };
+
+String _themeLabel(ThemePreference p) => switch (p) {
+      ThemePreference.light => 'Light',
+      ThemePreference.dark => 'Dark',
+    };
+
+void _showAiToneSheet(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppTokens.paper,
+    builder: (_) => SafeArea(
+      top: false,
+      child: Consumer(
+        builder: (context, ref, _) {
+          final current = ref.watch(aiToneProvider);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Coach'),
+                trailing: current == AiTone.coach
+                    ? const Icon(Icons.check, color: AppTokens.coral)
+                    : null,
+                onTap: () {
+                  ref.read(aiToneProvider.notifier).state = AiTone.coach;
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Chef'),
+                trailing: current == AiTone.chef
+                    ? const Icon(Icons.check, color: AppTokens.coral)
+                    : null,
+                onTap: () {
+                  ref.read(aiToneProvider.notifier).state = AiTone.chef;
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Ami'),
+                trailing: current == AiTone.ami
+                    ? const Icon(Icons.check, color: AppTokens.coral)
+                    : null,
+                onTap: () {
+                  ref.read(aiToneProvider.notifier).state = AiTone.ami;
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
+
+void _showThemeSheet(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppTokens.paper,
+    builder: (_) => SafeArea(
+      top: false,
+      child: Consumer(
+        builder: (context, ref, _) {
+          final current = ref.watch(themePreferenceProvider);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Light'),
+                trailing: current == ThemePreference.light
+                    ? const Icon(Icons.check, color: AppTokens.coral)
+                    : null,
+                onTap: () {
+                  ref.read(themePreferenceProvider.notifier).state =
+                      ThemePreference.light;
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('Dark'),
+                trailing: current == ThemePreference.dark
+                    ? const Icon(Icons.check, color: AppTokens.coral)
+                    : null,
+                onTap: () {
+                  ref.read(themePreferenceProvider.notifier).state =
+                      ThemePreference.dark;
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    ),
   );
 }
 
@@ -895,43 +944,6 @@ class _Divider extends StatelessWidget {
     padding: EdgeInsets.symmetric(vertical: 20),
     child: Divider(height: 1, thickness: 1, color: AppTokens.hairline),
   );
-}
-
-class _SimpleChoiceChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _SimpleChoiceChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected ? AppTokens.coralSoft : AppTokens.surface,
-          borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-          border: Border.all(
-            color: selected ? AppTokens.coral : AppTokens.hairline,
-          ),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: selected ? AppTokens.coral : AppTokens.inkSoft,
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _SectionTitle extends StatelessWidget {

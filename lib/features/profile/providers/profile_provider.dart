@@ -284,7 +284,7 @@ final userProfileProvider =
   (ref) => UserProfileNotifier(),
 );
 
-final aiToneProvider = StateProvider<AiTone>((ref) => AiTone.coach);
+final aiToneProvider = StateProvider<AiTone>((ref) => AiTone.chef);
 final themePreferenceProvider =
     StateProvider<ThemePreference>((ref) => ThemePreference.light);
 

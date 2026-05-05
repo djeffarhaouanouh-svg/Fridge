@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -92,7 +93,7 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             GestureDetector(
-                              onTap: () {},
+                              onTap: () => _showEditNameDialog(context, profile.name, notifier),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                 decoration: BoxDecoration(
@@ -496,6 +497,11 @@ class ProfileScreen extends ConsumerWidget {
             _SettingRow(label: 'Mon compte', value: profile.email, icon: Icons.person_outline),
             _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
             _SettingRow(
+              label: 'Se déconnecter',
+              icon: Icons.logout_outlined,
+              onTap: () async => FirebaseAuth.instance.signOut(),
+            ),
+            _SettingRow(
               label: 'Supprimer le compte',
               icon: Icons.delete_outline,
               danger: true,
@@ -506,6 +512,66 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+void _showEditNameDialog(
+    BuildContext context, String current, UserProfileNotifier notifier) {
+  final ctrl = TextEditingController(text: current);
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppTokens.paper,
+      title: Text('Modifier le prénom',
+          style: GoogleFonts.fraunces(
+              fontWeight: FontWeight.w600, color: AppTokens.ink)),
+      content: TextField(
+        controller: ctrl,
+        autofocus: true,
+        style: GoogleFonts.inter(fontSize: 14.5, color: AppTokens.ink),
+        decoration: InputDecoration(
+          hintText: 'Ton prénom',
+          hintStyle: GoogleFonts.inter(color: AppTokens.muted),
+          filled: true,
+          fillColor: AppTokens.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            borderSide: const BorderSide(color: AppTokens.hairline),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            borderSide: const BorderSide(color: AppTokens.hairline),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            borderSide: const BorderSide(color: AppTokens.coral, width: 1.5),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text('Annuler',
+              style: GoogleFonts.inter(color: AppTokens.muted)),
+        ),
+        TextButton(
+          onPressed: () async {
+            final name = ctrl.text.trim();
+            if (name.isNotEmpty) {
+              await FirebaseAuth.instance.currentUser
+                  ?.updateDisplayName(name);
+              notifier.updateName(name);
+            }
+            if (ctx.mounted) Navigator.pop(ctx);
+          },
+          child: Text('Sauvegarder',
+              style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600, color: AppTokens.coral)),
+        ),
+      ],
+    ),
+  );
 }
 
 // ─── Widgets helpers ────────────────────────────────────────────────────────
@@ -714,11 +780,14 @@ class _SettingRow extends StatelessWidget {
   final IconData? icon;
   final bool isLast;
   final bool danger;
-  const _SettingRow({required this.label, this.value, this.icon, this.isLast = false, this.danger = false});
+  final VoidCallback? onTap;
+  const _SettingRow({required this.label, this.value, this.icon, this.isLast = false, this.danger = false, this.onTap});
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Padding(
+      GestureDetector(
+        onTap: onTap,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         child: Row(
           children: [
@@ -737,6 +806,7 @@ class _SettingRow extends StatelessWidget {
               const Icon(Icons.chevron_right, size: 18, color: AppTokens.muted),
           ],
         ),
+      ),
       ),
       if (!isLast)
         const Divider(height: 1, thickness: 1, color: AppTokens.hairline, indent: 18, endIndent: 18),

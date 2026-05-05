@@ -149,6 +149,11 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
         .catchError((_) {});
   }
 
+  void updateName(String name) {
+    state = state.copyWith(name: name);
+    _db.upsertUser(name, state.email).catchError((_) {});
+  }
+
   void setNutrition({int? calories, int? protein, int? carbs, int? fats}) {
     state = state.copyWith(
       targetCalories: calories,

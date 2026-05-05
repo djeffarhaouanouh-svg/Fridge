@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/theme/app_tokens.dart';
+import 'features/auth/screens/auth_screen.dart';
 import 'features/meals/models/meal.dart';
 import 'features/navigation/widgets/bottom_nav.dart';
 import 'features/camera/screens/camera_screen.dart';
@@ -68,7 +70,29 @@ class FridgeApp extends StatelessWidget {
         ),
         textTheme: GoogleFonts.interTextTheme(),
       ),
-      home: const MainScreen(),
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: AppTokens.paper,
+            body: Center(
+              child: CircularProgressIndicator(color: AppTokens.coral),
+            ),
+          );
+        }
+        return snapshot.hasData ? const MainScreen() : const AuthScreen();
+      },
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
 class UserInfo {
   final String name;
   final String email;
@@ -9,12 +11,14 @@ class UserService {
   factory UserService() => _instance;
   UserService._();
 
-  // Remplacer par un vrai appel API quand le backend est prêt
   Future<UserInfo> fetchUser() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return const UserInfo(
-      name: 'Louis Dubois',
-      email: 'louis@fridge.ai',
-    );
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return UserInfo(
+        name: user.displayName ?? user.email?.split('@').first ?? 'Utilisateur',
+        email: user.email ?? '',
+      );
+    }
+    return const UserInfo(name: 'Invité', email: '');
   }
 }

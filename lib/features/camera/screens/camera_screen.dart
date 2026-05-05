@@ -414,7 +414,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                     clipBehavior: Clip.none,
                     children: [
                       SizedBox(
-                        width: 82,
+                        width: 172,
                         height: 70,
                         child: Stack(
                           clipBehavior: Clip.none,
@@ -495,7 +495,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                             ),
                             if (hasPhotos && !isScanning)
                               Positioned(
-                                right: -92,
+                                left: 72,
                                 bottom: 10,
                                 child: GestureDetector(
                                   onTap: _analyzePhotos,

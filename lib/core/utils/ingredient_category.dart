@@ -215,12 +215,12 @@ const List<(String, String)> _rules = [
   ('surgele', '❄️'),
 ];
 
-Widget buildIngredientIcon(String ingredientName) {
+Widget buildIngredientIcon(String ingredientName, {double emojiSize = 22}) {
   final n = ingredientName.toLowerCase();
   for (final (keyword, emoji) in _rules) {
     if (n.contains(keyword)) {
-      return Text(emoji, style: const TextStyle(fontSize: 22));
+      return Text(emoji, style: TextStyle(fontSize: emojiSize));
     }
   }
-  return const Text('🫙', style: TextStyle(fontSize: 22));
+  return Text('🫙', style: TextStyle(fontSize: emojiSize));
 }

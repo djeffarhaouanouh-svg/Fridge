@@ -233,7 +233,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       final profile = ref.read(userProfileProvider);
       final meals = await claude.findRecipes(ingredients, profile: profile);
       if (meals.isNotEmpty) {
-        ref.read(mealsProvider.notifier).setMeals(meals);
+        ref.read(mealsProvider.notifier).mergeScanResults(meals);
       }
 
       ref.read(scanStatusProvider.notifier).state = ScanStatus.done;

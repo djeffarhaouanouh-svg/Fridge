@@ -235,6 +235,120 @@ class NeonService {
     }
   }
 
+  String _difficultyToFr(String? d) {
+    final v = d ?? 'facile';
+    return switch (v) {
+      'intermediaire' => 'intermédiaire',
+      _ => v,
+    };
+  }
+
+  /// Recettes liées à l’utilisateur (favoris, planning, historique « cuisiné »).
+  Future<List<Meal>> loadUserRecipesCatalog() async {
+    final idRows = await query(
+      r'''
+      SELECT DISTINCT recipe_id::text AS id FROM (
+        SELECT recipe_id FROM favorites WHERE user_id = $1::uuid
+        UNION
+        SELECT recipe_id FROM meal_plans
+        WHERE user_id = $1::uuid AND recipe_id IS NOT NULL
+        UNION
+        SELECT recipe_id FROM cooked_recipes WHERE user_id = $1::uuid
+      ) s
+      ''',
+      [kUserId],
+    );
+    final ids = idRows
+        .map((r) => r['id'] as String)
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (ids.isEmpty) return [];
+
+    final favSet = (await getFavoriteIds()).toSet();
+    final meals = <Meal>[];
+    for (final id in ids) {
+      final m = await _loadRecipeMeal(id, favSet.contains(id));
+      if (m != null) meals.add(m);
+    }
+    meals.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    return meals;
+  }
+
+  Future<Meal?> _loadRecipeMeal(String id, bool isFavorite) async {
+    final rRows = await query(
+      r'''
+      SELECT id::text, title, image_url, duration, calories, difficulty, type, type_label,
+             emoji, color, locked
+      FROM recipes WHERE id = $1::uuid
+      ''',
+      [id],
+    );
+    if (rRows.isEmpty) return null;
+    final r = rRows.first;
+
+    final stepRows = await query(
+      r'''
+      SELECT instruction FROM recipe_steps
+      WHERE recipe_id = $1::uuid ORDER BY step_order
+      ''',
+      [id],
+    );
+    final steps = stepRows
+        .map((x) => x['instruction'] as String)
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    final ingRows = await query(
+      r'''
+      SELECT i.name, ri.quantity, ri.unit
+      FROM recipe_ingredients ri
+      JOIN ingredients i ON i.id = ri.ingredient_id
+      WHERE ri.recipe_id = $1::uuid
+      ''',
+      [id],
+    );
+    final ingredients = ingRows.map((row) {
+      final name = row['name'] as String? ?? '';
+      final q = row['quantity'];
+      final u = row['unit'] as String? ?? '';
+      String qtyStr;
+      if (q == null) {
+        qtyStr = u;
+      } else {
+        final qs = q is num ? _trimDecimal(q.toDouble()) : q.toString();
+        qtyStr = u.isEmpty ? qs : '$qs $u';
+      }
+      return Ingredient(name: name, qty: qtyStr.trim(), photo: '');
+    }).toList();
+
+    final duration = (r['duration'] as num?)?.toInt() ?? 0;
+
+    return Meal(
+      id: r['id'] as String,
+      title: r['title'] as String? ?? '',
+      photo: r['image_url'] as String? ?? '',
+      kcal: (r['calories'] as num?)?.toInt() ?? 0,
+      protein: 'moyen',
+      difficulty: _difficultyToFr(r['difficulty'] as String?),
+      time: duration > 0 ? '$duration min' : '—',
+      locked: r['locked'] as bool? ?? false,
+      type: r['type'] as String? ?? 'simple',
+      typeLabel: r['type_label'] as String? ?? '',
+      emoji: r['emoji'] as String? ?? '🍽️',
+      color: r['color'] as String? ?? '#82D28C',
+      ingredients: ingredients,
+      steps: steps.isEmpty
+          ? const ['Aucune étape détaillée en base pour cette recette.']
+          : steps,
+      isFavorite: isFavorite,
+    );
+  }
+
+  String _trimDecimal(double x) {
+    if (x == x.roundToDouble()) return x.round().toString();
+    return x.toString();
+  }
+
   // ── FAVORITES ──────────────────────────────────────────────────────────────
 
   Future<void> saveFavorite(Meal meal) async {

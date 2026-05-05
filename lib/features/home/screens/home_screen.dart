@@ -105,7 +105,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${meals.length} idées à partir de ton frigo',
+                    meals.isEmpty
+                        ? 'Scanne ton frigo ou ajoute des recettes en favoris pour les voir ici'
+                        : '${meals.length} recette${meals.length > 1 ? 's' : ''} dans ton app',
                     style: GoogleFonts.inter(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w500,
@@ -180,15 +182,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           SliverToBoxAdapter(
-            child: SizedBox(
-              height: 215,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                itemCount: meals.length,
-                itemBuilder: (context, i) => _CompactCard(meal: meals[i]),
-              ),
-            ),
+            child: meals.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                    child: Text(
+                      'Aucune recette enregistrée pour l’instant.',
+                      style: GoogleFonts.inter(
+                        fontSize: 13.5,
+                        color: AppTokens.muted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  )
+                : SizedBox(
+                    height: 215,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                      itemCount: meals.length,
+                      itemBuilder: (context, i) =>
+                          _CompactCard(meal: meals[i]),
+                    ),
+                  ),
           ),
 
           SliverToBoxAdapter(
@@ -270,7 +285,9 @@ class _HeroCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    meal.title,
+                    meal.emoji.isNotEmpty
+                        ? '${meal.emoji} ${meal.title}'
+                        : meal.title,
                     style: GoogleFonts.fraunces(
                       fontSize: 19,
                       fontWeight: FontWeight.w600,
@@ -382,7 +399,9 @@ class _CompactCard extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              meal.title,
+              meal.emoji.isNotEmpty
+                  ? '${meal.emoji} ${meal.title}'
+                  : meal.title,
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,

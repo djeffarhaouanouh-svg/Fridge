@@ -6,6 +6,7 @@ import '../../../core/services/neon_service.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../main.dart';
+import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
@@ -383,7 +384,13 @@ class ProfileScreen extends ConsumerWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.eco_outlined, size: 13, color: AppTokens.coral),
+                              SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: Center(
+                                  child: buildIngredientIcon(ing, emojiSize: 15),
+                                ),
+                              ),
                               const SizedBox(width: 5),
                               Text(ing,
                                 style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w500, color: AppTokens.ink),

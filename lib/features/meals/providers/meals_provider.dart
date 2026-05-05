@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/meal.dart';
-import '../data/mock_data.dart';
 import '../../../core/services/neon_service.dart';
 import '../../plan/models/day_plan.dart';
 
@@ -26,40 +25,39 @@ final mealsProvider = StateNotifierProvider<MealsNotifier, List<Meal>>((ref) {
 class MealsNotifier extends StateNotifier<List<Meal>> {
   final _db = NeonService();
 
-  MealsNotifier() : super(MockData.meals);
+  MealsNotifier() : super([]);
 
-  /// À appeler après connexion : réaffiche les cœurs depuis la table `favorites`.
-  Future<void> hydrateFavorites() async {
+  /// Recettes persistées (Neon) + entrées locales pas encore en base (ex. dernier scan).
+  Future<void> loadFromDatabase() async {
     try {
-      final ids = await _db.getFavoriteIds();
-      if (ids.isEmpty) return;
-      final set = ids.toSet();
-      state = [
-        for (final m in state)
-          m.copyWith(isFavorite: set.contains(m.id)),
-      ];
+      final dbMeals = await _db.loadUserRecipesCatalog();
+      final dbIds = dbMeals.map((m) => m.id).toSet();
+      final ephemeral = state.where((m) => !dbIds.contains(m.id)).toList();
+      state = [...dbMeals, ...ephemeral];
     } catch (_) {}
   }
 
-  void setMeals(List<Meal> meals) {
-    state = meals;
+  /// Fusionne les recettes proposées après scan sans effacer le catalogue chargé depuis la DB.
+  void mergeScanResults(List<Meal> incoming) {
+    final map = {for (final m in state) m.id: m};
+    for (final m in incoming) {
+      map[m.id] = m;
+    }
+    state = map.values.toList();
   }
 
-  void toggleFavorite(String mealId) {
-    state = [
-      for (final meal in state)
-        if (meal.id == mealId)
-          meal.copyWith(isFavorite: !meal.isFavorite)
-        else
-          meal,
-    ];
-    final meal = state.where((m) => m.id == mealId).firstOrNull;
-    if (meal == null) return;
-    if (meal.isFavorite) {
-      _db.saveFavorite(meal).catchError((_) {});
-    } else {
-      _db.removeFavorite(mealId).catchError((_) {});
-    }
+  Future<void> toggleFavorite(String mealId) async {
+    final current = state.where((m) => m.id == mealId).firstOrNull;
+    if (current == null) return;
+    final becomingFavorite = !current.isFavorite;
+    try {
+      if (becomingFavorite) {
+        await _db.saveFavorite(current.copyWith(isFavorite: true));
+      } else {
+        await _db.removeFavorite(mealId);
+      }
+      await loadFromDatabase();
+    } catch (_) {}
   }
 
   List<Meal> getFavorites() {

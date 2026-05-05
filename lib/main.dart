@@ -153,7 +153,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         ref.read(planMealSelectionsProvider.notifier).state = plan;
       }
 
-      await ref.read(mealsProvider.notifier).hydrateFavorites();
+      await ref.read(mealsProvider.notifier).loadFromDatabase();
     } catch (e, st) {
       debugPrint('Sync Neon au démarrage: $e\n$st');
     } finally {

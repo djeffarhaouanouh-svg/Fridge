@@ -405,182 +405,184 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             // viewPadding.bottom + 8 (margin nav) + 56 (nav height) + 44 (spacing)
             Positioned(
               bottom: MediaQuery.of(context).viewPadding.bottom + 108, left: 32, right: 32,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
+              child: Stack(
+                clipBehavior: Clip.none,
                 children: [
                   // Miniature / envoyer
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      SizedBox(
-                        width: 172,
-                        height: 70,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Positioned(
-                              left: 0,
-                              bottom: 0,
-                              child: Container(
-                                key: _thumbnailKey,
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: hasPhotos ? AppTokens.coral : Colors.white24,
-                                    width: hasPhotos ? 2 : 1,
-                                  ),
-                                  color: Colors.white10,
-                                ),
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    if (!hasPhotos)
-                                      const Center(
-                                        child: Icon(
-                                          Icons.grid_view_rounded,
-                                          color: Colors.white38,
-                                          size: 22,
-                                        ),
-                                      )
-                                    else if (_photos.length == 1)
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: Image.memory(
-                                          _photos.last,
-                                          width: 56,
-                                          height: 56,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                    else ...[
-                                      Positioned(
-                                        left: -8,
-                                        top: 7,
-                                        child: Transform.rotate(
-                                          angle: -0.26,
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(10),
-                                            child: Image.memory(
-                                              _photos[_photos.length - 2],
-                                              width: 42,
-                                              height: 42,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: 12,
-                                        top: -4,
-                                        child: Transform.rotate(
-                                          angle: 0.22,
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(10),
-                                            child: Image.memory(
-                                              _photos.last,
-                                              width: 46,
-                                              height: 46,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                            if (hasPhotos && !isScanning)
+                  Positioned(
+                    left: 0,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        SizedBox(
+                          width: 172,
+                          height: 70,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
                               Positioned(
-                                left: 72,
-                                bottom: 10,
-                                child: GestureDetector(
-                                  onTap: _analyzePhotos,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
+                                left: 0,
+                                bottom: 0,
+                                child: Container(
+                                  key: _thumbnailKey,
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: hasPhotos ? AppTokens.coral : Colors.white24,
+                                      width: hasPhotos ? 2 : 1,
+                                    ),
+                                    color: Colors.white10,
+                                  ),
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
                                     children: [
-                                      Container(
-                                        height: 34,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                                        decoration: BoxDecoration(
-                                          color: AppTokens.coral,
+                                      if (!hasPhotos)
+                                        const Center(
+                                          child: Icon(
+                                            Icons.grid_view_rounded,
+                                            color: Colors.white38,
+                                            size: 22,
+                                          ),
+                                        )
+                                      else if (_photos.length == 1)
+                                        ClipRRect(
                                           borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(color: Colors.white, width: 1.4),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Colors.black26,
-                                              blurRadius: 6,
-                                              offset: Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            'envoyer',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.white,
+                                          child: Image.memory(
+                                            _photos.last,
+                                            width: 56,
+                                            height: 56,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        )
+                                      else ...[
+                                        Positioned(
+                                          left: -8,
+                                          top: 7,
+                                          child: Transform.rotate(
+                                            angle: -0.26,
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: Image.memory(
+                                                _photos[_photos.length - 2],
+                                                width: 42,
+                                                height: 42,
+                                                fit: BoxFit.cover,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      Transform.translate(
-                                        offset: const Offset(-1, 0),
-                                        child: const Icon(
-                                          Icons.arrow_forward_ios_rounded,
-                                          size: 13,
-                                          color: Colors.white,
+                                        Positioned(
+                                          left: 12,
+                                          top: -4,
+                                          child: Transform.rotate(
+                                            angle: 0.22,
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: Image.memory(
+                                                _photos.last,
+                                                width: 46,
+                                                height: 46,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ],
                                   ),
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-
-                      // Bulle X — supprimer la dernière photo
-                      if (hasPhotos && !isScanning)
-                        Positioned(
-                          top: -7, left: -7,
-                          child: GestureDetector(
-                            onTap: _removeLastPhoto,
-                            child: Container(
-                              width: 22, height: 22,
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade600,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 1.5),
-                              ),
-                              child: const Icon(Icons.close, size: 13, color: Colors.white),
-                            ),
+                              if (hasPhotos && !isScanning)
+                                Positioned(
+                                  left: 72,
+                                  bottom: 10,
+                                  child: GestureDetector(
+                                    onTap: _analyzePhotos,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          height: 34,
+                                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                                          decoration: BoxDecoration(
+                                            color: AppTokens.coral,
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(color: Colors.white, width: 1.4),
+                                            boxShadow: const [
+                                              BoxShadow(
+                                                color: Colors.black26,
+                                                blurRadius: 6,
+                                                offset: Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              'envoyer',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Transform.translate(
+                                          offset: const Offset(-1, 0),
+                                          child: const Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            size: 13,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                    ],
-                  ),
 
-                  // Bouton capture
-                  GestureDetector(
-                    onTap: (isScanning || _isAnimating) ? null : _showSourcePicker,
-                    child: Container(
-                      width: 80, height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.transparent,
-                        border: Border.all(color: Colors.white, width: 4),
-                      ),
-                      child: isScanning
-                          ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                          : null,
+                        // Bulle X — supprimer la dernière photo
+                        if (hasPhotos && !isScanning)
+                          Positioned(
+                            top: -7, left: -7,
+                            child: GestureDetector(
+                              onTap: _removeLastPhoto,
+                              child: Container(
+                                width: 22, height: 22,
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade600,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                                child: const Icon(Icons.close, size: 13, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
 
-                  const SizedBox(width: 56),
+                  // Bouton capture
+                  Center(
+                    child: GestureDetector(
+                      onTap: (isScanning || _isAnimating) ? null : _showSourcePicker,
+                      child: Container(
+                        width: 80, height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.transparent,
+                          border: Border.all(color: Colors.white, width: 4),
+                        ),
+                        child: isScanning
+                            ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                            : null,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

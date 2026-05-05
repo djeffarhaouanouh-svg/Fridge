@@ -247,7 +247,7 @@ class ProfileScreen extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
-                        color: AppTokens.surface,
+                        color: isDark ? const Color(0xFFFDFBF8) : AppTokens.surface,
                         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                       ),
                       child: Column(
@@ -267,9 +267,11 @@ class ProfileScreen extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppTokens.surface,
+                            color: isDark ? const Color(0xFFFFFCF8) : AppTokens.surface,
                             borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                            border: Border.all(color: AppTokens.hairline),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFFEDE5DA) : AppTokens.hairline,
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -322,9 +324,11 @@ class ProfileScreen extends ConsumerWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             decoration: BoxDecoration(
-                              color: AppTokens.surface,
+                              color: isDark ? const Color(0xFFFFFCF8) : AppTokens.surface,
                               borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                              border: Border.all(color: AppTokens.hairline),
+                              border: Border.all(
+                                color: isDark ? const Color(0xFFEDE5DA) : AppTokens.hairline,
+                              ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,

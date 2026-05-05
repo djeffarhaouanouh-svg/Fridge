@@ -511,12 +511,6 @@ class ProfileScreen extends ConsumerWidget {
                   _SectionTitle(title: 'Notifications'),
                   const SizedBox(height: 4),
                   _SwitchRow(
-                    label: 'Produits qui expirent',
-                    subtitle: 'Rappel avant péremption',
-                    value: profile.notifExpiry,
-                    onChanged: (v) => notifier.setNotif(expiry: v),
-                  ),
-                  _SwitchRow(
                     label: 'Recette du jour',
                     subtitle: 'Suggestion personnalisée',
                     value: profile.notifSuggestion,

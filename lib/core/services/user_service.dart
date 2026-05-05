@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'auth_service.dart';
 
 class UserInfo {
   final String name;
@@ -12,11 +12,11 @@ class UserService {
   UserService._();
 
   Future<UserInfo> fetchUser() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+    final session = await AuthService.getSession();
+    if (session != null) {
       return UserInfo(
-        name: user.displayName ?? user.email?.split('@').first ?? 'Utilisateur',
-        email: user.email ?? '',
+        name: session['name'] ?? 'Utilisateur',
+        email: session['email'] ?? '',
       );
     }
     return const UserInfo(name: 'Invité', email: '');

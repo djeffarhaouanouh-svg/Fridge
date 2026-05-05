@@ -1,15 +1,17 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../main.dart';
 
-class AuthScreen extends StatefulWidget {
+class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _isLogin = true;
   bool _loading = false;
   String? _error;
@@ -34,33 +36,18 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
     setState(() { _loading = true; _error = null; });
-    try {
-      if (_isLogin) {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email, password: password,
-        );
-      } else {
-        final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email, password: password,
-        );
-        final name = _nameCtrl.text.trim();
-        if (name.isNotEmpty) await cred.user?.updateDisplayName(name);
-      }
-    } on FirebaseAuthException catch (e) {
-      setState(() => _error = _authError(e.code));
-    } finally {
-      if (mounted) setState(() => _loading = false);
+
+    final result = _isLogin
+        ? await AuthService.login(email, password)
+        : await AuthService.register(_nameCtrl.text.trim(), email, password);
+
+    if (!mounted) return;
+    if (result.success) {
+      ref.read(authStateProvider.notifier).state = true;
+    } else {
+      setState(() { _error = result.error; _loading = false; });
     }
   }
-
-  String _authError(String code) => switch (code) {
-    'user-not-found' || 'wrong-password' || 'invalid-credential' =>
-      'Email ou mot de passe incorrect.',
-    'email-already-in-use' => 'Cet email est déjà utilisé.',
-    'weak-password'        => 'Mot de passe trop court (6 caractères min).',
-    'invalid-email'        => 'Email invalide.',
-    _                      => 'Une erreur est survenue. ($code)',
-  };
 
   @override
   Widget build(BuildContext context) {

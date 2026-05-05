@@ -1,21 +1,17 @@
 import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
-import 'package:uuid/uuid.dart';
 import '../../features/meals/models/meal.dart';
 import '../config/app_secrets.dart';
 
 class NeonService {
   static const _host = 'ep-dawn-night-abd29yl2-pooler.eu-west-2.aws.neon.tech';
   static const _user = 'neondb_owner';
-  static const _uuidNamespace = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
 
-  // UUID v5 dérivé du Firebase UID → toujours le même UUID pour le même compte
-  static String get kUserId {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return '00000000-0000-0000-0000-000000000001';
-    return const Uuid().v5(_uuidNamespace, uid);
-  }
+  static String? _currentUserId;
+  static String get kUserId =>
+      _currentUserId ?? '00000000-0000-0000-0000-000000000001';
+  static void setCurrentUser(String id) => _currentUserId = id;
+  static void clearCurrentUser() => _currentUserId = null;
 
   static String get _auth =>
       'Basic ${base64Encode(utf8.encode('$_user:$kNeonPassword'))}';

@@ -1,9 +1,11 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/neon_service.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
+import '../../../main.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
@@ -499,7 +501,12 @@ class ProfileScreen extends ConsumerWidget {
             _SettingRow(
               label: 'Se déconnecter',
               icon: Icons.logout_outlined,
-              onTap: () async => FirebaseAuth.instance.signOut(),
+              onTap: () async {
+                await AuthService.logout();
+                if (context.mounted) {
+                  ref.read(authStateProvider.notifier).state = false;
+                }
+              },
             ),
             _SettingRow(
               label: 'Supprimer le compte',
@@ -559,9 +566,8 @@ void _showEditNameDialog(
           onPressed: () async {
             final name = ctrl.text.trim();
             if (name.isNotEmpty) {
-              await FirebaseAuth.instance.currentUser
-                  ?.updateDisplayName(name);
               notifier.updateName(name);
+              await AuthService.updateName(NeonService.kUserId, name);
             }
             if (ctx.mounted) Navigator.pop(ctx);
           },

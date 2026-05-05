@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/services/neon_service.dart';
 import '../../../core/services/user_service.dart';
 
@@ -152,6 +153,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   void updateName(String name) {
     state = state.copyWith(name: name);
     _db.upsertUser(name, state.email).catchError((_) {});
+    AuthService.updateName(NeonService.kUserId, name).catchError((_) {});
   }
 
   void setNutrition({int? calories, int? protein, int? carbs, int? fats}) {

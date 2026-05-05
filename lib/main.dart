@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'core/services/auth_service.dart';
 import 'core/theme/app_tokens.dart';
 import 'features/auth/screens/auth_screen.dart';
 import 'features/meals/models/meal.dart';
@@ -15,6 +15,9 @@ import 'features/home/screens/home_screen.dart';
 import 'features/plan/screens/plan_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'firebase_options.dart';
+
+// Provider global pour l'état de connexion
+final authStateProvider = StateProvider<bool>((ref) => false);
 
 void main() async {
   try {
@@ -75,25 +78,42 @@ class FridgeApp extends StatelessWidget {
   }
 }
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
   @override
+  ConsumerState<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<AuthGate> {
+  bool _checked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    final session = await AuthService.getSession();
+    if (session != null) {
+      ref.read(authStateProvider.notifier).state = true;
+    }
+    if (mounted) setState(() => _checked = true);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: AppTokens.paper,
-            body: Center(
-              child: CircularProgressIndicator(color: AppTokens.coral),
-            ),
-          );
-        }
-        return snapshot.hasData ? const MainScreen() : const AuthScreen();
-      },
-    );
+    if (!_checked) {
+      return const Scaffold(
+        backgroundColor: AppTokens.paper,
+        body: Center(
+          child: CircularProgressIndicator(color: AppTokens.coral),
+        ),
+      );
+    }
+    final isLoggedIn = ref.watch(authStateProvider);
+    return isLoggedIn ? const MainScreen() : const AuthScreen();
   }
 }
 
@@ -119,4 +139,3 @@ class MainScreen extends ConsumerWidget {
     );
   }
 }
-

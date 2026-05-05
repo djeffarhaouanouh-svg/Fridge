@@ -428,25 +428,58 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                           ),
                           child: Stack(
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: hasPhotos
-                                    ? Image.memory(_photos.last, width: 56, height: 56, fit: BoxFit.cover)
-                                    : Center(child: Icon(Icons.grid_view_rounded, color: Colors.white38, size: 22)),
-                              ),
-                              if (hasPhotos)
+                              if (!hasPhotos)
+                                Center(
+                                  child: Icon(
+                                    Icons.grid_view_rounded,
+                                    color: Colors.white38,
+                                    size: 22,
+                                  ),
+                                )
+                              else if (_photos.length == 1)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.memory(
+                                    _photos.last,
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              else ...[
                                 Positioned(
-                                  top: 4, right: 4,
-                                  child: Container(
-                                    width: 18, height: 18,
-                                    decoration: BoxDecoration(color: AppTokens.coral, shape: BoxShape.circle),
-                                    child: Center(
-                                      child: Text('${_photos.length}',
-                                        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
+                                  left: 5,
+                                  top: 7,
+                                  child: Transform.rotate(
+                                    angle: -0.16,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.memory(
+                                        _photos[_photos.length - 2],
+                                        width: 38,
+                                        height: 38,
+                                        fit: BoxFit.cover,
                                       ),
                                     ),
                                   ),
                                 ),
+                                Positioned(
+                                  right: 5,
+                                  top: 7,
+                                  child: Transform.rotate(
+                                    angle: 0.16,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.memory(
+                                        _photos.last,
+                                        width: 38,
+                                        height: 38,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                               if (hasPhotos && !isScanning)
                                 Positioned.fill(
                                   child: Container(

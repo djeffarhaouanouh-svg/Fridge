@@ -10,15 +10,22 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 1) Table users : ajouter les colonnes manquantes (ta table existe déjà)
+-- 1) Table users : migration sûre (idempotente) pour Fridge
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS cooking_level TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS fridge_ingredients_json TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_selections_json TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_date DATE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS login_streak INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS login_streak INTEGER;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS scan_meals_json TEXT;
+
+-- Normalisation des données existantes
+UPDATE users SET login_streak = 0 WHERE login_streak IS NULL;
+
+-- Contraintes / défauts attendus par l’app
+ALTER TABLE users ALTER COLUMN login_streak SET DEFAULT 0;
+ALTER TABLE users ALTER COLUMN login_streak SET NOT NULL;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 2) Tables relationnelles (CREATE IF NOT EXISTS — ordre des FK respecté)

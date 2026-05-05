@@ -223,6 +223,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     if (_photos.isEmpty) return;
 
     ref.read(scanStatusProvider.notifier).state = ScanStatus.loading;
+    ref.read(latestScanMealsProvider.notifier).state = const [];
+    ref.read(latestScanIngredientsProvider.notifier).state = const [];
     final claude = ClaudeService();
 
     try {
@@ -236,20 +238,30 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       }
 
       final existing = ref.read(detectedIngredientsProvider);
+      final latestDetected = <String>[];
+      final latestSeen = <String>{};
+      for (final item in ingredients) {
+        final v = item.trim();
+        if (v.isEmpty) continue;
+        final key = v.toLowerCase();
+        if (latestSeen.add(key)) latestDetected.add(v);
+      }
       final merged = <String>[];
       final seen = <String>{};
-      for (final item in [...existing, ...ingredients]) {
+      for (final item in [...existing, ...latestDetected]) {
         final v = item.trim();
         if (v.isEmpty) continue;
         final key = v.toLowerCase();
         if (seen.add(key)) merged.add(v);
       }
       ref.read(detectedIngredientsProvider.notifier).state = merged;
+      ref.read(latestScanIngredientsProvider.notifier).state = latestDetected;
       await persistFridgeToNeon(merged);
 
       final profile = ref.read(userProfileProvider);
       final meals = await claude.findRecipes(ingredients, profile: profile);
       if (meals.isNotEmpty) {
+        ref.read(latestScanMealsProvider.notifier).state = meals;
         await ref.read(mealsProvider.notifier).mergeScanResultsAndPersist(meals);
       }
 

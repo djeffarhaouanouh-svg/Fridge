@@ -18,6 +18,8 @@ final weekPlanProvider = StateProvider<List<DayPlan>>((ref) => []);
 final scanStatusProvider = StateProvider<ScanStatus>((ref) => ScanStatus.idle);
 
 final detectedIngredientsProvider = StateProvider<List<String>>((ref) => []);
+final latestScanIngredientsProvider = StateProvider<List<String>>((ref) => []);
+final latestScanMealsProvider = StateProvider<List<Meal>>((ref) => []);
 
 final mealsProvider = StateNotifierProvider<MealsNotifier, List<Meal>>((ref) {
   return MealsNotifier();

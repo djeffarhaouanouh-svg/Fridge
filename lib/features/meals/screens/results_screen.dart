@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/services/fridge_sync.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../core/widgets/glass_button.dart';
@@ -14,8 +13,13 @@ class ResultsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final meals = ref.watch(mealsProvider);
-    final ingredients = ref.watch(detectedIngredientsProvider);
+    final scanMeals = ref.watch(latestScanMealsProvider);
+    final allMeals = ref.watch(mealsProvider);
+    final meals = scanMeals.isNotEmpty ? scanMeals : allMeals;
+    final scanIngredients = ref.watch(latestScanIngredientsProvider);
+    final ingredients = scanIngredients.isNotEmpty
+        ? scanIngredients
+        : ref.watch(detectedIngredientsProvider);
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
@@ -176,35 +180,32 @@ class _IngredientsEditorSheetState
   Future<void> _saveEdit(int index) async {
     final val = _editCtrl.text.trim();
     if (val.isNotEmpty) {
-      final list = List<String>.from(ref.read(detectedIngredientsProvider));
+      final list = List<String>.from(ref.read(latestScanIngredientsProvider));
       list[index] = val;
-      ref.read(detectedIngredientsProvider.notifier).state = list;
-      await persistFridgeToNeon(list);
+      ref.read(latestScanIngredientsProvider.notifier).state = list;
     }
     setState(() => _editingIndex = null);
   }
 
   Future<void> _delete(int index) async {
-    final list = List<String>.from(ref.read(detectedIngredientsProvider));
+    final list = List<String>.from(ref.read(latestScanIngredientsProvider));
     list.removeAt(index);
-    ref.read(detectedIngredientsProvider.notifier).state = list;
-    await persistFridgeToNeon(list);
+    ref.read(latestScanIngredientsProvider.notifier).state = list;
     if (_editingIndex == index) setState(() => _editingIndex = null);
   }
 
   Future<void> _addIngredient() async {
     final val = _addCtrl.text.trim();
     if (val.isEmpty) return;
-    final list = List<String>.from(ref.read(detectedIngredientsProvider));
+    final list = List<String>.from(ref.read(latestScanIngredientsProvider));
     list.add(val.toLowerCase());
-    ref.read(detectedIngredientsProvider.notifier).state = list;
-    await persistFridgeToNeon(list);
+    ref.read(latestScanIngredientsProvider.notifier).state = list;
     _addCtrl.clear();
   }
 
   @override
   Widget build(BuildContext context) {
-    final ingredients = ref.watch(detectedIngredientsProvider);
+    final ingredients = ref.watch(latestScanIngredientsProvider);
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),

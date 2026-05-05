@@ -34,6 +34,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
     final heroMeals = meals.take(3).toList();
     final firstName = ref.watch(userProfileProvider).name.split(' ').first;
+    final themePreference = ref.watch(themePreferenceProvider);
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
@@ -48,27 +49,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Bonjour ',
-                          style: GoogleFonts.fraunces(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w400,
-                            color: AppTokens.inkSoft,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Bonjour ',
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w400,
+                                  color: AppTokens.inkSoft,
+                                ),
+                              ),
+                              TextSpan(
+                                text: firstName,
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTokens.coral,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        TextSpan(
-                          text: firstName,
-                          style: GoogleFonts.fraunces(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w600,
-                            color: AppTokens.coral,
-                          ),
+                      ),
+                      IconButton(
+                        tooltip: 'Basculer le thème',
+                        onPressed: () {
+                          final next = themePreference == ThemePreference.dark
+                              ? ThemePreference.light
+                              : ThemePreference.dark;
+                          ref.read(themePreferenceProvider.notifier).state = next;
+                        },
+                        icon: Icon(
+                          themePreference == ThemePreference.dark
+                              ? Icons.light_mode_rounded
+                              : Icons.dark_mode_rounded,
+                          color: Colors.amber.shade400,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   RichText(

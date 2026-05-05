@@ -582,26 +582,6 @@ class SettingsScreen extends ConsumerWidget {
             color: titleColor,
           ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: IconButton(
-              tooltip: 'Basculer le thème',
-              onPressed: () {
-                final next = themePreference == ThemePreference.dark
-                    ? ThemePreference.light
-                    : ThemePreference.dark;
-                ref.read(themePreferenceProvider.notifier).state = next;
-              },
-              icon: Icon(
-                themePreference == ThemePreference.dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
-                color: Colors.amber.shade400,
-              ),
-            ),
-          ),
-        ],
       ),
       body: SafeArea(
         top: false,

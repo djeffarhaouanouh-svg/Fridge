@@ -235,8 +235,17 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         return;
       }
 
-      ref.read(detectedIngredientsProvider.notifier).state = ingredients;
-      await persistFridgeToNeon(ingredients);
+      final existing = ref.read(detectedIngredientsProvider);
+      final merged = <String>[];
+      final seen = <String>{};
+      for (final item in [...existing, ...ingredients]) {
+        final v = item.trim();
+        if (v.isEmpty) continue;
+        final key = v.toLowerCase();
+        if (seen.add(key)) merged.add(v);
+      }
+      ref.read(detectedIngredientsProvider.notifier).state = merged;
+      await persistFridgeToNeon(merged);
 
       final profile = ref.read(userProfileProvider);
       final meals = await claude.findRecipes(ingredients, profile: profile);

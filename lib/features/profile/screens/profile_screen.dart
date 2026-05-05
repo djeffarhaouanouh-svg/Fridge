@@ -139,12 +139,12 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Text(profile.name,
                         style: GoogleFonts.fraunces(
-                          fontSize: 36, fontWeight: FontWeight.w700, color: AppTokens.ink,
+                          fontSize: 18, fontWeight: FontWeight.w700, color: AppTokens.ink,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(profile.email,
-                        style: GoogleFonts.inter(fontSize: 22, color: AppTokens.muted),
+                        style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted),
                       ),
                       const SizedBox(height: 10),
                       GestureDetector(

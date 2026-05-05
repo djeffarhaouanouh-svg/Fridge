@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../../core/services/claude_service.dart';
 import '../../../core/widgets/meal_image.dart';
@@ -151,38 +152,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       backgroundColor: AppTokens.paper,
       body: Column(
         children: [
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-              child: Row(
-                children: [
-                  const SizedBox(width: 32),
-                  Expanded(
-                    child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.kitchen_outlined, color: AppTokens.coral, size: 22),
-                          const SizedBox(width: 6),
-                          Text(
-                            'fridge·ai',
-                            style: GoogleFonts.fraunces(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: AppTokens.coral,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 32),
-                ],
-              ),
-            ),
-          ),
+          const AppHeader(brand: true),
 
           Expanded(
             child: ListView(

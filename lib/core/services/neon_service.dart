@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 import '../../features/meals/models/meal.dart';
 import '../config/app_secrets.dart';
 import '../utils/recipe_ids.dart';
@@ -8,6 +9,7 @@ import '../utils/recipe_ids.dart';
 class NeonService {
   static const _host = 'ep-dawn-night-abd29yl2-pooler.eu-west-2.aws.neon.tech';
   static const _user = 'neondb_owner';
+  static const _uuid = Uuid();
 
   static String? _currentUserId;
   static String get kUserId =>
@@ -93,9 +95,9 @@ class NeonService {
       await execute(
         '''
         INSERT INTO goals (id, user_id, goal)
-        VALUES (gen_random_uuid(), \$1::uuid, \$2)
+        VALUES (\$1::uuid, \$2::uuid, \$3)
         ''',
-        [kUserId, goal],
+        [_uuid.v4(), kUserId, goal],
       );
     }
   }
@@ -481,7 +483,7 @@ CREATE TABLE IF NOT EXISTS nutrition_profiles (
 
     await run('''
 CREATE TABLE IF NOT EXISTS goals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   goal TEXT NOT NULL,
   CONSTRAINT goals_one_row_per_user UNIQUE (user_id)

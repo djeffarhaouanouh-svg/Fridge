@@ -6,9 +6,6 @@
 
 BEGIN;
 
--- UUID (souvent déjà activé sur Neon)
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 1) Table users : migration sûre (idempotente) pour Fridge
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -41,7 +38,7 @@ CREATE TABLE IF NOT EXISTS nutrition_profiles (
 
 -- Objectifs cuisine (perte de poids, etc.) — table `goals` (colonne goal)
 CREATE TABLE IF NOT EXISTS goals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   goal TEXT NOT NULL,
   CONSTRAINT goals_one_row_per_user UNIQUE (user_id)

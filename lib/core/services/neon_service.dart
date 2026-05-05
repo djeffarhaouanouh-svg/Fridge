@@ -306,4 +306,138 @@ class NeonService {
       ORDER BY mp.date, mp.meal_type
     ''', [kUserId, startDate, endDate]);
   }
+
+  // ── SYNC APP STATE (frigo, planning, streak connexion) ─────────────────────
+
+  Future<void> ensureUserSyncSchema() async {
+    try {
+      await execute(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS fridge_ingredients_json TEXT',
+      );
+      await execute(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_selections_json TEXT',
+      );
+      await execute(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_date DATE',
+      );
+      await execute(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS login_streak INTEGER DEFAULT 0',
+      );
+    } catch (_) {}
+  }
+
+  Future<void> saveFridgeIngredients(List<String> items) async {
+    await execute(
+      'UPDATE users SET fridge_ingredients_json = \$1 WHERE id = \$2',
+      [jsonEncode(items), kUserId],
+    );
+  }
+
+  Future<List<String>> loadFridgeIngredients() async {
+    final rows = await query(
+      'SELECT fridge_ingredients_json FROM users WHERE id = \$1',
+      [kUserId],
+    );
+    if (rows.isEmpty) return [];
+    final raw = rows.first['fridge_ingredients_json'];
+    if (raw == null) return [];
+    final decoded = jsonDecode(raw as String);
+    if (decoded is! List) return [];
+    return decoded.map((e) => e.toString()).toList();
+  }
+
+  Future<void> savePlanSelections(Map<String, Meal> selections) async {
+    final payload = jsonEncode(
+      selections.map((k, v) => MapEntry(k, v.toJson())),
+    );
+    await execute(
+      'UPDATE users SET plan_selections_json = \$1 WHERE id = \$2',
+      [payload, kUserId],
+    );
+  }
+
+  Future<Map<String, Meal>?> loadPlanSelections() async {
+    final rows = await query(
+      'SELECT plan_selections_json FROM users WHERE id = \$1',
+      [kUserId],
+    );
+    if (rows.isEmpty) return null;
+    final raw = rows.first['plan_selections_json'];
+    if (raw == null || (raw is String && raw.isEmpty)) return null;
+    final str = raw as String;
+    final decoded = jsonDecode(str) as Map<String, dynamic>;
+    return decoded.map(
+      (k, v) => MapEntry(k, Meal.fromJson(v as Map<String, dynamic>)),
+    );
+  }
+
+  static String _isoLocal(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  /// Met à jour la série de jours consécutifs avec ouverture app (date locale).
+  /// Retourne le streak actuel après mise à jour.
+  Future<int> recordDailyLoginAndGetStreak() async {
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final todayIso = _isoLocal(todayDate);
+
+    final rows = await query(
+      '''
+      SELECT last_login_date::text, COALESCE(login_streak, 0) AS login_streak
+      FROM users WHERE id = \$1
+      ''',
+      [kUserId],
+    );
+    if (rows.isEmpty) return 0;
+
+    final lastStr = rows.first['last_login_date'] as String?;
+    final sr = rows.first['login_streak'];
+    final currentStreak = sr is int ? sr : (sr as num?)?.toInt() ?? 0;
+
+    if (lastStr == null || lastStr.isEmpty) {
+      await execute(
+        '''
+        UPDATE users SET last_login_date = \$1::date, login_streak = 1
+        WHERE id = \$2
+        ''',
+        [todayIso, kUserId],
+      );
+      return 1;
+    }
+
+    DateTime lastDate;
+    try {
+      lastDate = DateTime.parse(lastStr.split(' ').first.trim());
+    } catch (_) {
+      final streakReset = 1;
+      await execute(
+        '''
+        UPDATE users SET last_login_date = \$1::date, login_streak = \$2
+        WHERE id = \$3
+        ''',
+        [todayIso, streakReset, kUserId],
+      );
+      return streakReset;
+    }
+    final lastLocal =
+        DateTime(lastDate.year, lastDate.month, lastDate.day);
+
+    if (lastLocal == todayDate) {
+      return currentStreak;
+    }
+
+    final yesterday = todayDate.subtract(const Duration(days: 1));
+    final newStreak = lastLocal == yesterday ? currentStreak + 1 : 1;
+
+    await execute(
+      '''
+      UPDATE users SET last_login_date = \$1::date, login_streak = \$2
+      WHERE id = \$3
+      ''',
+      [todayIso, newStreak, kUserId],
+    );
+    return newStreak;
+  }
 }

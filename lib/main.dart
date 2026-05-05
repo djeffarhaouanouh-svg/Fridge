@@ -9,15 +9,20 @@ import 'core/services/auth_service.dart';
 import 'core/theme/app_tokens.dart';
 import 'features/auth/screens/auth_screen.dart';
 import 'features/meals/models/meal.dart';
+import 'features/meals/providers/meals_provider.dart';
 import 'features/navigation/widgets/bottom_nav.dart';
 import 'features/camera/screens/camera_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/plan/screens/plan_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'firebase_options.dart';
+import 'core/services/neon_service.dart';
 
 // Provider global pour l'état de connexion
 final authStateProvider = StateProvider<bool>((ref) => false);
+
+/// Série de jours consécutifs avec ouverture de l’app (persistée en base).
+final loginStreakProvider = StateProvider<int>((ref) => 0);
 
 void main() async {
   try {
@@ -117,22 +122,74 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   }
 }
 
-class MainScreen extends ConsumerWidget {
+class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends ConsumerState<MainScreen> {
+  bool _bootstrapped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bootstrapRemoteState();
+  }
+
+  Future<void> _bootstrapRemoteState() async {
+    try {
+      final db = NeonService();
+      await db.ensureUserSyncSchema();
+      final streak = await db.recordDailyLoginAndGetStreak();
+      ref.read(loginStreakProvider.notifier).state = streak;
+
+      final fridge = await db.loadFridgeIngredients();
+      ref.read(detectedIngredientsProvider.notifier).state = fridge;
+
+      final plan = await db.loadPlanSelections();
+      if (plan != null && plan.isNotEmpty) {
+        ref.read(planMealSelectionsProvider.notifier).state = plan;
+      }
+
+      await ref.read(mealsProvider.notifier).hydrateFavorites();
+    } catch (e, st) {
+      debugPrint('Sync Neon au démarrage: $e\n$st');
+    } finally {
+      if (mounted) setState(() => _bootstrapped = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selectedTab = ref.watch(selectedTabProvider);
+
+    if (!_bootstrapped) {
+      return const Scaffold(
+        backgroundColor: AppTokens.paper,
+        body: Center(
+          child: CircularProgressIndicator(color: AppTokens.coral),
+        ),
+      );
+    }
+
+    ref.listen<List<String>>(detectedIngredientsProvider, (prev, next) {
+      NeonService().saveFridgeIngredients(next).catchError((_) {});
+    });
+    ref.listen<Map<String, Meal>>(planMealSelectionsProvider, (prev, next) {
+      NeonService().savePlanSelections(next).catchError((_) {});
+    });
 
     return Scaffold(
       extendBody: true,
       body: IndexedStack(
         index: selectedTab,
         children: const [
-          HomeScreen(),    // 0 — Home
-          PlanScreen(),    // 1 — Plan de la semaine
-          CameraScreen(),  // 2 — Scanner
-          ProfileScreen(), // 3 — Profil
+          HomeScreen(),
+          PlanScreen(),
+          CameraScreen(),
+          ProfileScreen(),
         ],
       ),
       bottomNavigationBar: const BottomNav(),

@@ -28,6 +28,19 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
 
   MealsNotifier() : super(MockData.meals);
 
+  /// À appeler après connexion : réaffiche les cœurs depuis la table `favorites`.
+  Future<void> hydrateFavorites() async {
+    try {
+      final ids = await _db.getFavoriteIds();
+      if (ids.isEmpty) return;
+      final set = ids.toSet();
+      state = [
+        for (final m in state)
+          m.copyWith(isFavorite: set.contains(m.id)),
+      ];
+    } catch (_) {}
+  }
+
   void setMeals(List<Meal> meals) {
     state = meals;
   }

@@ -13,6 +13,89 @@ import '../../meals/screens/recipe_screen.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../providers/profile_provider.dart';
 
+Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) async {
+  final controller = TextEditingController();
+  try {
+    final submitted = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: AppTokens.paper,
+          title: Text(
+            'Ajouter un ingrédient',
+            style: GoogleFonts.fraunces(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppTokens.ink,
+            ),
+          ),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              hintText: 'Ex : tomates, yaourt…',
+              hintStyle: GoogleFonts.inter(color: AppTokens.muted),
+              filled: true,
+              fillColor: AppTokens.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            style: GoogleFonts.inter(fontSize: 15, color: AppTokens.ink),
+            onSubmitted: (v) {
+              final t = v.trim();
+              if (t.isNotEmpty) Navigator.pop(ctx, t);
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Annuler',
+                style: GoogleFonts.inter(color: AppTokens.muted, fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                final t = controller.text.trim();
+                if (t.isEmpty) return;
+                Navigator.pop(ctx, t);
+              },
+              child: Text(
+                'Ajouter',
+                style: GoogleFonts.inter(color: AppTokens.coral, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (submitted == null || submitted.isEmpty) return;
+
+    final list = List<String>.from(ref.read(detectedIngredientsProvider));
+    final lower = submitted.toLowerCase();
+    if (list.any((x) => x.toLowerCase() == lower)) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cet ingrédient est déjà dans ton frigo.',
+            style: GoogleFonts.inter(color: Colors.white),
+          ),
+          backgroundColor: AppTokens.inkSoft,
+        ),
+      );
+      return;
+    }
+    list.add(submitted);
+    ref.read(detectedIngredientsProvider.notifier).state = list;
+  } finally {
+    controller.dispose();
+  }
+}
+
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -25,9 +108,10 @@ class ProfileScreen extends ConsumerWidget {
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
     final selections = ref.watch(planMealSelectionsProvider);
     final recentlyViewed = ref.watch(recentlyViewedProvider);
+    final loginStreak = ref.watch(loginStreakProvider);
 
     final cookedCount = selections.length;
-    final streak = 3; // mock
+    final streak = loginStreak;
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
@@ -337,7 +421,7 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () {},
+                          onTap: () => showAddFridgeIngredientDialog(context, ref),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             decoration: BoxDecoration(

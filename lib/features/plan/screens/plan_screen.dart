@@ -8,6 +8,7 @@ import '../../../core/services/claude_service.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
+import '../../meals/screens/recipe_screen.dart';
 
 class PlanScreen extends ConsumerStatefulWidget {
   const PlanScreen({super.key});
@@ -647,11 +648,26 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                     ),
                     const SizedBox(height: 6),
                     _InfoChip(icon: Icons.fitness_center_outlined, label: 'Protéines ${meal.protein}'),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: GlassButton(
+                        label: 'Commencer',
+                        icon: Icons.play_arrow_rounded,
+                        color: GlassButtonColor.coral,
+                        size: GlassButtonSize.md,
+                        fullWidth: true,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => RecipeScreen(meal: meal)),
+                        ),
+                      ),
+                    ),
                   ],
 
                   const SizedBox(height: 28),
 
-                  if (availableFavorites.isNotEmpty) ...[
+                  if (meal == null && availableFavorites.isNotEmpty) ...[
                     _SectionTitle(title: 'Mes favoris'),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -669,7 +685,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  if (availableAllMeals.isNotEmpty) ...[
+                  if (meal == null && availableAllMeals.isNotEmpty) ...[
                     _SectionTitle(title: 'Plats de mon frigo'),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -687,7 +703,9 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  if (availableFavorites.isEmpty && availableAllMeals.isEmpty)
+                  if (meal == null &&
+                      availableFavorites.isEmpty &&
+                      availableAllMeals.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 16),
                       child: Center(

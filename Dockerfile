@@ -29,5 +29,5 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 8080
-# NEON_PASSWORD doit être défini au runtime (Railway → Variables) comme pour le build.
+# Runtime : NEON_DATABASE_URL (recommandé) ou NEON_PASSWORD pour le proxy → Neon.
 ENTRYPOINT ["/docker-entrypoint.sh"]

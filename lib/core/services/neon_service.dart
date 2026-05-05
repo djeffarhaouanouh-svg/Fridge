@@ -14,8 +14,11 @@ class NeonService {
   static void setCurrentUser(String id) => _currentUserId = id;
   static void clearCurrentUser() => _currentUserId = null;
 
-  static String get _auth =>
-      'Basic ${base64Encode(utf8.encode('$_user:$kNeonPassword'))}';
+  /// Neon `/sql` attend cet en-tête (pas Basic Auth). Cf. @neondatabase/serverless.
+  static String get _connectionString {
+    final pw = Uri.encodeComponent(kNeonPassword);
+    return 'postgresql://$_user:$pw@$_host/neondb?sslmode=require';
+  }
 
   /// Web : même origine que l’app (nginx proxy → Neon). Mobile/desktop : Neon direct.
   Uri get _sqlUri =>
@@ -30,7 +33,7 @@ class NeonService {
       'Accept': 'application/json',
     };
     if (!kIsWeb) {
-      headers['Authorization'] = _auth;
+      headers['Neon-Connection-String'] = _connectionString;
     }
 
     final resp = await http.post(

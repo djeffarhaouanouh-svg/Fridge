@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
-# Auth Neon côté serveur uniquement (le navigateur ne peut pas appeler Neon directement — CORS).
-export NEON_AUTH_HEADER="Basic $(printf '%s' "neondb_owner:${NEON_PASSWORD}" | base64 | tr -d '\n')"
-envsubst '${PORT} ${NEON_AUTH_HEADER}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+# Neon `/sql` exige l’en-tête Neon-Connection-String (pas Authorization Basic).
+# Préfère NEON_DATABASE_URL (copiée depuis le dashboard Neon). Sinon construit l’URL avec NEON_PASSWORD.
+if [ -n "$NEON_DATABASE_URL" ]; then
+  export NEON_CONNECTION_STRING="$NEON_DATABASE_URL"
+else
+  export NEON_CONNECTION_STRING="postgresql://neondb_owner:${NEON_PASSWORD}@ep-dawn-night-abd29yl2-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require"
+fi
+envsubst '${PORT} ${NEON_CONNECTION_STRING}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 exec nginx -g 'daemon off;'

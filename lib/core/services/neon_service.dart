@@ -12,10 +12,27 @@ class NeonService {
   static const _uuid = Uuid();
 
   static String? _currentUserId;
-  static String get kUserId =>
-      _currentUserId ?? '00000000-0000-0000-0000-000000000001';
+  static String get kUserId {
+    final raw = _currentUserId ?? '00000000-0000-0000-0000-000000000001';
+    if (Uuid.isValidUUID(fromString: raw)) return raw;
+    // Compat sessions anciennes avec id non-UUID.
+    return _uuid.v5(Namespace.url.value, 'fridge-user:$raw');
+  }
   static void setCurrentUser(String id) => _currentUserId = id;
   static void clearCurrentUser() => _currentUserId = null;
+
+  Future<void> _ensureUserRowExists() async {
+    final uid = kUserId;
+    final fallbackEmail = 'user-$uid@fridge.local';
+    await execute(
+      '''
+      INSERT INTO users (id, name, email)
+      VALUES (\$1::uuid, \$2, \$3)
+      ON CONFLICT (id) DO NOTHING
+      ''',
+      [uid, 'Utilisateur', fallbackEmail],
+    );
+  }
 
   /// Neon `/sql` attend cet en-tête (pas Basic Auth). Cf. @neondatabase/serverless.
   static String get _connectionString {
@@ -68,6 +85,7 @@ class NeonService {
   }
 
   Future<void> saveCookingLevel(String level) async {
+    await _ensureUserRowExists();
     await execute('''
       INSERT INTO user_cooking_levels (user_id, cooking_level)
       VALUES (\$1::uuid, \$2)
@@ -666,6 +684,7 @@ CREATE TABLE IF NOT EXISTS meal_plans (
   }
 
   Future<void> saveFridgeIngredients(List<String> items) async {
+    await _ensureUserRowExists();
     await execute(
       'DELETE FROM user_fridge_ingredients WHERE user_id = \$1::uuid',
       [kUserId],

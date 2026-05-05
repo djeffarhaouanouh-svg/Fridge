@@ -7,13 +7,13 @@ class MockData {
       type: 'simple',
       typeLabel: 'Rapide',
       emoji: '🥱',
-      title: 'Spaghetti bolognese',
-      kcal: 520,
-      protein: 'élevé',
+      title: 'Pâtes à l\'ail & parmesan',
+      kcal: 480,
+      protein: 'moyen',
       difficulty: 'facile',
-      time: '25 min',
+      time: '12 min',
       locked: false,
-      photo: 'https://images.unsplash.com/photo-1598866594230-a7c12756260f?w=800&h=800&fit=crop&q=80',
+      photo: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&h=800&fit=crop&q=80',
       ingredients: [
         Ingredient(
           name: 'Pâtes',

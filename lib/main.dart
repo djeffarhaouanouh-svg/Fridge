@@ -174,6 +174,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           session['name'] ?? 'Utilisateur',
           session['email'] ?? '',
         );
+        final savedTheme = await db.loadThemePreference();
+        if (savedTheme == 'dark') {
+          ref.read(themePreferenceProvider.notifier).state = ThemePreference.dark;
+        } else if (savedTheme == 'light') {
+          ref.read(themePreferenceProvider.notifier).state = ThemePreference.light;
+        }
         await PushNotificationsService.instance.initialize();
       }
 
@@ -214,6 +220,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     });
     ref.listen<Map<String, Meal>>(planMealSelectionsProvider, (prev, next) {
       NeonService().savePlanSelections(next).catchError((_) {});
+    });
+    ref.listen<ThemePreference>(themePreferenceProvider, (prev, next) {
+      final theme = next == ThemePreference.dark ? 'dark' : 'light';
+      NeonService().saveThemePreference(theme).catchError((_) {});
     });
 
     return Scaffold(

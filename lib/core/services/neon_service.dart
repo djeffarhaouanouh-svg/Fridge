@@ -177,6 +177,36 @@ class NeonService {
     ''', [kUserId, expiry, suggestion, fridge]);
   }
 
+  // ── THEME PREFERENCE ────────────────────────────────────────────────────────
+
+  Future<void> saveThemePreference(String theme) async {
+    await _ensureUserRowExists();
+    await execute(
+      '''
+      INSERT INTO user_theme_preferences (user_id, theme_preference, updated_at)
+      VALUES (\$1::uuid, \$2, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        theme_preference = EXCLUDED.theme_preference,
+        updated_at = NOW()
+      ''',
+      [kUserId, theme],
+    );
+  }
+
+  Future<String?> loadThemePreference() async {
+    final rows = await query(
+      '''
+      SELECT theme_preference
+      FROM user_theme_preferences
+      WHERE user_id = \$1::uuid
+      LIMIT 1
+      ''',
+      [kUserId],
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['theme_preference'] as String?;
+  }
+
   Future<void> upsertPushToken({
     required String token,
     required String platform,
@@ -642,6 +672,16 @@ CREATE TABLE IF NOT EXISTS user_notifications (
   notif_expiry BOOLEAN NOT NULL DEFAULT TRUE,
   notif_suggestion BOOLEAN NOT NULL DEFAULT TRUE,
   notif_fridge BOOLEAN NOT NULL DEFAULT TRUE
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_theme_preferences (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  theme_preference TEXT NOT NULL DEFAULT 'light',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT user_theme_preferences_valid_theme
+    CHECK (theme_preference IN ('light', 'dark'))
 )
 ''');
 

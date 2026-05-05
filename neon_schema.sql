@@ -79,6 +79,15 @@ CREATE TABLE IF NOT EXISTS user_notifications (
   notif_fridge BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+CREATE TABLE IF NOT EXISTS user_push_tokens (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  platform TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Ingrédients du frigo (propres à l’utilisateur)
 CREATE TABLE IF NOT EXISTS user_fridge_ingredients (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -149,6 +158,7 @@ CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_recipe ON favorites(recipe_id);
 CREATE INDEX IF NOT EXISTS idx_meal_plans_user_date ON meal_plans(user_id, date);
 CREATE INDEX IF NOT EXISTS idx_cooked_user ON cooked_recipes(user_id);
+CREATE INDEX IF NOT EXISTS idx_push_tokens_user_active ON user_push_tokens(user_id, is_active);
 
 -- =============================================================================
 -- NETTOYAGE OPTIONNEL — uniquement si une table existe avec un mauvais schéma

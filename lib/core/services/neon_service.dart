@@ -176,6 +176,36 @@ class NeonService {
     ''', [kUserId, expiry, suggestion, fridge]);
   }
 
+  Future<void> upsertPushToken({
+    required String token,
+    required String platform,
+  }) async {
+    await _ensureUserRowExists();
+    await execute(
+      '''
+      INSERT INTO user_push_tokens (user_id, token, platform, updated_at, is_active)
+      VALUES (\$1::uuid, \$2, \$3, NOW(), TRUE)
+      ON CONFLICT (token) DO UPDATE SET
+        user_id = EXCLUDED.user_id,
+        platform = EXCLUDED.platform,
+        updated_at = NOW(),
+        is_active = TRUE
+      ''',
+      [kUserId, token, platform],
+    );
+  }
+
+  Future<void> deactivatePushToken(String token) async {
+    await execute(
+      '''
+      UPDATE user_push_tokens
+      SET is_active = FALSE, updated_at = NOW()
+      WHERE token = \$1
+      ''',
+      [token],
+    );
+  }
+
   // ── LOAD FULL PROFILE ──────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> loadProfile() async {
@@ -570,6 +600,17 @@ CREATE TABLE IF NOT EXISTS user_notifications (
   notif_expiry BOOLEAN NOT NULL DEFAULT TRUE,
   notif_suggestion BOOLEAN NOT NULL DEFAULT TRUE,
   notif_fridge BOOLEAN NOT NULL DEFAULT TRUE
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_push_tokens (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  platform TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )
 ''');
 

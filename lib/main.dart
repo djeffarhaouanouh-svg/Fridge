@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/services/auth_service.dart';
+import 'core/services/push_notifications_service.dart';
 import 'core/theme/app_tokens.dart';
 import 'features/auth/screens/auth_screen.dart';
 import 'features/meals/models/meal.dart';
@@ -24,6 +26,11 @@ final authStateProvider = StateProvider<bool>((ref) => false);
 /// Série de jours consécutifs avec ouverture de l’app (persistée en base).
 final loginStreakProvider = StateProvider<int>((ref) => 0);
 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +43,9 @@ void main() async {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
     } else {
       await Firebase.initializeApp();
+      FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
     }
   } catch (e, stack) {
     debugPrint('=== CRASH AU DEMARRAGE ===');
@@ -149,6 +159,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           session['name'] ?? 'Utilisateur',
           session['email'] ?? '',
         );
+        await PushNotificationsService.instance.initialize();
       }
 
       final streak = await db.recordDailyLoginAndGetStreak();

@@ -5,7 +5,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../../core/services/claude_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
 
@@ -410,14 +410,8 @@ class _MealRow extends StatelessWidget {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(AppTokens.radiusMd),
                       ),
-                      child: selectedMeal != null && selectedMeal.photo.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: selectedMeal.photo,
-                              height: 80, width: 110,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(height: 80, color: AppTokens.placeholder),
-                              errorWidget: (_, __, ___) => Container(height: 80, color: AppTokens.placeholder),
-                            )
+                      child: selectedMeal != null
+                          ? SizedBox(height: 80, width: 110, child: MealImage(photo: selectedMeal.photo))
                           : Container(
                               height: 80,
                               color: AppTokens.placeholder,
@@ -568,20 +562,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                               key: ValueKey(meal.id),
                               height: 200,
                               width: double.infinity,
-                              child: meal.photo.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: meal.photo,
-                                      fit: BoxFit.cover,
-                                      placeholder: (_, __) => Container(color: AppTokens.placeholder),
-                                      errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
-                                    )
-                                  : Container(
-                                      color: AppTokens.placeholder,
-                                      child: const Center(child: Icon(
-                                        Icons.restaurant_outlined,
-                                        color: AppTokens.placeholderDeep, size: 48,
-                                      )),
-                                    ),
+                              child: MealImage(photo: meal.photo),
                             )
                           : Container(
                               key: const ValueKey('empty'),
@@ -759,26 +740,7 @@ class _MealPickCard extends StatelessWidget {
               ),
               child: SizedBox(
                 height: 100, width: 130,
-                child: meal.photo.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: meal.photo,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(color: AppTokens.placeholder),
-                        errorWidget: (_, __, ___) => Container(
-                          color: AppTokens.placeholder,
-                          child: const Center(child: Icon(
-                            Icons.image_not_supported_outlined,
-                            color: AppTokens.placeholderDeep, size: 20,
-                          )),
-                        ),
-                      )
-                    : Container(
-                        color: AppTokens.placeholder,
-                        child: const Center(child: Icon(
-                          Icons.restaurant_outlined,
-                          color: AppTokens.placeholderDeep, size: 24,
-                        )),
-                      ),
+                child: MealImage(photo: meal.photo),
               ),
             ),
             Padding(

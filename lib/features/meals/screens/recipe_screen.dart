@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/meal_image.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../models/meal.dart';
@@ -47,14 +47,7 @@ class RecipeScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: SizedBox(
                   height: 280,
-                  child: meal.photo.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: meal.photo,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(color: AppTokens.placeholder),
-                          errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
-                        )
-                      : Container(color: AppTokens.placeholder),
+                  child: MealImage(photo: meal.photo),
                 ),
               ),
 

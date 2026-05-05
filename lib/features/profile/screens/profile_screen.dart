@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/meal_image.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
@@ -766,15 +766,7 @@ class _MealCard extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTokens.radiusMd)),
             child: SizedBox(
               height: 100, width: 130,
-              child: meal.photo.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: meal.photo, fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppTokens.placeholder),
-                      errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
-                    )
-                  : Container(color: AppTokens.placeholder,
-                      child: const Center(child: Icon(Icons.restaurant_outlined,
-                        color: AppTokens.placeholderDeep, size: 24))),
+              child: MealImage(photo: meal.photo),
             ),
           ),
           Padding(

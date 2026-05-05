@@ -155,12 +155,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
     if (!mounted) return;
 
-    // Ajoute immédiatement la photo — pas besoin d'attendre l'animation
-    setState(() {
-      _photos.add(bytes);
-      _isAnimating = true;
-    });
-    ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
+    // Lance l'animation d'abord, puis ajoute la photo dans la vignette.
+    setState(() => _isAnimating = true);
     try {
       await NeonService().saveUserPhotoBytes(bytes);
     } catch (e, st) {
@@ -205,10 +201,20 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       _flyController.forward(from: 0).then((_) {
         _flyEntry?.remove();
         _flyEntry = null;
-        if (mounted) setState(() => _isAnimating = false);
+        if (!mounted) return;
+        setState(() {
+          _photos.add(bytes);
+          _isAnimating = false;
+        });
+        ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
       });
     } else {
-      setState(() => _isAnimating = false);
+      // Fallback sans animation: on ajoute immédiatement.
+      setState(() {
+        _photos.add(bytes);
+        _isAnimating = false;
+      });
+      ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
     }
   }
 
@@ -376,11 +382,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.kitchen_outlined, color: AppTokens.coral, size: 20),
-                          const SizedBox(width: 5),
+                          Icon(Icons.kitchen_outlined, color: AppTokens.coral, size: 24),
+                          const SizedBox(width: 7),
                           Text('fridge·ai',
                             style: GoogleFonts.fraunces(
-                              fontSize: 20,
+                              fontSize: 26,
                               fontWeight: FontWeight.w700,
                               color: AppTokens.coral,
                               letterSpacing: -0.5,
@@ -396,9 +402,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             ),
 
             // Contrôles bas : miniature + bouton capture
-            // viewPadding.bottom + 16 (margin nav) + 60 (nav height) + 20 (spacing)
+            // viewPadding.bottom + 8 (margin nav) + 56 (nav height) + 44 (spacing)
             Positioned(
-              bottom: MediaQuery.of(context).viewPadding.bottom + 96, left: 32, right: 32,
+              bottom: MediaQuery.of(context).viewPadding.bottom + 108, left: 32, right: 32,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,

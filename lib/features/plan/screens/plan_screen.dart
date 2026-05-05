@@ -231,30 +231,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   const SizedBox(height: 24),
 
                   _MealRow(
-                    label: 'PETIT-DÉJ',
-                    days: days,
-                    frDays: frDays,
-                    meals: List.generate(days.length, (i) {
-                      final key = '${_isoDate(days[i])}_Petit-déj';
-                      return selections[key]?.title ?? '';
-                    }),
-                    selectedMeals: List.generate(days.length, (i) {
-                      return selections['${_isoDate(days[i])}_Petit-déj'];
-                    }),
-                    scrollController: _breakfastScrollController,
-                    selectedDayIndex: _selectedDayIndex,
-                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => PlanMealDetailScreen(
-                        day: days[i],
-                        dayLabel: '${frDays[i]} ${days[i].day}',
-                        mealType: 'Petit-déj',
-                        mealName: '',
-                      ),
-                    )),
-                  ),
-                  const SizedBox(height: 20),
-
-                  _MealRow(
                     label: 'DÉJEUNER',
                     days: days,
                     frDays: frDays,
@@ -303,14 +279,37 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   const SizedBox(height: 28),
 
                   Center(
-                    child: GlassButton(
-                    label: 'Générer ma semaine',
-                    icon: Icons.auto_awesome,
-                    color: GlassButtonColor.coral,
-                    size: GlassButtonSize.md,
-                    fullWidth: false,
-                    onTap: isLoading ? null : _generatePlan,
-                  ),
+                    child: GestureDetector(
+                      onTap: isLoading ? null : _generatePlan,
+                      child: Opacity(
+                        opacity: isLoading ? 0.6 : 1,
+                        child: Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 22),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF242424) : const Color(0xFFF2F2F2),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: AppTokens.coral.withValues(alpha: 0.5)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.auto_awesome, size: 18, color: AppTokens.coral),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Générer ma semaine',
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 16,
+                                  height: 1.0,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTokens.coral,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
 
                   if (isLoading)

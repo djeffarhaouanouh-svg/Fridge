@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 import '../../features/meals/models/meal.dart';
 import '../../features/plan/models/day_plan.dart';
 import '../../features/profile/providers/profile_provider.dart';
@@ -168,8 +169,13 @@ Rules:
         .replaceAll(RegExp(r'```json|```'), '')
         .trim();
 
+    const uuid = Uuid();
     final List<dynamic> recipes = jsonDecode(text);
-    return recipes.map((e) => Meal.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+    return recipes.map((e) {
+      final raw = Map<String, dynamic>.from(e as Map);
+      raw['id'] = uuid.v4();
+      return Meal.fromJson(raw);
+    }).toList();
   }
 
   Future<List<DayPlan>> generateWeekPlan(List<Uint8List> photos) async {

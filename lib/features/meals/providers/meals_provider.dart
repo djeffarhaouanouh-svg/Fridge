@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/meal.dart';
 import '../data/mock_data.dart';
+import '../../../core/services/neon_service.dart';
 import '../../plan/models/day_plan.dart';
 
 enum ScanStatus { idle, loading, done, error }
@@ -23,6 +24,8 @@ final mealsProvider = StateNotifierProvider<MealsNotifier, List<Meal>>((ref) {
 });
 
 class MealsNotifier extends StateNotifier<List<Meal>> {
+  final _db = NeonService();
+
   MealsNotifier() : super(MockData.meals);
 
   void setMeals(List<Meal> meals) {
@@ -37,6 +40,13 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
         else
           meal,
     ];
+    final meal = state.where((m) => m.id == mealId).firstOrNull;
+    if (meal == null) return;
+    if (meal.isFavorite) {
+      _db.saveFavorite(meal).catchError((_) {});
+    } else {
+      _db.removeFavorite(mealId).catchError((_) {});
+    }
   }
 
   List<Meal> getFavorites() {

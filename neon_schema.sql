@@ -79,6 +79,13 @@ CREATE TABLE IF NOT EXISTS user_notifications (
   notif_fridge BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- Ingrédients du frigo (propres à l’utilisateur)
+CREATE TABLE IF NOT EXISTS user_fridge_ingredients (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  ingredient_name TEXT NOT NULL,
+  PRIMARY KEY (user_id, ingredient_name)
+);
+
 CREATE TABLE IF NOT EXISTS recipes (
   id UUID PRIMARY KEY,
   title TEXT NOT NULL,

@@ -509,6 +509,14 @@ CREATE TABLE IF NOT EXISTS user_cooking_levels (
 ''');
 
     await run('''
+CREATE TABLE IF NOT EXISTS user_fridge_ingredients (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  ingredient_name TEXT NOT NULL,
+  PRIMARY KEY (user_id, ingredient_name)
+)
+''');
+
+    await run('''
 CREATE TABLE IF NOT EXISTS allergies (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL UNIQUE
@@ -659,12 +667,47 @@ CREATE TABLE IF NOT EXISTS meal_plans (
 
   Future<void> saveFridgeIngredients(List<String> items) async {
     await execute(
+      'DELETE FROM user_fridge_ingredients WHERE user_id = \$1::uuid',
+      [kUserId],
+    );
+    for (final item in items) {
+      final name = item.trim();
+      if (name.isEmpty) continue;
+      await execute(
+        '''
+        INSERT INTO user_fridge_ingredients (user_id, ingredient_name)
+        VALUES (\$1::uuid, \$2)
+        ON CONFLICT DO NOTHING
+        ''',
+        [kUserId, name],
+      );
+    }
+
+    // Compat ancien stockage JSON.
+    await execute(
       'UPDATE users SET fridge_ingredients_json = \$1 WHERE id = \$2',
       [jsonEncode(items), kUserId],
     );
   }
 
   Future<List<String>> loadFridgeIngredients() async {
+    final relRows = await query(
+      '''
+      SELECT ingredient_name
+      FROM user_fridge_ingredients
+      WHERE user_id = \$1::uuid
+      ORDER BY ingredient_name
+      ''',
+      [kUserId],
+    );
+    if (relRows.isNotEmpty) {
+      return relRows
+          .map((r) => (r['ingredient_name'] as String?) ?? '')
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
+    }
+
+    // Fallback JSON ancien format.
     final rows = await query(
       'SELECT fridge_ingredients_json FROM users WHERE id = \$1',
       [kUserId],

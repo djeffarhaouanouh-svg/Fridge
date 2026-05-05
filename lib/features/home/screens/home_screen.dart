@@ -35,35 +35,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final heroMeals = meals.take(3).toList();
     final firstName = ref.watch(userProfileProvider).name.split(' ').first;
     final themePreference = ref.watch(themePreferenceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : AppTokens.ink;
+    final softTitleColor = isDark ? Colors.white70 : AppTokens.inkSoft;
+    final mutedColor = isDark ? Colors.white60 : AppTokens.muted;
 
     return Scaffold(
-      backgroundColor: AppTokens.paper,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: Stack(
-              children: [
-                const AppHeader(brand: true),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    tooltip: 'Basculer le thème',
-                    onPressed: () {
-                      final next = themePreference == ThemePreference.dark
-                          ? ThemePreference.light
-                          : ThemePreference.dark;
-                      ref.read(themePreferenceProvider.notifier).state = next;
-                    },
-                    icon: Icon(
-                      themePreference == ThemePreference.dark
-                          ? Icons.light_mode_rounded
-                          : Icons.dark_mode_rounded,
-                      color: Colors.amber.shade400,
-                    ),
-                  ),
+            child: AppHeader(
+              brand: true,
+              trailing: IconButton(
+                tooltip: 'Basculer le thème',
+                onPressed: () {
+                  final next = themePreference == ThemePreference.dark
+                      ? ThemePreference.light
+                      : ThemePreference.dark;
+                  ref.read(themePreferenceProvider.notifier).state = next;
+                },
+                icon: Icon(
+                  themePreference == ThemePreference.dark
+                      ? Icons.light_mode_rounded
+                      : Icons.dark_mode_rounded,
+                  color: Colors.amber.shade400,
+                  size: 22,
                 ),
-              ],
+              ),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 10)),
@@ -84,7 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               style: GoogleFonts.fraunces(
                                 fontSize: 19,
                                 fontWeight: FontWeight.w400,
-                                color: AppTokens.inkSoft,
+                                  color: softTitleColor,
                               ),
                             ),
                             TextSpan(
@@ -107,7 +106,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               style: GoogleFonts.fraunces(
                                 fontSize: 27,
                                 fontWeight: FontWeight.w700,
-                                color: AppTokens.ink,
+                                  color: titleColor,
                                 height: 1.2,
                               ),
                             ),
@@ -126,7 +125,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               style: GoogleFonts.fraunces(
                                 fontSize: 27,
                                 fontWeight: FontWeight.w700,
-                                color: AppTokens.ink,
+                                  color: titleColor,
                                 height: 1.2,
                               ),
                             ),
@@ -141,7 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w500,
-                          color: AppTokens.muted,
+                          color: mutedColor,
                         ),
                       ),
                     ],

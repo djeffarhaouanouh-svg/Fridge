@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:http/http.dart' as http;
 import '../../features/meals/models/meal.dart';
 import '../config/app_secrets.dart';
@@ -86,10 +86,10 @@ class NeonService {
   // ── GOALS ──────────────────────────────────────────────────────────────────
 
   Future<void> saveGoal(String? goal) async {
-    await execute('DELETE FROM goals WHERE user_id = \$1', [kUserId]);
+    await execute('DELETE FROM user_goals WHERE user_id = \$1', [kUserId]);
     if (goal != null) {
       await execute(
-        'INSERT INTO goals (user_id, goal) VALUES (\$1, \$2)',
+        'INSERT INTO user_goals (user_id, goal) VALUES (\$1, \$2)',
         [kUserId, goal],
       );
     }
@@ -153,7 +153,7 @@ class NeonService {
       query(
           'SELECT calories, proteins, carbs, fats FROM nutrition_profiles WHERE user_id = \$1',
           [kUserId]),
-      query('SELECT goal FROM goals WHERE user_id = \$1', [kUserId]),
+      query('SELECT goal FROM user_goals WHERE user_id = \$1', [kUserId]),
       query('''
         SELECT a.name FROM allergies a
         JOIN user_allergies ua ON ua.allergy_id = a.id
@@ -424,6 +424,7 @@ class NeonService {
   // ── SYNC APP STATE (frigo, planning, streak connexion) ─────────────────────
 
   Future<void> ensureUserSyncSchema() async {
+    await ensureRelationalSchema();
     try {
       await execute(
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS fridge_ingredients_json TEXT',
@@ -440,7 +441,147 @@ class NeonService {
       await execute(
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS scan_meals_json TEXT',
       );
-    } catch (_) {}
+      await execute(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS cooking_level TEXT',
+      );
+    } catch (e) {
+      debugPrint('ensureUserSyncSchema columns: $e');
+    }
+  }
+
+  /// Crée les tables attendues par l’app si elles n’existent pas (Neon par défaut ≠ schéma Fridge).
+  Future<void> ensureRelationalSchema() async {
+    Future<void> run(String sql) async {
+      try {
+        await execute(sql);
+      } catch (e) {
+        debugPrint('Neon ensureRelationalSchema: $e');
+      }
+    }
+
+    await run('''
+CREATE TABLE IF NOT EXISTS nutrition_profiles (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  calories INT NOT NULL DEFAULT 2000,
+  proteins INT NOT NULL DEFAULT 150,
+  carbs INT NOT NULL DEFAULT 200,
+  fats INT NOT NULL DEFAULT 65
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_goals (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  goal TEXT
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS allergies (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS diets (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_allergies (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  allergy_id INT NOT NULL REFERENCES allergies(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, allergy_id)
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_diets (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  diet_id INT NOT NULL REFERENCES diets(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, diet_id)
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_notifications (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  notif_expiry BOOLEAN NOT NULL DEFAULT TRUE,
+  notif_suggestion BOOLEAN NOT NULL DEFAULT TRUE,
+  notif_fridge BOOLEAN NOT NULL DEFAULT TRUE
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS recipes (
+  id UUID PRIMARY KEY,
+  title TEXT NOT NULL,
+  image_url TEXT,
+  duration INT NOT NULL DEFAULT 0,
+  calories INT NOT NULL DEFAULT 0,
+  difficulty TEXT,
+  type TEXT,
+  type_label TEXT,
+  emoji TEXT,
+  color TEXT,
+  locked BOOLEAN NOT NULL DEFAULT FALSE
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS ingredients (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS recipe_steps (
+  recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+  step_order INT NOT NULL,
+  instruction TEXT NOT NULL,
+  PRIMARY KEY (recipe_id, step_order)
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS recipe_ingredients (
+  recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+  ingredient_id INT NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
+  quantity DOUBLE PRECISION,
+  unit TEXT,
+  PRIMARY KEY (recipe_id, ingredient_id)
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS favorites (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, recipe_id)
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS cooked_recipes (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, recipe_id)
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS meal_plans (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  meal_type TEXT NOT NULL,
+  recipe_id UUID REFERENCES recipes(id) ON DELETE SET NULL,
+  PRIMARY KEY (user_id, date, meal_type)
+)
+''');
   }
 
   /// Recettes issues des scans (JSON), fusionnées par id à chaque nouveau scan.

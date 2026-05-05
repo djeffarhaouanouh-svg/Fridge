@@ -385,6 +385,7 @@ class _CompactCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
         if (!meal.locked) {
@@ -445,7 +446,7 @@ class _CompactCard extends ConsumerWidget {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTokens.ink,
+                color: isDark ? Colors.white : AppTokens.ink,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -460,7 +461,7 @@ class _CompactCard extends ConsumerWidget {
                   style: GoogleFonts.inter(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
-                    color: AppTokens.muted,
+                    color: isDark ? Colors.white70 : AppTokens.muted,
                   ),
                 ),
               ],

@@ -115,9 +115,10 @@ class ProfileScreen extends ConsumerWidget {
     final loginStreak = ref.watch(loginStreakProvider);
     final cookedCount = selections.length;
     final streak = loginStreak;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppTokens.paper,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
         child: ListView(
@@ -138,7 +139,9 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Text(profile.name,
                         style: GoogleFonts.fraunces(
-                          fontSize: 18, fontWeight: FontWeight.w700, color: AppTokens.ink,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : AppTokens.ink,
                         ),
                       ),
                     ],
@@ -1081,19 +1084,34 @@ class _UserPhotoCard extends StatelessWidget {
 
 class _Divider extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.symmetric(vertical: 20),
-    child: Divider(height: 1, thickness: 1, color: AppTokens.hairline),
-  );
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: isDark ? Colors.white12 : AppTokens.hairline,
+      ),
+    );
+  }
 }
 
 class _SectionTitle extends StatelessWidget {
   final String title;
   const _SectionTitle({required this.title});
   @override
-  Widget build(BuildContext context) => Text(title,
-    style: GoogleFonts.fraunces(fontSize: 18, fontWeight: FontWeight.w600, color: AppTokens.ink),
-  );
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Text(
+      title,
+      style: GoogleFonts.fraunces(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: isDark ? Colors.white : AppTokens.ink,
+      ),
+    );
+  }
 }
 
 class _Stat extends StatelessWidget {
@@ -1102,17 +1120,22 @@ class _Stat extends StatelessWidget {
   final IconData icon;
   const _Stat({required this.value, required this.label, required this.icon});
   @override
-  Widget build(BuildContext context) => Expanded(
-    child: Column(
-      children: [
-        Text(value, style: GoogleFonts.fraunces(
-          fontSize: 28, fontWeight: FontWeight.w700, color: AppTokens.coral)),
-        const SizedBox(height: 2),
-        Text(label, style: GoogleFonts.inter(
-          fontSize: 11.5, color: AppTokens.muted, fontWeight: FontWeight.w500)),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Expanded(
+      child: Column(
+        children: [
+          Text(value, style: GoogleFonts.fraunces(
+            fontSize: 28, fontWeight: FontWeight.w700, color: AppTokens.coral)),
+          const SizedBox(height: 2),
+          Text(label, style: GoogleFonts.inter(
+            fontSize: 11.5,
+            color: isDark ? Colors.white70 : AppTokens.muted,
+            fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
 }
 
 class _MacroCard extends StatelessWidget {
@@ -1122,26 +1145,31 @@ class _MacroCard extends StatelessWidget {
   final Color color;
   const _MacroCard({required this.value, required this.unit, required this.label, required this.color});
   @override
-  Widget build(BuildContext context) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-      decoration: BoxDecoration(
-        color: AppTokens.surface,
-        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-        border: Border(bottom: BorderSide(color: color, width: 2.5)),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : AppTokens.surface,
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          border: Border(bottom: BorderSide(color: color, width: 2.5)),
+        ),
+        child: Column(
+          children: [
+            Text(value, style: GoogleFonts.fraunces(
+              fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+            const SizedBox(height: 3),
+            Text(label, style: GoogleFonts.inter(
+              fontSize: 10,
+              color: isDark ? Colors.white70 : AppTokens.muted,
+              fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center),
+          ],
+        ),
       ),
-      child: Column(
-        children: [
-          Text(value, style: GoogleFonts.fraunces(
-            fontSize: 16, fontWeight: FontWeight.w700, color: color)),
-          const SizedBox(height: 3),
-          Text(label, style: GoogleFonts.inter(
-            fontSize: 10, color: AppTokens.muted, fontWeight: FontWeight.w500),
-            textAlign: TextAlign.center),
-        ],
-      ),
-    ),
-  );
+    );
+  }
 }
 
 class _SwitchRow extends StatelessWidget {
@@ -1152,39 +1180,45 @@ class _SwitchRow extends StatelessWidget {
   final bool isLast;
   const _SwitchRow({required this.label, this.subtitle, required this.value, required this.onChanged, this.isLast = false});
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: GoogleFonts.inter(
-                    fontSize: 14, fontWeight: FontWeight.w500, color: AppTokens.ink)),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(subtitle!, style: GoogleFonts.inter(
-                      fontSize: 12, color: AppTokens.muted)),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white : AppTokens.ink)),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(subtitle!, style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: isDark ? Colors.white70 : AppTokens.muted)),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            Switch(
-              value: value,
-              onChanged: onChanged,
-              activeThumbColor: AppTokens.coral,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-          ],
+              Switch(
+                value: value,
+                onChanged: onChanged,
+                activeThumbColor: AppTokens.coral,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ],
+          ),
         ),
-      ),
-      if (!isLast)
-        const Divider(height: 1, thickness: 1, color: AppTokens.hairlineSoft, indent: 0, endIndent: 0),
-    ],
-  );
+        if (!isLast)
+          Divider(height: 1, thickness: 1, color: isDark ? Colors.white12 : AppTokens.hairlineSoft, indent: 0, endIndent: 0),
+      ],
+    );
+  }
 }
 
 class _SettingRow extends StatelessWidget {
@@ -1238,7 +1272,9 @@ class _MealCard extends StatelessWidget {
   final Meal meal;
   const _MealCard({required this.meal});
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
     onTap: () => Navigator.push(context, MaterialPageRoute(
       builder: (_) => RecipeScreen(meal: meal),
     )),
@@ -1246,7 +1282,7 @@ class _MealCard extends StatelessWidget {
       width: 130,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: AppTokens.surface,
+        color: isDark ? const Color(0xFF1E1E1E) : AppTokens.surface,
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
       ),
       child: Column(
@@ -1265,13 +1301,13 @@ class _MealCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(meal.title, style: GoogleFonts.inter(
-                  fontSize: 11.5, fontWeight: FontWeight.w600, color: AppTokens.ink),
+                  fontSize: 11.5, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppTokens.ink),
                   maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 3),
                 Row(children: [
-                  const Icon(Icons.schedule_outlined, size: 10, color: AppTokens.muted),
+                  Icon(Icons.schedule_outlined, size: 10, color: isDark ? Colors.white70 : AppTokens.muted),
                   const SizedBox(width: 3),
-                  Text(meal.time, style: GoogleFonts.inter(fontSize: 10.5, color: AppTokens.muted)),
+                  Text(meal.time, style: GoogleFonts.inter(fontSize: 10.5, color: isDark ? Colors.white70 : AppTokens.muted)),
                 ]),
               ],
             ),
@@ -1280,4 +1316,5 @@ class _MealCard extends StatelessWidget {
       ),
     ),
   );
+  }
 }

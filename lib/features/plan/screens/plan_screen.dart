@@ -141,6 +141,9 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final weekNum = _weekNumber(days.first);
     final planMap = {for (final d in weekPlan) d.date: d};
     final frDays = days.map((d) => _weekdayToFr[d.weekday]!).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : AppTokens.ink;
+    final mutedColor = isDark ? Colors.white70 : AppTokens.muted;
 
     final start = days.first;
     final end = days.last;
@@ -149,7 +152,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         : '${start.day} ${_frMonths[start.month - 1]} — ${end.day} ${_frMonths[end.month - 1]} ${end.year}';
 
     return Scaffold(
-      backgroundColor: AppTokens.paper,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           const SliverToBoxAdapter(child: AppHeader(brand: true)),
@@ -164,7 +167,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       TextSpan(
                         text: 'Sem. ',
                         style: GoogleFonts.fraunces(
-                          fontSize: 26, fontWeight: FontWeight.w700, color: AppTokens.ink,
+                          fontSize: 26, fontWeight: FontWeight.w700, color: titleColor,
                         ),
                       ),
                       TextSpan(
@@ -178,7 +181,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   const SizedBox(height: 2),
                   Text(dateRange,
                     style: GoogleFonts.inter(
-                      fontSize: 13, fontWeight: FontWeight.w500, color: AppTokens.muted,
+                      fontSize: 13, fontWeight: FontWeight.w500, color: mutedColor,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -199,7 +202,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                             margin: const EdgeInsets.only(right: 8),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
-                              color: isActive ? AppTokens.coral : AppTokens.surface,
+                              color: isActive ? AppTokens.coral : (isDark ? const Color(0xFF1E1E1E) : AppTokens.surface),
                               borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                             ),
                             child: Column(
@@ -208,14 +211,14 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                                 Text(frDays[i],
                                   style: GoogleFonts.inter(
                                     fontSize: 11, fontWeight: FontWeight.w600,
-                                    color: isActive ? Colors.white : AppTokens.muted,
+                                    color: isActive ? Colors.white : mutedColor,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text('${days[i].day}',
                                   style: GoogleFonts.fraunces(
                                     fontSize: 17, fontWeight: FontWeight.w700,
-                                    color: isActive ? Colors.white : AppTokens.ink,
+                                    color: isActive ? Colors.white : titleColor,
                                   ),
                                 ),
                               ],
@@ -348,13 +351,17 @@ class _MealRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : AppTokens.ink;
+    final mutedColor = isDark ? Colors.white70 : AppTokens.muted;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
           style: GoogleFonts.inter(
             fontSize: 11, fontWeight: FontWeight.w700,
-            color: AppTokens.muted, letterSpacing: 0.5,
+            color: mutedColor, letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 10),
@@ -370,13 +377,14 @@ class _MealRow extends StatelessWidget {
                   width: 100,
                   margin: const EdgeInsets.only(right: 10),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppTokens.hairline, width: 1.5),
+                    color: isDark ? const Color(0xFF1E1E1E) : null,
+                    border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline, width: 1.5),
                     borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                   ),
                   child: Center(
                     child: Text('+ Ajouter',
                       style: GoogleFonts.inter(
-                        fontSize: 12, color: AppTokens.muted, fontWeight: FontWeight.w500,
+                        fontSize: 12, color: mutedColor, fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -395,7 +403,9 @@ class _MealRow extends StatelessWidget {
                 width: 110,
                 margin: const EdgeInsets.only(right: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTokens.coralSoft : AppTokens.surface,
+                  color: isSelected
+                      ? (isDark ? const Color(0xFF3A2A26) : AppTokens.coralSoft)
+                      : (isDark ? const Color(0xFF1E1E1E) : AppTokens.surface),
                   borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                   border: isSelected
                       ? Border.all(color: AppTokens.coral.withValues(alpha: 0.3), width: 1)
@@ -434,7 +444,7 @@ class _MealRow extends StatelessWidget {
                           Text(mealName.isNotEmpty ? mealName : '—',
                             style: GoogleFonts.inter(
                               fontSize: 12, fontWeight: FontWeight.w600,
-                              color: AppTokens.ink,
+                              color: titleColor,
                             ),
                             maxLines: 2, overflow: TextOverflow.ellipsis,
                           ),
@@ -525,7 +535,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
         allMeals.where((m) => !takenIds.contains(m.id)).toList();
 
     return Scaffold(
-      backgroundColor: AppTokens.paper,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -537,7 +547,13 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 18, color: AppTokens.ink),
+                    child: Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 18,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : AppTokens.ink,
+                    ),
                   ),
                   Expanded(
                     child: Center(
@@ -545,12 +561,20 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                         children: [
                           Text(widget.mealType,
                             style: GoogleFonts.fraunces(
-                              fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : AppTokens.ink,
                             ),
                           ),
                           Text(fullDate,
                             style: GoogleFonts.inter(
-                              fontSize: 11.5, color: AppTokens.muted, fontWeight: FontWeight.w500,
+                              fontSize: 11.5,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white70
+                                  : AppTokens.muted,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -593,7 +617,10 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                                         const SizedBox(height: 10),
                                         Text('Choisis un plat ci-dessous',
                                           style: GoogleFonts.inter(
-                                            fontSize: 13.5, color: AppTokens.muted,
+                                            fontSize: 13.5,
+                                            color: Theme.of(context).brightness == Brightness.dark
+                                                ? Colors.white70
+                                                : AppTokens.muted,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -632,7 +659,11 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                     const SizedBox(height: 16),
                     Text(meal.title,
                       style: GoogleFonts.fraunces(
-                        fontSize: 20, fontWeight: FontWeight.w700, color: AppTokens.ink,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : AppTokens.ink,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -710,7 +741,12 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                       child: Center(
                         child: Text(
                           'Toutes les recettes sont deja planifiees',
-                          style: GoogleFonts.inter(fontSize: 13.5, color: AppTokens.muted),
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white70
+                                : AppTokens.muted,
+                          ),
                         ),
                       ),
                     ),
@@ -730,9 +766,10 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(title,
       style: GoogleFonts.fraunces(
-        fontSize: 17, fontWeight: FontWeight.w600, color: AppTokens.ink,
+        fontSize: 17, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppTokens.ink,
       ),
     );
   }
@@ -745,20 +782,23 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppTokens.surface,
+        color: isDark ? const Color(0xFF1E1E1E) : AppTokens.surface,
         borderRadius: BorderRadius.circular(AppTokens.radiusPill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppTokens.muted),
+          Icon(icon, size: 12, color: isDark ? Colors.white70 : AppTokens.muted),
           const SizedBox(width: 5),
           Text(label,
             style: GoogleFonts.inter(
-              fontSize: 12, fontWeight: FontWeight.w500, color: AppTokens.inkSoft,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white70 : AppTokens.inkSoft,
             ),
           ),
         ],
@@ -775,13 +815,16 @@ class _MealPickCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 130,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppTokens.coralSoft : AppTokens.surface,
+          color: isSelected
+              ? (isDark ? const Color(0xFF3A2A26) : AppTokens.coralSoft)
+              : (isDark ? const Color(0xFF1E1E1E) : AppTokens.surface),
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
           border: isSelected
               ? Border.all(color: AppTokens.coral, width: 1.5)
@@ -806,17 +849,17 @@ class _MealPickCard extends StatelessWidget {
                 children: [
                   Text(meal.title,
                     style: GoogleFonts.inter(
-                      fontSize: 11.5, fontWeight: FontWeight.w600, color: AppTokens.ink,
+                      fontSize: 11.5, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppTokens.ink,
                     ),
                     maxLines: 2, overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      const Icon(Icons.schedule_outlined, size: 10, color: AppTokens.muted),
+                      Icon(Icons.schedule_outlined, size: 10, color: isDark ? Colors.white70 : AppTokens.muted),
                       const SizedBox(width: 3),
                       Text(meal.time,
-                        style: GoogleFonts.inter(fontSize: 10.5, color: AppTokens.muted),
+                        style: GoogleFonts.inter(fontSize: 10.5, color: isDark ? Colors.white70 : AppTokens.muted),
                       ),
                     ],
                   ),

@@ -53,7 +53,7 @@ class AuthService {
       await _saveSession(userId, name, email);
       return AuthResult(userId: userId, name: name, email: email);
     } catch (e) {
-      return AuthResult(error: 'Erreur réseau. Vérifie ta connexion.');
+      return AuthResult(error: e.toString());
     }
   }
 
@@ -75,7 +75,7 @@ class AuthService {
       await _saveSession(userId, name, email);
       return AuthResult(userId: userId, name: name, email: email);
     } catch (e) {
-      return AuthResult(error: 'Erreur réseau. Vérifie ta connexion.');
+      return AuthResult(error: e.toString());
     }
   }
 

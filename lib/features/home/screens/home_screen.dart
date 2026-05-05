@@ -47,20 +47,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(
             child: AppHeader(
               brand: true,
-              trailing: IconButton(
-                tooltip: 'Basculer le thème',
-                onPressed: () {
-                  final next = themePreference == ThemePreference.dark
-                      ? ThemePreference.light
-                      : ThemePreference.dark;
-                  ref.read(themePreferenceProvider.notifier).state = next;
-                },
-                icon: Icon(
-                  themePreference == ThemePreference.dark
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
-                  color: Colors.amber.shade400,
-                  size: 22,
+              trailing: SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                  tooltip: 'Basculer le thème',
+                  onPressed: () {
+                    final next = themePreference == ThemePreference.dark
+                        ? ThemePreference.light
+                        : ThemePreference.dark;
+                    ref.read(themePreferenceProvider.notifier).state = next;
+                  },
+                  icon: Icon(
+                    themePreference == ThemePreference.dark
+                        ? Icons.light_mode_rounded
+                        : Icons.dark_mode_rounded,
+                    color: Colors.amber.shade400,
+                    size: 22,
+                  ),
                 ),
               ),
             ),

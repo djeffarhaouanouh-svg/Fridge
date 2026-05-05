@@ -16,6 +16,8 @@ class AppHeader extends StatelessWidget {
     this.brand = false,
   });
 
+  static const double _sideSlotWidth = 44;
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -24,7 +26,13 @@ class AppHeader extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
         child: Row(
           children: [
-            SizedBox(width: 32, child: leading),
+            SizedBox(
+              width: _sideSlotWidth,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: leading,
+              ),
+            ),
             Expanded(
               child: Center(
                 child: brand
@@ -42,7 +50,7 @@ class AppHeader extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: 32,
+              width: _sideSlotWidth,
               child: Align(
                 alignment: Alignment.centerRight,
                 child: trailing,

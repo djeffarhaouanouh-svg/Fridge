@@ -495,58 +495,48 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                             ),
                             if (hasPhotos && !isScanning)
                               Positioned(
-                                right: -86,
-                                bottom: 8,
+                                right: -92,
+                                bottom: 10,
                                 child: GestureDetector(
                                   onTap: _analyzePhotos,
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Container(
-                                        height: 32,
-                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        height: 34,
+                                        padding: const EdgeInsets.symmetric(horizontal: 14),
                                         decoration: BoxDecoration(
                                           color: AppTokens.coral,
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.white, width: 1.2),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(color: Colors.white, width: 1.4),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Colors.black26,
+                                              blurRadius: 6,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
                                         ),
                                         child: Center(
                                           child: Text(
                                             'envoyer',
                                             style: GoogleFonts.inter(
-                                              fontSize: 11.5,
+                                              fontSize: 12,
                                               fontWeight: FontWeight.w700,
                                               color: Colors.white,
                                             ),
                                           ),
                                         ),
                                       ),
-                                      Positioned(
-                                        right: -11,
-                                        top: 8,
-                                        child: Container(
-                                          width: 0,
-                                          height: 0,
-                                          decoration: const BoxDecoration(),
-                                          child: CustomPaint(
-                                            size: const Size(11, 16),
-                                            painter: _SendPointerPainter(),
-                                          ),
+                                      Transform.translate(
+                                        offset: const Offset(-1, 0),
+                                        child: const Icon(
+                                          Icons.arrow_forward_ios_rounded,
+                                          size: 13,
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ],
-                                  ),
-                                ),
-                              ),
-                            if (hasPhotos && !isScanning)
-                              Positioned(
-                                right: -98,
-                                bottom: 8,
-                                child: IgnorePointer(
-                                  child: Icon(
-                                    Icons.send_rounded,
-                                    size: 14,
-                                    color: Colors.white.withValues(alpha: 0.9),
                                   ),
                                 ),
                               ),
@@ -598,32 +588,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         ),
     );
   }
-}
-
-class _SendPointerPainter extends CustomPainter {
-  const _SendPointerPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppTokens.coral
-      ..style = PaintingStyle.fill;
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, size.height / 2)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(path, paint);
-
-    final border = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    canvas.drawPath(path, border);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _FilterChip extends StatelessWidget {

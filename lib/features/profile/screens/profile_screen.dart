@@ -133,69 +133,45 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Avatar + info
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                  // Infos compte (sans bulle avatar)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 68, height: 68,
-                        decoration: BoxDecoration(
-                          color: AppTokens.coralSoft,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppTokens.coral, width: 2),
-                        ),
-                        child: Center(
-                          child: Text(
-                            profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
-                            style: GoogleFonts.fraunces(
-                              fontSize: 26, fontWeight: FontWeight.w700, color: AppTokens.coral,
-                            ),
-                          ),
+                      Text(profile.name,
+                        style: GoogleFonts.fraunces(
+                          fontSize: 36, fontWeight: FontWeight.w700, color: AppTokens.ink,
                         ),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(profile.name,
-                              style: GoogleFonts.fraunces(
-                                fontSize: 18, fontWeight: FontWeight.w700, color: AppTokens.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(profile.email,
-                              style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted),
-                            ),
-                            const SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () => _showEditAccountDialog(
-                                context,
-                                profile.name,
-                                profile.email,
-                                notifier,
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: AppTokens.coral, width: 1),
-                                  borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.edit_outlined, size: 12, color: AppTokens.coral),
-                                    const SizedBox(width: 5),
-                                    Text('Modifier',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12.5, fontWeight: FontWeight.w600, color: AppTokens.coral,
-                                      ),
-                                    ),
-                                  ],
+                      const SizedBox(height: 2),
+                      Text(profile.email,
+                        style: GoogleFonts.inter(fontSize: 22, color: AppTokens.muted),
+                      ),
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () => _showEditAccountDialog(
+                          context,
+                          profile.name,
+                          profile.email,
+                          notifier,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppTokens.coral, width: 1),
+                            borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.edit_outlined, size: 12, color: AppTokens.coral),
+                              const SizedBox(width: 5),
+                              Text('Modifier',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5, fontWeight: FontWeight.w600, color: AppTokens.coral,
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],

@@ -68,6 +68,13 @@ class NeonService {
   }
 
   Future<void> saveCookingLevel(String level) async {
+    await execute('''
+      INSERT INTO user_cooking_levels (user_id, cooking_level)
+      VALUES (\$1::uuid, \$2)
+      ON CONFLICT (user_id) DO UPDATE SET
+        cooking_level = EXCLUDED.cooking_level
+    ''', [kUserId, level]);
+    // Compat: garde aussi la colonne historique sur users.
     await execute(
       'UPDATE users SET cooking_level = \$1 WHERE id = \$2',
       [level, kUserId],
@@ -155,8 +162,12 @@ class NeonService {
 
   Future<Map<String, dynamic>> loadProfile() async {
     final results = await Future.wait([
-      query('SELECT name, email, cooking_level FROM users WHERE id = \$1',
-          [kUserId]),
+      query('''
+        SELECT u.name, u.email, COALESCE(ucl.cooking_level, u.cooking_level) AS cooking_level
+        FROM users u
+        LEFT JOIN user_cooking_levels ucl ON ucl.user_id = u.id
+        WHERE u.id = \$1::uuid
+      ''', [kUserId]),
       query(
           'SELECT calories, proteins, carbs, fats FROM nutrition_profiles WHERE user_id = \$1',
           [kUserId]),
@@ -487,6 +498,13 @@ CREATE TABLE IF NOT EXISTS goals (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   goal TEXT NOT NULL,
   CONSTRAINT goals_one_row_per_user UNIQUE (user_id)
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_cooking_levels (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  cooking_level TEXT NOT NULL
 )
 ''');
 

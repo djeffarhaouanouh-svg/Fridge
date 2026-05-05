@@ -44,6 +44,12 @@ CREATE TABLE IF NOT EXISTS goals (
   CONSTRAINT goals_one_row_per_user UNIQUE (user_id)
 );
 
+-- Niveau de cuisine utilisateur
+CREATE TABLE IF NOT EXISTS user_cooking_levels (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  cooking_level TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS allergies (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL UNIQUE

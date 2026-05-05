@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../meals/models/meal.dart';
@@ -239,18 +239,7 @@ class _HeroCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         child: Stack(
           children: [
-            Positioned.fill(
-              child: meal.photo.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: meal.photo,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppTokens.placeholder),
-                      errorWidget: (_, __, ___) =>
-                          Container(color: AppTokens.placeholder),
-                    )
-                  : Container(color: AppTokens.placeholder),
-            ),
+            Positioned.fill(child: MealImage(photo: meal.photo)),
             Positioned.fill(
               child: Container(
                 decoration: const BoxDecoration(
@@ -361,18 +350,7 @@ class _CompactCard extends ConsumerWidget {
                 height: 148,
                 child: Stack(
                   children: [
-                    Positioned.fill(
-                      child: meal.photo.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: meal.photo,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) =>
-                                  Container(color: AppTokens.placeholder),
-                              errorWidget: (_, __, ___) =>
-                                  Container(color: AppTokens.placeholder),
-                            )
-                          : Container(color: AppTokens.placeholder),
-                    ),
+                    Positioned.fill(child: MealImage(photo: meal.photo)),
                     Positioned(
                       top: 8,
                       right: 8,

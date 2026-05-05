@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/meal_image.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
@@ -433,14 +433,7 @@ class _RecipeRow extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                   child: SizedBox(
                     width: 72, height: 72,
-                    child: meal.photo.isNotEmpty
-                        ? Image.network(
-                            meal.photo, fit: BoxFit.cover,
-                            loadingBuilder: (_, child, progress) =>
-                                progress == null ? child : Container(color: AppTokens.placeholder),
-                            errorBuilder: (_, __, ___) => Container(color: AppTokens.placeholder),
-                          )
-                        : Container(color: AppTokens.placeholder),
+                    child: MealImage(photo: meal.photo),
                   ),
                 ),
                 const SizedBox(width: 14),

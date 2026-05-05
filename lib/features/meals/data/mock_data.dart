@@ -13,7 +13,7 @@ class MockData {
       difficulty: 'facile',
       time: '12 min',
       locked: false,
-      photo: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&h=800&fit=crop&q=80',
+      photo: 'assets/images/spaghetti_bolognese.png',
       ingredients: [
         Ingredient(
           name: 'Pâtes',

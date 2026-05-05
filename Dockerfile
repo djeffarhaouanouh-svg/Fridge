@@ -22,8 +22,12 @@ RUN mkdir -p lib/core/config && \
 RUN flutter build web --release --pwa-strategy=none
 
 FROM nginx:alpine
+RUN apk add --no-cache gettext
 COPY --from=build /app/build/web /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf.template
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 8080
-CMD ["/bin/sh", "-c", "envsubst '$PORT' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# NEON_PASSWORD doit être défini au runtime (Railway → Variables) comme pour le build.
+ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../../features/meals/models/meal.dart';
 import '../config/app_secrets.dart';
@@ -16,17 +17,25 @@ class NeonService {
   static String get _auth =>
       'Basic ${base64Encode(utf8.encode('$_user:$kNeonPassword'))}';
 
+  /// Web : même origine que l’app (nginx proxy → Neon). Mobile/desktop : Neon direct.
+  Uri get _sqlUri =>
+      kIsWeb ? Uri.base.resolve('/api/neon/sql') : Uri.https(_host, '/sql');
+
   Future<List<Map<String, dynamic>>> query(
     String sql, [
     List<dynamic> params = const [],
   ]) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (!kIsWeb) {
+      headers['Authorization'] = _auth;
+    }
+
     final resp = await http.post(
-      Uri.https(_host, '/sql'),
-      headers: {
-        'Authorization': _auth,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      _sqlUri,
+      headers: headers,
       body: jsonEncode({'query': sql, 'params': params}),
     );
     if (resp.statusCode != 200) {

@@ -15,7 +15,13 @@ class MealImage extends StatelessWidget {
     }
 
     if (photo.startsWith('assets/')) {
-      return Image.asset(photo, fit: fit);
+      return Image.asset(
+        photo,
+        fit: fit,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => Container(color: AppTokens.placeholder),
+      );
     }
 
     return CachedNetworkImage(

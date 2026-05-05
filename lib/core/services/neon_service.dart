@@ -85,11 +85,15 @@ class NeonService {
 
   // ── GOALS ──────────────────────────────────────────────────────────────────
 
+  /// Table `goals` : id, user_id, goal (visible dans Neon / Supabase — pas user_goals).
   Future<void> saveGoal(String? goal) async {
-    await execute('DELETE FROM user_goals WHERE user_id = \$1', [kUserId]);
+    await execute('DELETE FROM goals WHERE user_id = \$1', [kUserId]);
     if (goal != null) {
       await execute(
-        'INSERT INTO user_goals (user_id, goal) VALUES (\$1, \$2)',
+        '''
+        INSERT INTO goals (id, user_id, goal)
+        VALUES (gen_random_uuid(), \$1::uuid, \$2)
+        ''',
         [kUserId, goal],
       );
     }
@@ -153,7 +157,10 @@ class NeonService {
       query(
           'SELECT calories, proteins, carbs, fats FROM nutrition_profiles WHERE user_id = \$1',
           [kUserId]),
-      query('SELECT goal FROM user_goals WHERE user_id = \$1', [kUserId]),
+      query(
+        'SELECT goal FROM goals WHERE user_id = \$1::uuid LIMIT 1',
+        [kUserId],
+      ),
       query('''
         SELECT a.name FROM allergies a
         JOIN user_allergies ua ON ua.allergy_id = a.id
@@ -470,9 +477,11 @@ CREATE TABLE IF NOT EXISTS nutrition_profiles (
 ''');
 
     await run('''
-CREATE TABLE IF NOT EXISTS user_goals (
-  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  goal TEXT
+CREATE TABLE IF NOT EXISTS goals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  goal TEXT NOT NULL,
+  CONSTRAINT goals_one_row_per_user UNIQUE (user_id)
 )
 ''');
 

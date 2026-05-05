@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/neon_service.dart';
@@ -108,65 +109,98 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
         notifSuggestion: notifRow?['notif_suggestion'] as bool? ?? true,
         notifFridge: notifRow?['notif_fridge'] as bool? ?? true,
       );
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('UserProfile _init: $e\n$st');
+    }
   }
 
   // ── Setters ────────────────────────────────────────────────────────────────
 
-  void setObjective(CookingObjective obj) {
+  Future<void> setObjective(CookingObjective obj) async {
     final next = state.objective == obj ? null : obj;
     state = state.copyWith(objective: next);
-    _db.saveGoal(_objectiveToDb(next)).catchError((_) {});
+    try {
+      await _db.saveGoal(_objectiveToDb(next));
+    } catch (e, st) {
+      debugPrint('UserProfile setObjective: $e\n$st');
+    }
   }
 
-  void setCookingLevel(CookingLevel level) {
+  Future<void> setCookingLevel(CookingLevel level) async {
     state = state.copyWith(cookingLevel: level);
-    _db.saveCookingLevel(_levelToDb(level)).catchError((_) {});
+    try {
+      await _db.saveCookingLevel(_levelToDb(level));
+    } catch (e, st) {
+      debugPrint('UserProfile setCookingLevel: $e\n$st');
+    }
   }
 
-  void toggleAllergy(String v) {
+  Future<void> toggleAllergy(String v) async {
     final s = Set<String>.from(state.allergies);
     s.contains(v) ? s.remove(v) : s.add(v);
     state = state.copyWith(allergies: s);
-    _db.saveAllergies(s.toList()).catchError((_) {});
+    try {
+      await _db.saveAllergies(s.toList());
+    } catch (e, st) {
+      debugPrint('UserProfile toggleAllergy: $e\n$st');
+    }
   }
 
-  void toggleDiet(String v) {
+  Future<void> toggleDiet(String v) async {
     final s = Set<String>.from(state.diets);
     s.contains(v) ? s.remove(v) : s.add(v);
     state = state.copyWith(diets: s);
-    _db.saveDiets(s.toList()).catchError((_) {});
+    try {
+      await _db.saveDiets(s.toList());
+    } catch (e, st) {
+      debugPrint('UserProfile toggleDiet: $e\n$st');
+    }
   }
 
-  void setNotif({bool? expiry, bool? suggestion, bool? fridge}) {
+  Future<void> setNotif({bool? expiry, bool? suggestion, bool? fridge}) async {
     state = state.copyWith(
       notifExpiry: expiry,
       notifSuggestion: suggestion,
       notifFridge: fridge,
     );
-    _db
-        .saveNotifications(
-            state.notifExpiry, state.notifSuggestion, state.notifFridge)
-        .catchError((_) {});
+    try {
+      await _db.saveNotifications(
+        state.notifExpiry,
+        state.notifSuggestion,
+        state.notifFridge,
+      );
+    } catch (e, st) {
+      debugPrint('UserProfile setNotif: $e\n$st');
+    }
   }
 
-  void updateName(String name) {
+  Future<void> updateName(String name) async {
     state = state.copyWith(name: name);
-    _db.upsertUser(name, state.email).catchError((_) {});
-    AuthService.updateName(NeonService.kUserId, name).catchError((_) {});
+    try {
+      await _db.upsertUser(name, state.email);
+      await AuthService.updateName(NeonService.kUserId, name);
+    } catch (e, st) {
+      debugPrint('UserProfile updateName: $e\n$st');
+    }
   }
 
-  void setNutrition({int? calories, int? protein, int? carbs, int? fats}) {
+  Future<void> setNutrition({int? calories, int? protein, int? carbs, int? fats}) async {
     state = state.copyWith(
       targetCalories: calories,
       targetProtein: protein,
       targetCarbs: carbs,
       targetFats: fats,
     );
-    _db
-        .saveNutrition(state.targetCalories, state.targetProtein,
-            state.targetCarbs, state.targetFats)
-        .catchError((_) {});
+    try {
+      await _db.saveNutrition(
+        state.targetCalories,
+        state.targetProtein,
+        state.targetCarbs,
+        state.targetFats,
+      );
+    } catch (e, st) {
+      debugPrint('UserProfile setNutrition: $e\n$st');
+    }
   }
 
   // ── Mapping helpers ────────────────────────────────────────────────────────

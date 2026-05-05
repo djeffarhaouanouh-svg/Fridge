@@ -32,10 +32,12 @@ CREATE TABLE IF NOT EXISTS nutrition_profiles (
   fats INTEGER NOT NULL DEFAULT 65
 );
 
--- Objectifs cuisine (perte de poids, etc.) — PAS la table "goals" générique Neon
-CREATE TABLE IF NOT EXISTS user_goals (
-  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  goal TEXT
+-- Objectifs cuisine (perte de poids, etc.) — table `goals` (colonne goal)
+CREATE TABLE IF NOT EXISTS goals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  goal TEXT NOT NULL,
+  CONSTRAINT goals_one_row_per_user UNIQUE (user_id)
 );
 
 CREATE TABLE IF NOT EXISTS allergies (
@@ -135,8 +137,8 @@ CREATE INDEX IF NOT EXISTS idx_cooked_user ON cooked_recipes(user_id);
 -- NETTOYAGE OPTIONNEL — uniquement si une table existe avec un mauvais schéma
 -- et qu’elle est VIDE ou jetable. À commenter/décommenter avec précaution.
 -- =============================================================================
--- La table "goals" fournie par certains templates Neon ne correspond pas à l’app
--- (colonnes title/description/…). L’app utilise user_goals à la place.
+-- Si une ancienne table "goals" ou "user_goals" ne correspond pas au schéma ci-dessus
+-- (id UUID, user_id, goal), renommer ou migrer les données puis ajuster.
 --
 -- DROP TABLE IF EXISTS goals CASCADE;
 --

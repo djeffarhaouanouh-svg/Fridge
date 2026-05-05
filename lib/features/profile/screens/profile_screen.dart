@@ -107,8 +107,6 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
     final notifier = ref.read(userProfileProvider.notifier);
-    final aiTone = ref.watch(aiToneProvider);
-    final themePreference = ref.watch(themePreferenceProvider);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
     final allMeals = ref.watch(mealsProvider);
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
@@ -564,6 +562,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
     final notifier = ref.read(userProfileProvider.notifier);
+    final aiTone = ref.watch(aiToneProvider);
+    final themePreference = ref.watch(themePreferenceProvider);
 
     return Scaffold(
       backgroundColor: AppTokens.paper,

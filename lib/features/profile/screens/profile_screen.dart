@@ -186,6 +186,50 @@ Future<void> showRemoveFridgeIngredientDialog(BuildContext context, WidgetRef re
   await persistFridgeToNeon(updated);
 }
 
+Future<void> showFridgeActionDialog(BuildContext context, WidgetRef ref) async {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final action = await showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: isDark ? const Color(0xFF1E1E1E) : AppTokens.paper,
+    builder: (sheetContext) => SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.add, color: AppTokens.coral),
+            title: Text(
+              'Ajouter',
+              style: GoogleFonts.inter(
+                color: isDark ? Colors.white : AppTokens.ink,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onTap: () => Navigator.pop(sheetContext, 'add'),
+          ),
+          ListTile(
+            leading: Icon(Icons.delete_outline, color: Colors.red.shade400),
+            title: Text(
+              'Supprimer',
+              style: GoogleFonts.inter(
+                color: isDark ? Colors.white : AppTokens.ink,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onTap: () => Navigator.pop(sheetContext, 'remove'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  if (action == 'add') {
+    await showAddFridgeIngredientDialog(context, ref);
+  } else if (action == 'remove') {
+    await showRemoveFridgeIngredientDialog(context, ref);
+  }
+}
+
 final fridgeSectionExpandedProvider = StateProvider<bool>((ref) => false);
 
 Color _sheetBg(BuildContext context) {
@@ -419,20 +463,20 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => showRemoveFridgeIngredientDialog(context, ref),
+                          onTap: () => ref.read(selectedTabProvider.notifier).state = 2,
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFFFFEEEE) : AppTokens.coralSoft,
+                              color: AppTokens.coralSoft,
                               borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.delete_outline, size: 16, color: Colors.red.shade400),
+                                const Icon(Icons.camera_alt_outlined, size: 16, color: AppTokens.coral),
                                 const SizedBox(width: 7),
-                                Text('Supprimer',
-                                  style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: Colors.red.shade400),
+                                Text('Scanner',
+                                  style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppTokens.coral),
                                 ),
                               ],
                             ),
@@ -442,7 +486,7 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => showAddFridgeIngredientDialog(context, ref),
+                          onTap: () => showFridgeActionDialog(context, ref),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             decoration: BoxDecoration(
@@ -457,7 +501,7 @@ class ProfileScreen extends ConsumerWidget {
                               children: [
                                 const Icon(Icons.add, size: 16, color: AppTokens.inkSoft),
                                 const SizedBox(width: 7),
-                                Text('+ Ajouter',
+                                Text('+ Ajouter/Supprimer',
                                   style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppTokens.inkSoft),
                                 ),
                               ],

@@ -413,85 +413,109 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      GestureDetector(
-                        onTap: isScanning ? null : (hasPhotos ? _analyzePhotos : null),
-                        child: Container(
-                          key: _thumbnailKey,
-                          width: 56, height: 56,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: hasPhotos ? AppTokens.coral : Colors.white24,
-                              width: hasPhotos ? 2 : 1,
+                      SizedBox(
+                        width: 82,
+                        height: 70,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned(
+                              left: 0,
+                              bottom: 0,
+                              child: Container(
+                                key: _thumbnailKey,
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: hasPhotos ? AppTokens.coral : Colors.white24,
+                                    width: hasPhotos ? 2 : 1,
+                                  ),
+                                  color: Colors.white10,
+                                ),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    if (!hasPhotos)
+                                      const Center(
+                                        child: Icon(
+                                          Icons.grid_view_rounded,
+                                          color: Colors.white38,
+                                          size: 22,
+                                        ),
+                                      )
+                                    else if (_photos.length == 1)
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Image.memory(
+                                          _photos.last,
+                                          width: 56,
+                                          height: 56,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    else ...[
+                                      Positioned(
+                                        left: -8,
+                                        top: 7,
+                                        child: Transform.rotate(
+                                          angle: -0.26,
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: Image.memory(
+                                              _photos[_photos.length - 2],
+                                              width: 42,
+                                              height: 42,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: 12,
+                                        top: -4,
+                                        child: Transform.rotate(
+                                          angle: 0.22,
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: Image.memory(
+                                              _photos.last,
+                                              width: 46,
+                                              height: 46,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
                             ),
-                            color: Colors.white10,
-                          ),
-                          child: Stack(
-                            children: [
-                              if (!hasPhotos)
-                                Center(
-                                  child: Icon(
-                                    Icons.grid_view_rounded,
-                                    color: Colors.white38,
-                                    size: 22,
-                                  ),
-                                )
-                              else if (_photos.length == 1)
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.memory(
-                                    _photos.last,
-                                    width: 56,
-                                    height: 56,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              else ...[
-                                Positioned(
-                                  left: 5,
-                                  top: 7,
-                                  child: Transform.rotate(
-                                    angle: -0.16,
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.memory(
-                                        _photos[_photos.length - 2],
-                                        width: 38,
-                                        height: 38,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  right: 5,
-                                  top: 7,
-                                  child: Transform.rotate(
-                                    angle: 0.16,
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.memory(
-                                        _photos.last,
-                                        width: 38,
-                                        height: 38,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              if (hasPhotos && !isScanning)
-                                Positioned.fill(
+                            if (hasPhotos && !isScanning)
+                              Positioned(
+                                right: -2,
+                                bottom: -2,
+                                child: GestureDetector(
+                                  onTap: _analyzePhotos,
                                   child: Container(
+                                    width: 28,
+                                    height: 28,
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: Colors.black.withValues(alpha: 0.35),
+                                      color: AppTokens.coral,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 1.5),
                                     ),
-                                    child: const Center(child: Icon(Icons.send_rounded, color: Colors.white, size: 20)),
+                                    child: const Icon(
+                                      Icons.send_rounded,
+                                      size: 15,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                            ],
-                          ),
+                              ),
+                          ],
                         ),
                       ),
 

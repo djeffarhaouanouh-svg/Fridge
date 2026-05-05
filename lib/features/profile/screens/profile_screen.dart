@@ -18,18 +18,23 @@ import '../providers/profile_provider.dart';
 
 Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) async {
   final controller = TextEditingController();
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final dialogBg = isDark ? const Color(0xFF1E1E1E) : AppTokens.paper;
+  final textColor = isDark ? Colors.white : AppTokens.ink;
+  final mutedColor = isDark ? Colors.white70 : AppTokens.muted;
+  final fieldBg = isDark ? const Color(0xFF2A2A2A) : AppTokens.surface;
   try {
     final submitted = await showDialog<String>(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: AppTokens.paper,
+          backgroundColor: dialogBg,
           title: Text(
             'Ajouter un ingrédient',
             style: GoogleFonts.fraunces(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: AppTokens.ink,
+              color: textColor,
             ),
           ),
           content: TextField(
@@ -38,15 +43,15 @@ Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) 
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
               hintText: 'Ex : tomates, yaourt…',
-              hintStyle: GoogleFonts.inter(color: AppTokens.muted),
+              hintStyle: GoogleFonts.inter(color: mutedColor),
               filled: true,
-              fillColor: AppTokens.surface,
+              fillColor: fieldBg,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                 borderSide: BorderSide.none,
               ),
             ),
-            style: GoogleFonts.inter(fontSize: 15, color: AppTokens.ink),
+            style: GoogleFonts.inter(fontSize: 15, color: textColor),
             onSubmitted: (v) {
               final t = v.trim();
               if (t.isNotEmpty) Navigator.pop(ctx, t);
@@ -57,7 +62,7 @@ Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) 
               onPressed: () => Navigator.pop(ctx),
               child: Text(
                 'Annuler',
-                style: GoogleFonts.inter(color: AppTokens.muted, fontWeight: FontWeight.w600),
+                style: GoogleFonts.inter(color: mutedColor, fontWeight: FontWeight.w600),
               ),
             ),
             TextButton(
@@ -98,6 +103,16 @@ Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) 
   } finally {
     controller.dispose();
   }
+}
+
+Color _sheetBg(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark ? const Color(0xFF1E1E1E) : AppTokens.paper;
+}
+
+Color _sheetText(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark ? Colors.white : AppTokens.ink;
 }
 
 class ProfileScreen extends ConsumerWidget {
@@ -485,7 +500,7 @@ class ProfileScreen extends ConsumerWidget {
 void _showUserPhotosSheet(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: AppTokens.paper,
+    backgroundColor: _sheetBg(context),
     isScrollControlled: true,
     builder: (_) {
       return SafeArea(
@@ -656,10 +671,9 @@ String _themeLabel(ThemePreference p) => switch (p) {
     };
 
 void _showAiToneSheet(BuildContext context, WidgetRef ref) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
   showModalBottomSheet(
     context: context,
-    backgroundColor: isDark ? const Color(0xFF1E1E1E) : AppTokens.paper,
+    backgroundColor: _sheetBg(context),
     builder: (_) => SafeArea(
       top: false,
       child: Consumer(
@@ -669,7 +683,7 @@ void _showAiToneSheet(BuildContext context, WidgetRef ref) {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title: const Text('Coach'),
+                title: Text('Coach', style: TextStyle(color: _sheetText(context))),
                 trailing: current == AiTone.coach
                     ? const Icon(Icons.check, color: AppTokens.coral)
                     : null,
@@ -679,7 +693,7 @@ void _showAiToneSheet(BuildContext context, WidgetRef ref) {
                 },
               ),
               ListTile(
-                title: const Text('Chef'),
+                title: Text('Chef', style: TextStyle(color: _sheetText(context))),
                 trailing: current == AiTone.chef
                     ? const Icon(Icons.check, color: AppTokens.coral)
                     : null,
@@ -689,7 +703,7 @@ void _showAiToneSheet(BuildContext context, WidgetRef ref) {
                 },
               ),
               ListTile(
-                title: const Text('Ami'),
+                title: Text('Ami', style: TextStyle(color: _sheetText(context))),
                 trailing: current == AiTone.ami
                     ? const Icon(Icons.check, color: AppTokens.coral)
                     : null,
@@ -707,10 +721,9 @@ void _showAiToneSheet(BuildContext context, WidgetRef ref) {
 }
 
 void _showThemeSheet(BuildContext context, WidgetRef ref) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
   showModalBottomSheet(
     context: context,
-    backgroundColor: isDark ? const Color(0xFF1E1E1E) : AppTokens.paper,
+    backgroundColor: _sheetBg(context),
     builder: (_) => SafeArea(
       top: false,
       child: Consumer(
@@ -720,7 +733,7 @@ void _showThemeSheet(BuildContext context, WidgetRef ref) {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title: const Text('Light'),
+                title: Text('Light', style: TextStyle(color: _sheetText(context))),
                 trailing: current == ThemePreference.light
                     ? const Icon(Icons.check, color: AppTokens.coral)
                     : null,
@@ -731,7 +744,7 @@ void _showThemeSheet(BuildContext context, WidgetRef ref) {
                 },
               ),
               ListTile(
-                title: const Text('Dark'),
+                title: Text('Dark', style: TextStyle(color: _sheetText(context))),
                 trailing: current == ThemePreference.dark
                     ? const Icon(Icons.check, color: AppTokens.coral)
                     : null,
@@ -776,35 +789,35 @@ void _showObjectiveSheet(
 ) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: AppTokens.paper,
+    backgroundColor: _sheetBg(context),
     builder: (_) => SafeArea(
       top: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            title: const Text('Perte de poids'),
+            title: Text('Perte de poids', style: TextStyle(color: _sheetText(context))),
             onTap: () {
               notifier.setObjective(CookingObjective.weightLoss);
               Navigator.pop(context);
             },
           ),
           ListTile(
-            title: const Text('Prise de masse'),
+            title: Text('Prise de masse', style: TextStyle(color: _sheetText(context))),
             onTap: () {
               notifier.setObjective(CookingObjective.muscleGain);
               Navigator.pop(context);
             },
           ),
           ListTile(
-            title: const Text('Famille'),
+            title: Text('Famille', style: TextStyle(color: _sheetText(context))),
             onTap: () {
               notifier.setObjective(CookingObjective.family);
               Navigator.pop(context);
             },
           ),
           ListTile(
-            title: const Text('Passion cuisine'),
+            title: Text('Passion cuisine', style: TextStyle(color: _sheetText(context))),
             onTap: () {
               notifier.setObjective(CookingObjective.passion);
               Navigator.pop(context);
@@ -822,35 +835,35 @@ void _showCookingLevelSheet(
 ) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: AppTokens.paper,
+    backgroundColor: _sheetBg(context),
     builder: (_) => SafeArea(
       top: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            title: const Text('Débutant'),
+            title: Text('Débutant', style: TextStyle(color: _sheetText(context))),
             onTap: () {
               notifier.setCookingLevel(CookingLevel.beginner);
               Navigator.pop(context);
             },
           ),
           ListTile(
-            title: const Text('Intermédiaire'),
+            title: Text('Intermédiaire', style: TextStyle(color: _sheetText(context))),
             onTap: () {
               notifier.setCookingLevel(CookingLevel.intermediate);
               Navigator.pop(context);
             },
           ),
           ListTile(
-            title: const Text('Avancé'),
+            title: Text('Avancé', style: TextStyle(color: _sheetText(context))),
             onTap: () {
               notifier.setCookingLevel(CookingLevel.advanced);
               Navigator.pop(context);
             },
           ),
           ListTile(
-            title: const Text('Expert'),
+            title: Text('Expert', style: TextStyle(color: _sheetText(context))),
             onTap: () {
               notifier.setCookingLevel(CookingLevel.expert);
               Navigator.pop(context);
@@ -870,7 +883,7 @@ void _showAllergiesSheet(
   const options = ['Gluten', 'Lactose', 'Noix', 'Œufs', 'Fruits de mer', 'Soja'];
   showModalBottomSheet(
     context: context,
-    backgroundColor: AppTokens.paper,
+    backgroundColor: _sheetBg(context),
     isScrollControlled: true,
     builder: (_) => SafeArea(
       top: false,
@@ -884,8 +897,9 @@ void _showAllergiesSheet(
                 CheckboxListTile(
                   value: selected.contains(a),
                   onChanged: (_) => notifier.toggleAllergy(a),
-                  title: Text(a),
+                  title: Text(a, style: TextStyle(color: _sheetText(context))),
                   activeColor: AppTokens.coral,
+                  checkColor: Colors.white,
                 ),
             ],
           );
@@ -903,7 +917,7 @@ void _showDietsSheet(
   const options = ['Végétarien', 'Végétalien', 'Halal', 'Keto', 'Sans gluten', 'Sans lactose'];
   showModalBottomSheet(
     context: context,
-    backgroundColor: AppTokens.paper,
+    backgroundColor: _sheetBg(context),
     isScrollControlled: true,
     builder: (_) => SafeArea(
       top: false,
@@ -917,8 +931,9 @@ void _showDietsSheet(
                 CheckboxListTile(
                   value: selected.contains(d),
                   onChanged: (_) => notifier.toggleDiet(d),
-                  title: Text(d),
+                  title: Text(d, style: TextStyle(color: _sheetText(context))),
                   activeColor: AppTokens.coral,
+                  checkColor: Colors.white,
                 ),
             ],
           );

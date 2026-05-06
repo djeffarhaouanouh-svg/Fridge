@@ -39,7 +39,11 @@ class GlassButton extends StatelessWidget {
       GlassButtonSize.lg => 15.0,
     };
 
+    // Le libellé doit rester un enfant non-[Positioned] pour que IntrinsicWidth
+    // mesure correctement la pill (sinon largeur ~0 → bouton invisible).
     final inner = Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
       children: [
         Positioned.fill(
           child: ClipRRect(
@@ -66,32 +70,27 @@ class GlassButton extends StatelessWidget {
             ),
           ),
         ),
-        Positioned.fill(
-          child: Align(
-            alignment: Alignment.center,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: fs + 2, color: t.text),
-                    const SizedBox(width: 7),
-                  ],
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: fs,
-                      fontWeight: FontWeight.w600,
-                      color: t.text,
-                    ),
-                  ),
-                ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: fs + 2, color: t.text),
+                const SizedBox(width: 7),
+              ],
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: fs,
+                  fontWeight: FontWeight.w600,
+                  color: t.text,
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ],

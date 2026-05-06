@@ -40,6 +40,60 @@ class ClaudeService {
     return 'image/jpeg';
   }
 
+  static const List<String> _uniquePhotoFallbackPool = [
+    'spaghetti bolognese.png',
+    'spaghetti carbonara.png',
+    'spaghetti carbonara-2.png',
+    'gnocchi-saucetomate.png',
+    'pates-basilic.png',
+    'pates-saucetomate.png',
+    'pate-saucetomate.png',
+    'icon.js/farfalle.png',
+  ];
+
+  String _normalizePhotoIdentity(String photo) {
+    final raw = photo.trim().toLowerCase();
+    if (raw.isEmpty) return '';
+    // Unsplash: détecte l'ID de photo même avec query params différents.
+    final unsplashId = RegExp(r'photo-[a-z0-9]+').firstMatch(raw)?.group(0);
+    if (unsplashId != null) return unsplashId;
+    return raw;
+  }
+
+  List<Meal> _ensureUniquePhotos(List<Meal> meals) {
+    final used = <String>{};
+    var fallbackIndex = 0;
+    final result = <Meal>[];
+
+    for (final meal in meals) {
+      var chosen = meal.photo.trim();
+      var key = _normalizePhotoIdentity(chosen);
+
+      if (key.isEmpty || used.contains(key)) {
+        while (fallbackIndex < _uniquePhotoFallbackPool.length) {
+          final candidate = _uniquePhotoFallbackPool[fallbackIndex++];
+          final candidateKey = _normalizePhotoIdentity(candidate);
+          if (!used.contains(candidateKey)) {
+            chosen = candidate;
+            key = candidateKey;
+            break;
+          }
+        }
+      }
+
+      if (key.isEmpty || used.contains(key)) {
+        // Ultime sécurité: URL unique par id recette.
+        chosen =
+            'https://picsum.photos/seed/${Uri.encodeComponent(meal.id)}/800/600';
+        key = _normalizePhotoIdentity(chosen);
+      }
+
+      used.add(key);
+      result.add(meal.copyWith(photo: chosen));
+    }
+    return result;
+  }
+
   Future<List<String>> detectIngredients(Uint8List imageBytes) async {
     final base64Image = base64Encode(imageBytes);
     final mediaType = _mediaType(imageBytes);
@@ -175,11 +229,14 @@ Rules:
 
     const uuid = Uuid();
     final List<dynamic> recipes = jsonDecode(text);
-    return recipes.map((e) {
+    final meals = recipes.map((e) {
       final raw = Map<String, dynamic>.from(e as Map);
       raw['id'] = uuid.v4();
       return Meal.fromJson(raw);
     }).toList();
+
+    // Sécurité anti-doublon: aucune recette ne garde la même image qu'une autre.
+    return _ensureUniquePhotos(meals);
   }
 
   Future<List<DayPlan>> generateWeekPlan(List<Uint8List> photos) async {

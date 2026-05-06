@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' show lerpDouble;
@@ -232,71 +231,57 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     ref.read(scanStatusProvider.notifier).state = ScanStatus.loading;
     ref.read(latestScanMealsProvider.notifier).state = const [];
     ref.read(latestScanIngredientsProvider.notifier).state = const [];
+    final claude = ClaudeService();
 
     try {
-      await _runPhotoAnalysis().timeout(
-        const Duration(minutes: 3),
-        onTimeout: () => throw TimeoutException('scan'),
-      );
-    } on TimeoutException {
-      _showError('Délai dépassé. Vérifie ta connexion et réessaie.');
-      ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
+      final ingredients = await claude.detectIngredients(_photos.last);
+
+      if (ingredients.isEmpty) {
+        _showError(
+            'Aucun ingrédient détecté. Réessaie avec une meilleure photo.');
+        ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
+        return;
+      }
+
+      final existing = ref.read(detectedIngredientsProvider);
+      final latestDetected = <String>[];
+      final latestSeen = <String>{};
+      for (final item in ingredients) {
+        final v = item.trim();
+        if (v.isEmpty) continue;
+        final key = v.toLowerCase();
+        if (latestSeen.add(key)) latestDetected.add(v);
+      }
+      final merged = <String>[];
+      final seen = <String>{};
+      for (final item in [...existing, ...latestDetected]) {
+        final v = item.trim();
+        if (v.isEmpty) continue;
+        final key = v.toLowerCase();
+        if (seen.add(key)) merged.add(v);
+      }
+      ref.read(detectedIngredientsProvider.notifier).state = merged;
+      ref.read(latestScanIngredientsProvider.notifier).state = latestDetected;
+      await persistFridgeToNeon(merged);
+
+      final profile = ref.read(userProfileProvider);
+      final meals = await claude.findRecipes(ingredients, profile: profile);
+      if (meals.isNotEmpty) {
+        ref.read(latestScanMealsProvider.notifier).state = meals;
+        await ref.read(mealsProvider.notifier).mergeScanResultsAndPersist(meals);
+      }
+
+      ref.read(scanStatusProvider.notifier).state = ScanStatus.done;
+      setState(() => _photos.clear());
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ResultsScreen()),
+        );
+      }
     } catch (e) {
       _showError('Erreur : $e');
       ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
-    } finally {
-      if (ref.read(scanStatusProvider) == ScanStatus.loading) {
-        ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
-      }
-    }
-  }
-
-  Future<void> _runPhotoAnalysis() async {
-    final claude = ClaudeService();
-    final ingredients = await claude.detectIngredients(_photos.last);
-
-    if (ingredients.isEmpty) {
-      _showError(
-          'Aucun ingrédient détecté. Réessaie avec une meilleure photo.');
-      ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
-      return;
-    }
-
-    final existing = ref.read(detectedIngredientsProvider);
-    final latestDetected = <String>[];
-    final latestSeen = <String>{};
-    for (final item in ingredients) {
-      final v = item.trim();
-      if (v.isEmpty) continue;
-      final key = v.toLowerCase();
-      if (latestSeen.add(key)) latestDetected.add(v);
-    }
-    final merged = <String>[];
-    final seen = <String>{};
-    for (final item in [...existing, ...latestDetected]) {
-      final v = item.trim();
-      if (v.isEmpty) continue;
-      final key = v.toLowerCase();
-      if (seen.add(key)) merged.add(v);
-    }
-    ref.read(detectedIngredientsProvider.notifier).state = merged;
-    ref.read(latestScanIngredientsProvider.notifier).state = latestDetected;
-    await persistFridgeToNeon(merged);
-
-    final profile = ref.read(userProfileProvider);
-    final meals = await claude.findRecipes(ingredients, profile: profile);
-    if (meals.isNotEmpty) {
-      ref.read(latestScanMealsProvider.notifier).state = meals;
-      await ref.read(mealsProvider.notifier).mergeScanResultsAndPersist(meals);
-    }
-
-    ref.read(scanStatusProvider.notifier).state = ScanStatus.done;
-    setState(() => _photos.clear());
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ResultsScreen()),
-      );
     }
   }
 

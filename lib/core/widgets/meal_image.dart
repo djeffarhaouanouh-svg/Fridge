@@ -15,17 +15,61 @@ class MealImage extends StatelessWidget {
   });
 
   static const List<(String, String)> _localRecipePhotoRules = [
+    // Bolognese / viande tomate
     ('bolognese', 'spaghetti bolognese.png'),
+    ('bolognaise', 'spaghetti bolognese.png'),
+    ('boeuf tomate', 'spaghetti bolognese.png'),
+    ('bœuf tomate', 'spaghetti bolognese.png'),
+    ('viande hachee', 'spaghetti bolognese.png'),
+    ('viande hachée', 'spaghetti bolognese.png'),
+
+    // Carbonara / lardons
     ('carbonara', 'spaghetti carbonara.png'),
+    ('carbo', 'spaghetti carbonara.png'),
+    ('lardons', 'spaghetti carbonara.png'),
+    ('jambon creme', 'spaghetti carbonara.png'),
+    ('jambon crème', 'spaghetti carbonara.png'),
+
+    // Gnocchi / tomate
     ('gnocchi', 'gnocchi-saucetomate.png'),
+    ('gnocchis', 'gnocchi-saucetomate.png'),
+    ('gnocchi tomate', 'gnocchi-saucetomate.png'),
+
+    // Farfalle
     ('farfalle', 'icon.js/farfalle.png'),
+
+    // Basilic / pesto-ish
     ('basilic', 'pates-basilic.png'),
+    ('pesto', 'pates-basilic.png'),
+    ('verde', 'pates-basilic.png'),
+
+    // Sauce tomate / pasta rouge
     ('sauce tomate', 'pates-saucetomate.png'),
     ('saucetomate', 'pates-saucetomate.png'),
+    ('pates tomate', 'pates-saucetomate.png'),
+    ('pâtes tomate', 'pates-saucetomate.png'),
+    ('pasta tomate', 'pates-saucetomate.png'),
+    ('napolitaine', 'pates-saucetomate.png'),
+    ('arrabiata', 'pates-saucetomate.png'),
+    ('arrabbiata', 'pates-saucetomate.png'),
+
+    // Tomate générique
     ('tomate', 'pate-saucetomate.png'),
+    ('tomates', 'pate-saucetomate.png'),
+
+    // Spaghetti / pâtes génériques
     ('spaghetti', 'spaghetti carbonara-2.png'),
+    ('spaghettis', 'spaghetti carbonara-2.png'),
+    ('pasta', 'spaghetti carbonara-2.png'),
     ('pates', 'pates-saucetomate.png'),
     ('pâtes', 'pates-saucetomate.png'),
+    ('penne', 'pates-saucetomate.png'),
+    ('tagliatelle', 'pates-saucetomate.png'),
+    ('linguine', 'pates-saucetomate.png'),
+    ('macaroni', 'pates-saucetomate.png'),
+    ('nouilles', 'pates-saucetomate.png'),
+    ('nouille', 'pates-saucetomate.png'),
+    ('lasagne', 'pates-saucetomate.png'),
   ];
 
   String? _guessLocalAsset() {

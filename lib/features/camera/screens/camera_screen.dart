@@ -581,7 +581,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                     ),
                   ),
 
-                  // Bouton capture
                   Center(
                     child: GestureDetector(
                       onTap: (isScanning || _isAnimating) ? null : _showSourcePicker,
@@ -592,9 +591,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                           color: Colors.transparent,
                           border: Border.all(color: Colors.white, width: 4),
                         ),
-                        child: isScanning
-                            ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                            : null,
                       ),
                     ),
                   ),

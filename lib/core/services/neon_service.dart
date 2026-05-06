@@ -207,6 +207,36 @@ class NeonService {
     return rows.first['theme_preference'] as String?;
   }
 
+  // ── AI TONE (Coach / Chef / Ami) ───────────────────────────────────────────
+
+  Future<void> saveAiTonePreference(String aiTone) async {
+    await _ensureUserRowExists();
+    await execute(
+      '''
+      INSERT INTO user_ai_tone_preferences (user_id, ai_tone, updated_at)
+      VALUES (\$1::uuid, \$2, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        ai_tone = EXCLUDED.ai_tone,
+        updated_at = NOW()
+      ''',
+      [kUserId, aiTone],
+    );
+  }
+
+  Future<String?> loadAiTonePreference() async {
+    final rows = await query(
+      '''
+      SELECT ai_tone
+      FROM user_ai_tone_preferences
+      WHERE user_id = \$1::uuid
+      LIMIT 1
+      ''',
+      [kUserId],
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['ai_tone'] as String?;
+  }
+
   Future<void> upsertPushToken({
     required String token,
     required String platform,
@@ -682,6 +712,16 @@ CREATE TABLE IF NOT EXISTS user_theme_preferences (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT user_theme_preferences_valid_theme
     CHECK (theme_preference IN ('light', 'dark'))
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_ai_tone_preferences (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  ai_tone TEXT NOT NULL DEFAULT 'chef',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT user_ai_tone_preferences_valid_tone
+    CHECK (ai_tone IN ('coach', 'chef', 'ami'))
 )
 ''');
 

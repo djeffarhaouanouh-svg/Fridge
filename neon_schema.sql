@@ -79,6 +79,15 @@ CREATE TABLE IF NOT EXISTS user_notifications (
   notif_fridge BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- Ton de l’IA : Coach / Chef / Ami (valeurs : coach, chef, ami)
+CREATE TABLE IF NOT EXISTS user_ai_tone_preferences (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  ai_tone TEXT NOT NULL DEFAULT 'chef',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT user_ai_tone_preferences_valid_tone
+    CHECK (ai_tone IN ('coach', 'chef', 'ami'))
+);
+
 CREATE TABLE IF NOT EXISTS user_push_tokens (
   id BIGSERIAL PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -93,14 +102,6 @@ CREATE TABLE IF NOT EXISTS user_fridge_ingredients (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   ingredient_name TEXT NOT NULL,
   PRIMARY KEY (user_id, ingredient_name)
-);
-
--- Photos envoyees par l'utilisateur (scan frigo, etc.)
-CREATE TABLE IF NOT EXISTS user_photos (
-  id UUID PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  photo_base64 TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS recipes (

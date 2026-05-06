@@ -179,6 +179,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         } else if (savedTheme == 'light') {
           ref.read(themePreferenceProvider.notifier).state = ThemePreference.light;
         }
+        final savedAiTone = await db.loadAiTonePreference();
+        if (savedAiTone != null) {
+          for (final t in AiTone.values) {
+            if (t.name == savedAiTone) {
+              ref.read(aiToneProvider.notifier).state = t;
+              break;
+            }
+          }
+        }
         await PushNotificationsService.instance.initialize();
       }
 
@@ -229,6 +238,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     ref.listen<ThemePreference>(themePreferenceProvider, (prev, next) {
       final theme = next == ThemePreference.dark ? 'dark' : 'light';
       NeonService().saveThemePreference(theme).catchError((_) {});
+    });
+    ref.listen<AiTone>(aiToneProvider, (prev, next) {
+      NeonService().saveAiTonePreference(next.name).catchError((_) {});
     });
 
     return Scaffold(

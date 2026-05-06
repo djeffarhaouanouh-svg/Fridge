@@ -66,25 +66,32 @@ class GlassButton extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: fs + 2, color: t.text),
-                const SizedBox(width: 7),
-              ],
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: fs,
-                  fontWeight: FontWeight.w600,
-                  color: t.text,
-                ),
+        Positioned.fill(
+          child: Align(
+            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: fs + 2, color: t.text),
+                    const SizedBox(width: 7),
+                  ],
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: fs,
+                      fontWeight: FontWeight.w600,
+                      color: t.text,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ],

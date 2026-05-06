@@ -129,13 +129,16 @@ class ResultsScreen extends ConsumerWidget {
                   const SizedBox(height: 28),
 
                   // CTA "Générer plus de recettes"
-                  GlassButton(
-                    label: 'Générer plus de recettes',
-                    icon: Icons.auto_awesome,
-                    color: GlassButtonColor.green,
-                    size: GlassButtonSize.lg,
-                    fullWidth: true,
-                    onTap: () {},
+                  Align(
+                    alignment: Alignment.center,
+                    child: GlassButton(
+                      label: 'Générer plus de recettes',
+                      icon: Icons.auto_awesome,
+                      color: GlassButtonColor.green,
+                      size: GlassButtonSize.lg,
+                      fullWidth: false,
+                      onTap: () {},
+                    ),
                   ),
                 ],
               ),

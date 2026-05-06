@@ -601,7 +601,10 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                                   key: ValueKey(meal.id),
                                   height: 200,
                                   width: double.infinity,
-                                  child: MealImage(photo: meal.photo),
+                                  child: MealImage(
+                                    photo: meal.photo,
+                                    fallbackKey: meal.title,
+                                  ),
                                 )
                               : Container(
                                   key: const ValueKey('empty'),
@@ -838,7 +841,10 @@ class _MealPickCard extends StatelessWidget {
               ),
               child: SizedBox(
                 height: 100, width: 130,
-                child: MealImage(photo: meal.photo),
+                child: MealImage(
+                  photo: meal.photo,
+                  fallbackKey: meal.title,
+                ),
               ),
             ),
             Padding(

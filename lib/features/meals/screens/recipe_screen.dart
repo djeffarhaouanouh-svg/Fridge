@@ -94,7 +94,10 @@ class RecipeScreen extends ConsumerWidget {
                             SizedBox(
                               height: 300,
                               width: double.infinity,
-                              child: MealImage(photo: meal.photo),
+                              child: MealImage(
+                                photo: meal.photo,
+                                fallbackKey: meal.title,
+                              ),
                             ),
                             Positioned(
                               top: 12,

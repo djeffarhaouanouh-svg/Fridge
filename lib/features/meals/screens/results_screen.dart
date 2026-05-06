@@ -442,7 +442,10 @@ class _RecipeRow extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                   child: SizedBox(
                     width: 72, height: 72,
-                    child: MealImage(photo: meal.photo),
+                    child: MealImage(
+                      photo: meal.photo,
+                      fallbackKey: meal.title,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),

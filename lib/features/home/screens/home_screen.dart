@@ -299,7 +299,12 @@ class _HeroCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         child: Stack(
           children: [
-            Positioned.fill(child: MealImage(photo: meal.photo)),
+            Positioned.fill(
+              child: MealImage(
+                photo: meal.photo,
+                fallbackKey: meal.title,
+              ),
+            ),
             Positioned.fill(
               child: Container(
                 decoration: const BoxDecoration(
@@ -413,7 +418,12 @@ class _CompactCard extends ConsumerWidget {
                 height: 148,
                 child: Stack(
                   children: [
-                    Positioned.fill(child: MealImage(photo: meal.photo)),
+                    Positioned.fill(
+                      child: MealImage(
+                        photo: meal.photo,
+                        fallbackKey: meal.title,
+                      ),
+                    ),
                     Positioned(
                       top: 8,
                       right: 8,

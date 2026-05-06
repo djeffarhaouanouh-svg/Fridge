@@ -38,7 +38,7 @@ class ResultsScreen extends ConsumerWidget {
                   Expanded(
                     child: Center(
                       child: Text(
-                        'Voici ce qu\'on a trouvé',
+                        'Voici ce que j\'ai détecté',
                         style: GoogleFonts.fraunces(
                           fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink,
                         ),
@@ -322,7 +322,8 @@ class _IngredientsEditorSheetState
                     controller: _addCtrl,
                     style: GoogleFonts.inter(fontSize: 14, color: AppTokens.ink),
                     decoration: InputDecoration(
-                      hintText: 'Ajouter un ingrédient...',
+                      hintText:
+                          'ajoute un ingrédient que je n\'ai pas détecté',
                       hintStyle: GoogleFonts.inter(color: AppTokens.muted, fontSize: 14),
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 8),

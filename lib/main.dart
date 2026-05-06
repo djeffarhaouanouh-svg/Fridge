@@ -155,8 +155,6 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  bool _bootstrapped = false;
-
   @override
   void initState() {
     super.initState();
@@ -197,23 +195,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       await ref.read(mealsProvider.notifier).loadFromDatabase();
     } catch (e, st) {
       debugPrint('Sync Neon au démarrage: $e\n$st');
-    } finally {
-      if (mounted) setState(() => _bootstrapped = true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedTab = ref.watch(selectedTabProvider);
-
-    if (!_bootstrapped) {
-      return const Scaffold(
-        backgroundColor: AppTokens.paper,
-        body: Center(
-          child: CircularProgressIndicator(color: AppTokens.coral),
-        ),
-      );
-    }
 
     ref.listen<List<String>>(detectedIngredientsProvider, (prev, next) {
       NeonService().saveFridgeIngredients(next).catchError((_) {});

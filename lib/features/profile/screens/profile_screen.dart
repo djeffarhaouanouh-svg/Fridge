@@ -1146,131 +1146,43 @@ void _showKitchenEquipmentsSheet(
 
   showModalBottomSheet(
     context: context,
+    backgroundColor: _sheetBg(context),
     isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: AppTokens.paper,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-    ),
-    builder: (_) => Consumer(
-      builder: (context, ref, _) {
-        final selected = ref.watch(userProfileProvider).kitchenEquipments;
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.84,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-            child: Column(
-              children: [
-                Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppTokens.hairline,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Votre cuisine',
-                  style: GoogleFonts.fraunces(
-                    fontSize: 42,
-                    fontWeight: FontWeight.w700,
-                    color: AppTokens.ink,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Quels sont vos équipements\nde cuisine ?',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTokens.ink,
-                    height: 1.25,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Expanded(
-                  child: GridView.count(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 0.82,
-                    children: options.map((item) {
-                      final isOn = selected.contains(item);
-                      return GestureDetector(
-                        onTap: () => notifier.toggleKitchenEquipment(item),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isOn
-                                        ? AppTokens.coral
-                                        : AppTokens.hairlineSoft,
-                                    width: isOn ? 2 : 1.2,
-                                  ),
-                                ),
-                                child: Icon(
-                                  icons[item] ?? Icons.kitchen_outlined,
-                                  size: 44,
-                                  color: isOn
-                                      ? AppTokens.coral
-                                      : const Color(0xFF6A6F7D),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              item,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w600,
-                                color: AppTokens.ink,
-                                height: 1.15,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+    builder: (_) => SafeArea(
+      top: false,
+      child: Consumer(
+        builder: (context, ref, _) {
+          final selected = ref.watch(userProfileProvider).kitchenEquipments;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final item in options)
+                CheckboxListTile(
+                  value: selected.contains(item),
+                  onChanged: (_) => notifier.toggleKitchenEquipment(item),
+                  title: Row(
+                    children: [
+                      Icon(
+                        icons[item] ?? Icons.kitchen_outlined,
+                        size: 18,
+                        color: _sheetText(context),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          item,
+                          style: TextStyle(color: _sheetText(context)),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTokens.coral,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
                       ),
-                    ),
-                    child: Text(
-                      'Valider',
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    ],
                   ),
+                  activeColor: AppTokens.coral,
+                  checkColor: Colors.white,
                 ),
-              ],
-            ),
-          ),
-        );
-      },
+            ],
+          );
+        },
+      ),
     ),
   );
 }

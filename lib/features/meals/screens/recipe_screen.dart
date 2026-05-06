@@ -37,6 +37,7 @@ class RecipeScreen extends ConsumerWidget {
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: bg,
+        extendBody: true,
         bottomNavigationBar: const SafeArea(
           top: false,
           child: BottomNav(popRouteFirst: true),

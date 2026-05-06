@@ -154,6 +154,8 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
+  bool _remoteReady = false;
+
   @override
   void initState() {
     super.initState();
@@ -180,26 +182,43 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         await PushNotificationsService.instance.initialize();
       }
 
-      final streak = await db.recordDailyLoginAndGetStreak();
-      ref.read(loginStreakProvider.notifier).state = streak;
-
-      final fridge = await db.loadFridgeIngredients();
-      ref.read(detectedIngredientsProvider.notifier).state = fridge;
-
-      final plan = await db.loadPlanSelections();
-      if (plan != null && plan.isNotEmpty) {
-        ref.read(planMealSelectionsProvider.notifier).state = plan;
-      }
-
-      await ref.read(mealsProvider.notifier).loadFromDatabase();
+      // Requêtes indépendantes en parallèle (moins de latence qu’en série).
+      await Future.wait([
+        (() async {
+          final streak = await db.recordDailyLoginAndGetStreak();
+          ref.read(loginStreakProvider.notifier).state = streak;
+        })(),
+        (() async {
+          final fridge = await db.loadFridgeIngredients();
+          ref.read(detectedIngredientsProvider.notifier).state = fridge;
+        })(),
+        (() async {
+          final plan = await db.loadPlanSelections();
+          if (plan != null && plan.isNotEmpty) {
+            ref.read(planMealSelectionsProvider.notifier).state = plan;
+          }
+        })(),
+        ref.read(mealsProvider.notifier).loadFromDatabase(),
+      ]);
     } catch (e, st) {
       debugPrint('Sync Neon au démarrage: $e\n$st');
+    } finally {
+      if (mounted) setState(() => _remoteReady = true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedTab = ref.watch(selectedTabProvider);
+
+    if (!_remoteReady) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(
+          child: CircularProgressIndicator(color: AppTokens.coral),
+        ),
+      );
+    }
 
     ref.listen<List<String>>(detectedIngredientsProvider, (prev, next) {
       NeonService().saveFridgeIngredients(next).catchError((_) {});

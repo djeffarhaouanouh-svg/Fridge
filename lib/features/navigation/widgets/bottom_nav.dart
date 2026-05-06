@@ -6,7 +6,10 @@ import '../../../core/theme/app_tokens.dart';
 final selectedTabProvider = StateProvider<int>((ref) => 0);
 
 class BottomNav extends ConsumerWidget {
-  const BottomNav({super.key});
+  /// Si true, ferme la route courante (ex. écran recette) avant de changer d’onglet.
+  final bool popRouteFirst;
+
+  const BottomNav({super.key, this.popRouteFirst = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,12 +23,12 @@ class BottomNav extends ConsumerWidget {
       Icons.person_rounded,
     ];
     const count = 4;
-    const pillW = 48.0;
-    const pillH = 36.0;
-    const navH = 60.0;
+    const pillW = 50.0;
+    const pillH = 34.0;
+    const navH = 56.0;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 16),
+      padding: EdgeInsets.fromLTRB(40, 0, 40, bottom + 8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(999),
         child: BackdropFilter(
@@ -89,8 +92,13 @@ class BottomNav extends ConsumerWidget {
                           final isActive = i == selected;
                           return Expanded(
                             child: GestureDetector(
-                              onTap: () =>
-                                  ref.read(selectedTabProvider.notifier).state = i,
+                              onTap: () {
+                                if (popRouteFirst &&
+                                    Navigator.canPop(context)) {
+                                  Navigator.pop(context);
+                                }
+                                ref.read(selectedTabProvider.notifier).state = i;
+                              },
                               behavior: HitTestBehavior.opaque,
                               child: Center(
                                 child: TweenAnimationBuilder<Color?>(
@@ -106,7 +114,7 @@ class BottomNav extends ConsumerWidget {
                                   ),
                                   builder: (_, color, __) => Icon(
                                     icons[i],
-                                    size: 20,
+                                    size: 19,
                                     color: color,
                                   ),
                                 ),

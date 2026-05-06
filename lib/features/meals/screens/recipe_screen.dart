@@ -1,183 +1,431 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../meals/providers/meals_provider.dart';
+import '../../navigation/widgets/bottom_nav.dart';
 import '../models/meal.dart';
 
-// ─── Fiche recette (ingrédients) ────────────────────────────────────────────
+// ─── Fiche recette ─────────────────────────────────────────────────────────
 
 class RecipeScreen extends ConsumerWidget {
   final Meal meal;
   const RecipeScreen({super.key, required this.meal});
 
+  static String _difficultyLabel(String d) {
+    final x = d.toLowerCase();
+    if (x.contains('facile')) return 'Très facile';
+    if (x.contains('inter')) return 'Intermédiaire';
+    return d;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final total = meal.ingredients.length;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    final ink = isDark ? Colors.white : AppTokens.ink;
+    final muted = isDark ? Colors.white70 : AppTokens.muted;
+    final surface = isDark ? const Color(0xFF2A2A2A) : Colors.white;
+    final hair = isDark ? Colors.white24 : AppTokens.hairline;
 
-    return Scaffold(
-      backgroundColor: AppTokens.paper,
-      bottomNavigationBar: meal.steps.isNotEmpty
-          ? SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-                child: GlassButton(
-                  label: 'Commencer la recette',
-                  icon: Icons.play_arrow_rounded,
-                  color: GlassButtonColor.green,
-                  size: GlassButtonSize.lg,
-                  fullWidth: true,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => _CookingScreen(meal: meal),
+    final bottomSlot = meal.steps.isNotEmpty
+        ? SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 6),
+                  child: _CommencerRecetteButton(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => _CookingScreen(meal: meal),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            )
-          : null,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              // Hero image
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 280,
-                  child: MealImage(photo: meal.photo),
-                ),
-              ),
+                const BottomNav(popRouteFirst: true),
+              ],
+            ),
+          )
+        : const SafeArea(
+            top: false,
+            child: BottomNav(popRouteFirst: true),
+          );
 
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: AppTokens.paper,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  transform: Matrix4.translationValues(0, -24, 0),
-                  padding: const EdgeInsets.fromLTRB(18, 20, 18, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Tags
-                      Row(
-                        children: [
-                          _Tag(label: meal.typeLabel),
-                          const SizedBox(width: 8),
-                          _Tag(label: meal.difficulty),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Titre
-                      Text(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: bg,
+        bottomNavigationBar: bottomSlot,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Barre corail : commence sous la barre de statut / encoche (pas sous l’heure / batterie).
+            SafeArea(
+              bottom: false,
+              child: Container(
+                color: AppTokens.coral,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 20),
+                    ),
+                    Expanded(
+                      child: Text(
                         meal.title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.fraunces(
-                          fontSize: 24, fontWeight: FontWeight.w700,
-                          color: AppTokens.ink, height: 1.2,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          height: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 12),
-
-                      // Metadata
-                      Row(
-                        children: [
-                          Icon(Icons.schedule_outlined, size: 14, color: AppTokens.muted),
-                          const SizedBox(width: 4),
-                          Text(meal.time,
-                            style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted, fontWeight: FontWeight.w500)),
-                          const SizedBox(width: 12),
-                          Icon(Icons.local_fire_department_outlined, size: 14, color: AppTokens.muted),
-                          const SizedBox(width: 4),
-                          Text('${meal.kcal} kcal',
-                            style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted, fontWeight: FontWeight.w500)),
-                          const SizedBox(width: 12),
-                          Icon(Icons.star_rounded, size: 14, color: AppTokens.coral),
-                          const SizedBox(width: 4),
-                          Text('4.7',
-                            style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted, fontWeight: FontWeight.w500)),
-                        ],
+                    ),
+                    IconButton(
+                      onPressed: () => ref
+                          .read(mealsProvider.notifier)
+                          .toggleFavorite(meal.id),
+                      icon: Icon(
+                        meal.isFavorite
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: Colors.white,
+                        size: 24,
                       ),
-                      const SizedBox(height: 28),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
-                      // Section ingrédients
-                      Row(
-                        children: [
-                          Text('Ingrédients',
-                            style: GoogleFonts.fraunces(
-                              fontSize: 18, fontWeight: FontWeight.w600, color: AppTokens.ink,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text('$total/$total dans ton frigo',
-                            style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w600, color: AppTokens.coral,
-                            ),
-                          ),
-                        ],
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(AppTokens.radiusLg),
+                        child: SizedBox(
+                          height: 220,
+                          child: MealImage(photo: meal.photo),
+                        ),
                       ),
-                      const SizedBox(height: 14),
-
-                      // Liste ingrédients
-                      ...meal.ingredients.map((ing) => _IngredientRow(ingredient: ing)),
-
-                      const SizedBox(height: 16),
-                    ],
+                    ),
                   ),
+
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              _Tag(label: meal.typeLabel),
+                              const SizedBox(width: 8),
+                              _Tag(label: _difficultyLabel(meal.difficulty)),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          // Métadonnées (pas d’avis / pas de notes)
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.schedule_outlined,
+                                    size: 16, color: muted),
+                                const SizedBox(width: 6),
+                                Text(meal.time,
+                                    style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: ink)),
+                                Text(' · ',
+                                    style: TextStyle(
+                                        color: muted, fontSize: 13)),
+                                Icon(Icons.restaurant_menu_outlined,
+                                    size: 16, color: muted),
+                                const SizedBox(width: 6),
+                                Text(_difficultyLabel(meal.difficulty),
+                                    style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: ink)),
+                                Text(' · ',
+                                    style: TextStyle(
+                                        color: muted, fontSize: 13)),
+                                Icon(Icons.savings_outlined,
+                                    size: 16, color: muted),
+                                const SizedBox(width: 6),
+                                Text('Bon marché',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: ink)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          Text(
+                            'Ingrédients',
+                            style: GoogleFonts.fraunces(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: ink,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 0.72,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) {
+                          final ing = meal.ingredients[i];
+                          return _IngredientEmojiTile(
+                            ingredient: ing,
+                            surface: surface,
+                            hair: hair,
+                            ink: ink,
+                            muted: muted,
+                          );
+                        },
+                        childCount: meal.ingredients.length,
+                      ),
+                    ),
+                  ),
+
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 28, 18, 12),
+                      child: Text(
+                        'Préparation',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.fraunces(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: AppTokens.coral,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFF3F0EA),
+                          borderRadius:
+                              BorderRadius.circular(AppTokens.radiusMd),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Temps total : ${meal.time}',
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: ink,
+                              ),
+                            ),
+                            Divider(height: 24, color: hair),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      Text('Préparation',
+                                          style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: ink)),
+                                      const SizedBox(height: 4),
+                                      Text('—',
+                                          style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              color: muted)),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      Text('Repos',
+                                          style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: ink)),
+                                      const SizedBox(height: 4),
+                                      Text('—',
+                                          style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              color: muted)),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      Text('Cuisson',
+                                          style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: ink)),
+                                      const SizedBox(height: 4),
+                                      Text(meal.time,
+                                          style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              color: muted)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CommencerRecetteButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CommencerRecetteButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: AppTokens.coral, width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('🧑‍🍳', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 10),
+              Text(
+                'Commencer la recette',
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppTokens.coral,
                 ),
               ),
             ],
           ),
-
-          // Bouton back
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16, top: 8),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 36, height: 36,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.arrow_back_ios_new, size: 16, color: AppTokens.ink),
-                ),
-              ),
-            ),
-          ),
-
-          // Bouton favori
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16, top: 8),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
-                  child: Container(
-                    width: 36, height: 36,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      meal.isFavorite ? Icons.favorite : Icons.favorite_border,
-                      size: 18, color: AppTokens.coral,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+class _IngredientEmojiTile extends StatelessWidget {
+  final Ingredient ingredient;
+  final Color surface;
+  final Color hair;
+  final Color ink;
+  final Color muted;
+
+  const _IngredientEmojiTile({
+    required this.ingredient,
+    required this.surface,
+    required this.hair,
+    required this.ink,
+    required this.muted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        AspectRatio(
+          aspectRatio: 1,
+          child: Container(
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: hair),
+            ),
+            alignment: Alignment.center,
+            child: buildIngredientIcon(ingredient.name, emojiSize: 36),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          ingredient.qty,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: muted,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          ingredient.name,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: ink,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
@@ -244,7 +492,6 @@ class _CookingScreenState extends State<_CookingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header : fermer + titre
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
               child: Row(
@@ -270,11 +517,9 @@ class _CookingScreenState extends State<_CookingScreen> {
 
             const SizedBox(height: 28),
 
-            // Dots + compteur
             Center(
               child: Column(
                 children: [
-                  // Dots
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(total, (i) {
@@ -310,7 +555,6 @@ class _CookingScreenState extends State<_CookingScreen> {
 
             const SizedBox(height: 36),
 
-            // Contenu de l'étape
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -322,7 +566,6 @@ class _CookingScreenState extends State<_CookingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Numéro de l'étape
                       Container(
                         width: 52, height: 52,
                         alignment: Alignment.center,
@@ -349,12 +592,10 @@ class _CookingScreenState extends State<_CookingScreen> {
               ),
             ),
 
-            // Boutons navigation
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
               child: Row(
                 children: [
-                  // Précédent (caché sur la 1ère étape)
                   AnimatedOpacity(
                     opacity: isFirst ? 0 : 1,
                     duration: const Duration(milliseconds: 200),
@@ -412,43 +653,6 @@ class _Tag extends StatelessWidget {
         style: GoogleFonts.inter(
           fontSize: 12, fontWeight: FontWeight.w600, color: AppTokens.coral,
         ),
-      ),
-    );
-  }
-}
-
-class _IngredientRow extends StatelessWidget {
-  final Ingredient ingredient;
-  const _IngredientRow({required this.ingredient});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 28, height: 28,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: AppTokens.coral, shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.check, size: 16, color: Colors.white),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(ingredient.name,
-              style: GoogleFonts.inter(
-                fontSize: 14, fontWeight: FontWeight.w500, color: AppTokens.ink,
-              ),
-            ),
-          ),
-          Text(ingredient.qty,
-            style: GoogleFonts.inter(
-              fontSize: 13, fontWeight: FontWeight.w400, color: AppTokens.muted,
-            ),
-          ),
-        ],
       ),
     );
   }

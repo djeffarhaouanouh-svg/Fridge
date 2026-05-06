@@ -347,17 +347,24 @@ class NeonService {
     final rid = normalizeRecipeId(meal.id);
     final duration =
         int.tryParse(meal.time.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+    final prep = meal.prepTimeMin;
+    final rest = meal.restTimeMin;
+    final cook = meal.cookTimeMin > 0 ? meal.cookTimeMin : duration;
     final difficulty =
         meal.difficulty.replaceAll('é', 'e').replaceAll('è', 'e');
 
     await execute('''
       INSERT INTO recipes (
         id, title, image_url, duration, calories,
-        difficulty, type, type_label, emoji, color, locked
-      ) VALUES (\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10,\$11)
+        difficulty, type, type_label, emoji, color, locked,
+        prep_time_min, rest_time_min, cook_time_min
+      ) VALUES (\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14)
       ON CONFLICT (id) DO UPDATE SET
         title     = EXCLUDED.title,
-        image_url = EXCLUDED.image_url
+        image_url = EXCLUDED.image_url,
+        prep_time_min = EXCLUDED.prep_time_min,
+        rest_time_min = EXCLUDED.rest_time_min,
+        cook_time_min = EXCLUDED.cook_time_min
     ''', [
       rid,
       meal.title,
@@ -370,6 +377,9 @@ class NeonService {
       meal.emoji,
       meal.color,
       meal.locked,
+      prep,
+      rest,
+      cook,
     ]);
 
     await execute(
@@ -441,7 +451,7 @@ class NeonService {
     final rRows = await query(
       r'''
       SELECT id::text, title, image_url, duration, calories, difficulty, type, type_label,
-             emoji, color, locked
+             emoji, color, locked, prep_time_min, rest_time_min, cook_time_min
       FROM recipes WHERE id = $1::uuid
       ''',
       [id],
@@ -485,6 +495,12 @@ class NeonService {
     }).toList();
 
     final duration = (r['duration'] as num?)?.toInt() ?? 0;
+    final prepTimeMin = (r['prep_time_min'] as num?)?.toInt() ?? 0;
+    final restTimeMin = (r['rest_time_min'] as num?)?.toInt() ?? 0;
+    final cookTimeMin =
+        ((r['cook_time_min'] as num?)?.toInt() ?? 0) > 0
+            ? (r['cook_time_min'] as num).toInt()
+            : duration;
 
     return Meal(
       id: r['id'] as String,
@@ -504,6 +520,9 @@ class NeonService {
           ? const ['Aucune étape détaillée en base pour cette recette.']
           : steps,
       isFavorite: isFavorite,
+      prepTimeMin: prepTimeMin,
+      restTimeMin: restTimeMin,
+      cookTimeMin: cookTimeMin,
     );
   }
 
@@ -607,6 +626,15 @@ class NeonService {
       );
       await execute(
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS cooking_level TEXT',
+      );
+      await execute(
+        'ALTER TABLE recipes ADD COLUMN IF NOT EXISTS prep_time_min INTEGER DEFAULT 0',
+      );
+      await execute(
+        'ALTER TABLE recipes ADD COLUMN IF NOT EXISTS rest_time_min INTEGER DEFAULT 0',
+      );
+      await execute(
+        'ALTER TABLE recipes ADD COLUMN IF NOT EXISTS cook_time_min INTEGER DEFAULT 0',
       );
     } catch (e) {
       debugPrint('ensureUserSyncSchema columns: $e');
@@ -743,6 +771,9 @@ CREATE TABLE IF NOT EXISTS recipes (
   image_url TEXT,
   duration INT NOT NULL DEFAULT 0,
   calories INT NOT NULL DEFAULT 0,
+  prep_time_min INT NOT NULL DEFAULT 0,
+  rest_time_min INT NOT NULL DEFAULT 0,
+  cook_time_min INT NOT NULL DEFAULT 0,
   difficulty TEXT,
   type TEXT,
   type_label TEXT,
@@ -1013,7 +1044,7 @@ CREATE TABLE IF NOT EXISTS meal_plans (
     try {
       lastDate = DateTime.parse(lastStr.split(' ').first.trim());
     } catch (_) {
-      final streakReset = 1;
+      const streakReset = 1;
       await execute(
         '''
         UPDATE users SET last_login_date = \$1::date, login_streak = \$2

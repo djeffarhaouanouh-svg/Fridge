@@ -22,6 +22,8 @@ class RecipeScreen extends ConsumerWidget {
     return d;
   }
 
+  static String _minLabel(int min) => min > 0 ? '$min min' : '—';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -276,7 +278,7 @@ class RecipeScreen extends ConsumerWidget {
                                               fontWeight: FontWeight.w700,
                                               color: ink)),
                                       const SizedBox(height: 4),
-                                      Text('—',
+                                      Text(_minLabel(meal.prepTimeMin),
                                           style: GoogleFonts.inter(
                                               fontSize: 14,
                                               color: muted)),
@@ -292,7 +294,7 @@ class RecipeScreen extends ConsumerWidget {
                                               fontWeight: FontWeight.w700,
                                               color: ink)),
                                       const SizedBox(height: 4),
-                                      Text('—',
+                                      Text(_minLabel(meal.restTimeMin),
                                           style: GoogleFonts.inter(
                                               fontSize: 14,
                                               color: muted)),
@@ -308,7 +310,7 @@ class RecipeScreen extends ConsumerWidget {
                                               fontWeight: FontWeight.w700,
                                               color: ink)),
                                       const SizedBox(height: 4),
-                                      Text(meal.time,
+                                      Text(_minLabel(meal.cookTimeMin),
                                           style: GoogleFonts.inter(
                                               fontSize: 14,
                                               color: muted)),

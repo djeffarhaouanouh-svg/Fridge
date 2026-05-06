@@ -49,6 +49,12 @@ class Meal {
   @HiveField(14)
   final bool isFavorite;
 
+  // Temps détaillés (optionnels) pour l'écran recette.
+  // Stockés dans le JSON/DB même si non persistés dans Hive.
+  final int prepTimeMin;
+  final int restTimeMin;
+  final int cookTimeMin;
+
   Meal({
     required this.id,
     required this.type,
@@ -65,6 +71,9 @@ class Meal {
     required this.steps,
     required this.color,
     this.isFavorite = false,
+    this.prepTimeMin = 0,
+    this.restTimeMin = 0,
+    this.cookTimeMin = 0,
   });
 
   Meal copyWith({
@@ -83,6 +92,9 @@ class Meal {
     List<String>? steps,
     String? color,
     bool? isFavorite,
+    int? prepTimeMin,
+    int? restTimeMin,
+    int? cookTimeMin,
   }) {
     return Meal(
       id: id ?? this.id,
@@ -100,10 +112,29 @@ class Meal {
       steps: steps ?? this.steps,
       color: color ?? this.color,
       isFavorite: isFavorite ?? this.isFavorite,
+      prepTimeMin: prepTimeMin ?? this.prepTimeMin,
+      restTimeMin: restTimeMin ?? this.restTimeMin,
+      cookTimeMin: cookTimeMin ?? this.cookTimeMin,
     );
   }
 
   factory Meal.fromJson(Map<String, dynamic> json) {
+    int asMinutes(dynamic value) {
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      if (value is String) {
+        final parsed = int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), ''));
+        return parsed ?? 0;
+      }
+      return 0;
+    }
+
+    final totalMin = asMinutes(json['time']);
+    final prep = asMinutes(json['prepTimeMin']);
+    final rest = asMinutes(json['restTimeMin']);
+    final cookFromPayload = asMinutes(json['cookTimeMin']);
+    final cook = cookFromPayload > 0 ? cookFromPayload : totalMin;
+
     return Meal(
       id: json['id'].toString(),
       type: json['type'] ?? '',
@@ -123,6 +154,9 @@ class Meal {
       steps: (json['steps'] as List?)?.cast<String>() ?? [],
       color: json['color'] ?? '#82D28C',
       isFavorite: json['isFavorite'] ?? false,
+      prepTimeMin: prep,
+      restTimeMin: rest,
+      cookTimeMin: cook,
     );
   }
 
@@ -143,6 +177,9 @@ class Meal {
       'steps': steps,
       'color': color,
       'isFavorite': isFavorite,
+      'prepTimeMin': prepTimeMin,
+      'restTimeMin': restTimeMin,
+      'cookTimeMin': cookTimeMin,
     };
   }
 }

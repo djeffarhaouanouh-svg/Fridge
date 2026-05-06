@@ -137,6 +137,9 @@ Suggest 3 recipes. Return ONLY a JSON array with this exact structure:
     "protein": "moyen",
     "difficulty": "facile",
     "time": "25 min",
+    "prepTimeMin": 10,
+    "restTimeMin": 0,
+    "cookTimeMin": 15,
     "locked": false,
     "photo": "https://images.unsplash.com/photo-XXXXXXXXXXXXXXXXXXX?w=600&q=80",
     "ingredients": [{"name": "chicken", "qty": "200g", "photo": ""}],
@@ -150,6 +153,7 @@ Rules:
 - Recipe 3: type="stylish", typeLabel="Stylé", emoji="😈", color="#C070C8", locked=true
 - 5-8 ingredients per recipe with quantities
 - 4-6 cooking steps in French
+- Include prepTimeMin, restTimeMin, cookTimeMin as integer minutes (>= 0)
 - protein: "moyen" or "élevé"
 - difficulty: "facile" or "intermédiaire"
 - photo: a real images.unsplash.com URL with a valid photo ID matching the dish (e.g. pasta → photo-1621996346565-e3dbc646d9a9, chicken → photo-1598103442097-8b74394b95c1). Each recipe must have a different photo.

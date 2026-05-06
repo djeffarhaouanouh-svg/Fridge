@@ -230,7 +230,7 @@ class RecipeScreen extends ConsumerWidget {
 
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 44, 18, 20),
+                      padding: const EdgeInsets.fromLTRB(18, 28, 18, 12),
                       child: Text(
                         'Préparation',
                         textAlign: TextAlign.center,
@@ -327,7 +327,7 @@ class RecipeScreen extends ConsumerWidget {
                   if (meal.steps.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 28, 18, 36),
+                        padding: const EdgeInsets.fromLTRB(18, 52, 18, 36),
                         child: _CommencerRecetteButton(
                           onTap: () => Navigator.push(
                             context,

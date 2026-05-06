@@ -245,7 +245,7 @@ class RecipeScreen extends ConsumerWidget {
 
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
                       child: Container(
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                         decoration: BoxDecoration(
@@ -324,39 +324,25 @@ class RecipeScreen extends ConsumerWidget {
                     ),
                   ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                ],
-              ),
-            ),
-
-            if (meal.steps.isNotEmpty)
-              SafeArea(
-                top: false,
-                bottom: false,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: bg,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 12,
-                        offset: const Offset(0, -4),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-                    child: _CommencerRecetteButton(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => _CookingScreen(meal: meal),
+                  if (meal.steps.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 20, 18, 32),
+                        child: _CommencerRecetteButton(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => _CookingScreen(meal: meal),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                ],
               ),
+            ),
           ],
         ),
       ),

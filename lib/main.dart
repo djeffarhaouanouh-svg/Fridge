@@ -87,10 +87,9 @@ class FridgeApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         scaffoldBackgroundColor: AppTokens.paper,
-        colorScheme: ColorScheme.light(
+        colorScheme: const ColorScheme.light(
           primary: AppTokens.coral,
           surface: AppTokens.surface,
-          background: AppTokens.paper,
         ),
         textTheme: GoogleFonts.interTextTheme(),
       ),

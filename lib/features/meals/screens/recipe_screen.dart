@@ -32,37 +32,14 @@ class RecipeScreen extends ConsumerWidget {
     final surface = isDark ? const Color(0xFF2A2A2A) : Colors.white;
     final hair = isDark ? Colors.white24 : AppTokens.hairline;
 
-    final bottomSlot = meal.steps.isNotEmpty
-        ? SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 6),
-                  child: _CommencerRecetteButton(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => _CookingScreen(meal: meal),
-                      ),
-                    ),
-                  ),
-                ),
-                const BottomNav(popRouteFirst: true),
-              ],
-            ),
-          )
-        : const SafeArea(
-            top: false,
-            child: BottomNav(popRouteFirst: true),
-          );
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: bg,
-        bottomNavigationBar: bottomSlot,
+        bottomNavigationBar: const SafeArea(
+          top: false,
+          child: BottomNav(popRouteFirst: true),
+        ),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -94,18 +71,7 @@ class RecipeScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => ref
-                          .read(mealsProvider.notifier)
-                          .toggleFavorite(meal.id),
-                      icon: Icon(
-                        meal.isFavorite
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
+                    const SizedBox(width: 48),
                   ],
                 ),
               ),
@@ -116,13 +82,52 @@ class RecipeScreen extends ConsumerWidget {
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
                       child: ClipRRect(
                         borderRadius:
                             BorderRadius.circular(AppTokens.radiusLg),
-                        child: SizedBox(
-                          height: 220,
-                          child: MealImage(photo: meal.photo),
+                        child: Stack(
+                          clipBehavior: Clip.hardEdge,
+                          children: [
+                            SizedBox(
+                              height: 300,
+                              width: double.infinity,
+                              child: MealImage(photo: meal.photo),
+                            ),
+                            Positioned(
+                              top: 12,
+                              right: 12,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => ref
+                                    .read(mealsProvider.notifier)
+                                    .toggleFavorite(meal.id),
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.92),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.12),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    meal.isFavorite
+                                        ? Icons.favorite_rounded
+                                        : Icons.favorite_border_rounded,
+                                    size: 22,
+                                    color: AppTokens.coral,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -323,6 +328,35 @@ class RecipeScreen extends ConsumerWidget {
                 ],
               ),
             ),
+
+            if (meal.steps.isNotEmpty)
+              SafeArea(
+                top: false,
+                bottom: false,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: bg,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+                    child: _CommencerRecetteButton(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => _CookingScreen(meal: meal),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

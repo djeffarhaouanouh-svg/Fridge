@@ -163,6 +163,26 @@ class NeonService {
     }
   }
 
+  // ── KITCHEN EQUIPMENTS ─────────────────────────────────────────────────────
+
+  Future<void> saveKitchenEquipments(List<String> names) async {
+    await execute(
+      'DELETE FROM user_kitchen_equipments WHERE user_id = \$1',
+      [kUserId],
+    );
+    for (final name in names) {
+      await execute(
+        'INSERT INTO kitchen_equipments (name) VALUES (\$1) ON CONFLICT (name) DO NOTHING',
+        [name],
+      );
+      await execute('''
+        INSERT INTO user_kitchen_equipments (user_id, equipment_id)
+        SELECT \$1, id FROM kitchen_equipments WHERE name = \$2
+        ON CONFLICT DO NOTHING
+      ''', [kUserId, name]);
+    }
+  }
+
   // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
 
   Future<void> saveNotifications(
@@ -326,6 +346,12 @@ class NeonService {
         JOIN user_diets ud ON ud.diet_id = d.id
         WHERE ud.user_id = \$1
       ''', [kUserId]),
+      query('''
+        SELECT ke.name
+        FROM kitchen_equipments ke
+        JOIN user_kitchen_equipments uke ON uke.equipment_id = ke.id
+        WHERE uke.user_id = \$1
+      ''', [kUserId]),
       query(
           'SELECT notif_expiry, notif_suggestion, notif_fridge FROM user_notifications WHERE user_id = \$1',
           [kUserId]),
@@ -337,7 +363,8 @@ class NeonService {
       'goal': results[2].firstOrNull?['goal'],
       'allergies': results[3].map((r) => r['name'] as String).toList(),
       'diets': results[4].map((r) => r['name'] as String).toList(),
-      'notifications': results[5].firstOrNull,
+      'kitchenEquipments': results[5].map((r) => r['name'] as String).toList(),
+      'notifications': results[6].firstOrNull,
     };
   }
 
@@ -721,6 +748,21 @@ CREATE TABLE IF NOT EXISTS user_diets (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   diet_id INT NOT NULL REFERENCES diets(id) ON DELETE CASCADE,
   PRIMARY KEY (user_id, diet_id)
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS kitchen_equipments (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+)
+''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS user_kitchen_equipments (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  equipment_id INT NOT NULL REFERENCES kitchen_equipments(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, equipment_id)
 )
 ''');
 

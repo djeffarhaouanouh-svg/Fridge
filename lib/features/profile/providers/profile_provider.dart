@@ -28,6 +28,7 @@ class UserProfile {
   final CookingLevel? cookingLevel;
   final Set<String> allergies;
   final Set<String> diets;
+  final Set<String> kitchenEquipments;
   final bool notifExpiry;
   final bool notifSuggestion;
   final bool notifFridge;
@@ -43,6 +44,7 @@ class UserProfile {
     this.cookingLevel,
     this.allergies = const {},
     this.diets = const {},
+    this.kitchenEquipments = const {},
     this.notifExpiry = true,
     this.notifSuggestion = true,
     this.notifFridge = true,
@@ -59,6 +61,7 @@ class UserProfile {
     Object? cookingLevel = _s,
     Set<String>? allergies,
     Set<String>? diets,
+    Set<String>? kitchenEquipments,
     bool? notifExpiry,
     bool? notifSuggestion,
     bool? notifFridge,
@@ -76,6 +79,7 @@ class UserProfile {
           cookingLevel == _s ? this.cookingLevel : cookingLevel as CookingLevel?,
       allergies: allergies ?? this.allergies,
       diets: diets ?? this.diets,
+      kitchenEquipments: kitchenEquipments ?? this.kitchenEquipments,
       notifExpiry: notifExpiry ?? this.notifExpiry,
       notifSuggestion: notifSuggestion ?? this.notifSuggestion,
       notifFridge: notifFridge ?? this.notifFridge,
@@ -108,6 +112,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       final goalStr = p['goal'] as String?;
       final allergies = (p['allergies'] as List).cast<String>();
       final diets = (p['diets'] as List).cast<String>();
+      final kitchenEquipments = (p['kitchenEquipments'] as List).cast<String>();
       final notifRow = p['notifications'] as Map<String, dynamic>?;
 
       state = state.copyWith(
@@ -115,6 +120,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
         objective: _parseObjective(goalStr),
         allergies: Set<String>.from(allergies),
         diets: Set<String>.from(diets),
+        kitchenEquipments: Set<String>.from(kitchenEquipments),
         targetCalories: nutRow?['calories'] as int? ?? 2000,
         targetProtein: nutRow?['proteins'] as int? ?? 150,
         targetCarbs: nutRow?['carbs'] as int? ?? 200,
@@ -168,6 +174,17 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       await _db.saveDiets(s.toList());
     } catch (e, st) {
       debugPrint('UserProfile toggleDiet: $e\n$st');
+    }
+  }
+
+  Future<void> toggleKitchenEquipment(String v) async {
+    final s = Set<String>.from(state.kitchenEquipments);
+    s.contains(v) ? s.remove(v) : s.add(v);
+    state = state.copyWith(kitchenEquipments: s);
+    try {
+      await _db.saveKitchenEquipments(s.toList());
+    } catch (e, st) {
+      debugPrint('UserProfile toggleKitchenEquipment: $e\n$st');
     }
   }
 

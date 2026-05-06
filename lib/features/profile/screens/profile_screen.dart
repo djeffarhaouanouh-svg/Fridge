@@ -317,8 +317,15 @@ class ProfileScreen extends ConsumerWidget {
                     label: 'Regime',
                     value: _joinOrNone(profile.diets),
                     icon: Icons.restaurant_menu_outlined,
-                    isLast: true,
                     onTap: () => _showDietsSheet(context, ref, notifier),
+                  ),
+                  _SettingRow(
+                    label: 'Votre cuisine',
+                    value: _joinOrNone(profile.kitchenEquipments),
+                    icon: Icons.kitchen_outlined,
+                    isLast: true,
+                    onTap: () =>
+                        _showKitchenEquipmentsSheet(context, ref, notifier),
                   ),
                 ],
               ),
@@ -1106,6 +1113,139 @@ void _showDietsSheet(
                   checkColor: Colors.white,
                 ),
             ],
+          );
+        },
+      ),
+    ),
+  );
+}
+
+void _showKitchenEquipmentsSheet(
+  BuildContext context,
+  WidgetRef ref,
+  UserProfileNotifier notifier,
+) {
+  const options = [
+    'Micro-ondes',
+    'Four',
+    'Plaques de cuisson',
+    'Friteuse',
+    'Mixeur',
+    'Robot cuiseur',
+    'Air-fryer',
+  ];
+  final icons = <String, IconData>{
+    'Micro-ondes': Icons.microwave_outlined,
+    'Four': Icons.local_fire_department_outlined,
+    'Plaques de cuisson': Icons.grid_4x4_outlined,
+    'Friteuse': Icons.set_meal_outlined,
+    'Mixeur': Icons.blender_outlined,
+    'Robot cuiseur': Icons.soup_kitchen_outlined,
+    'Air-fryer': Icons.kitchen_outlined,
+  };
+
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: _sheetBg(context),
+    isScrollControlled: true,
+    builder: (_) => SafeArea(
+      top: false,
+      child: Consumer(
+        builder: (context, ref, _) {
+          final selected = ref.watch(userProfileProvider).kitchenEquipments;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Votre cuisine',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: _sheetText(context),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Quels sont vos équipements de cuisine ?',
+                  style: GoogleFonts.inter(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                    color: _sheetText(context).withValues(alpha: 0.72),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                GridView.count(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.95,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: options.map((item) {
+                    final isOn = selected.contains(item);
+                    return GestureDetector(
+                      onTap: () => notifier.toggleKitchenEquipment(item),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isOn
+                              ? AppTokens.coral.withValues(alpha: 0.12)
+                              : Colors.transparent,
+                          borderRadius:
+                              BorderRadius.circular(AppTokens.radiusMd),
+                          border: Border.all(
+                            color: isOn
+                                ? AppTokens.coral
+                                : _sheetText(context).withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              icons[item] ?? Icons.kitchen_outlined,
+                              size: 28,
+                              color:
+                                  isOn ? AppTokens.coral : _sheetText(context),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              item,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                fontSize: 12.5,
+                                fontWeight:
+                                    isOn ? FontWeight.w700 : FontWeight.w500,
+                                color: isOn
+                                    ? AppTokens.coral
+                                    : _sheetText(context),
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
           );
         },
       ),

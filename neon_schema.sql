@@ -72,6 +72,17 @@ CREATE TABLE IF NOT EXISTS user_diets (
   PRIMARY KEY (user_id, diet_id)
 );
 
+CREATE TABLE IF NOT EXISTS kitchen_equipments (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS user_kitchen_equipments (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  equipment_id INTEGER NOT NULL REFERENCES kitchen_equipments(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, equipment_id)
+);
+
 CREATE TABLE IF NOT EXISTS user_notifications (
   user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   notif_expiry BOOLEAN NOT NULL DEFAULT TRUE,

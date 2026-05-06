@@ -356,19 +356,20 @@ class _CommencerRecetteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+      color: AppTokens.coral,
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
+        splashColor: Colors.white24,
+        highlightColor: Colors.white10,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppTokens.coral, width: 1.5),
+            border: Border.all(color: AppTokens.coralDeep, width: 1.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -380,7 +381,7 @@ class _CommencerRecetteButton extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: AppTokens.coral,
+                  color: Colors.white,
                 ),
               ),
             ],

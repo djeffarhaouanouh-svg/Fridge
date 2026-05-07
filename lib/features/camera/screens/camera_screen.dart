@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
+import '../../../core/services/google_vision_service.dart';
 import '../../../core/services/fridge_sync.dart';
 import '../../../core/services/neon_service.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -232,9 +233,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     ref.read(latestScanMealsProvider.notifier).state = const [];
     ref.read(latestScanIngredientsProvider.notifier).state = const [];
     final claude = ClaudeService();
+    final vision = GoogleVisionService();
 
     try {
-      final ingredients = await claude.detectIngredients(_photos.last);
+      final ingredients = await vision.detectIngredients(_photos.last);
 
       if (ingredients.isEmpty) {
         _showError(

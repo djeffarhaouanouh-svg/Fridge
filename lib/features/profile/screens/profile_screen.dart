@@ -1551,7 +1551,10 @@ class _MealCard extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTokens.radiusMd)),
             child: SizedBox(
               height: 100, width: 130,
-              child: MealImage(photo: meal.photo),
+              child: MealImage(
+                photo: meal.photo,
+                fallbackKey: meal.title,
+              ),
             ),
           ),
           Padding(

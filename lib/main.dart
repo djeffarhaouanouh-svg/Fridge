@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/push_notifications_service.dart';
 import 'core/theme/app_tokens.dart';
@@ -18,6 +19,7 @@ import 'features/home/screens/home_screen.dart';
 import 'features/plan/screens/plan_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/profile/providers/profile_provider.dart';
+import 'features/onboarding/screens/onboarding_screen.dart';
 import 'firebase_options.dart';
 import 'core/services/neon_service.dart';
 
@@ -155,6 +157,8 @@ class MainScreen extends ConsumerStatefulWidget {
 
 class _MainScreenState extends ConsumerState<MainScreen> {
   bool _remoteReady = false;
+  bool _onboardingChecked = false;
+  bool _showOnboarding = false;
 
   @override
   void initState() {
@@ -212,15 +216,35 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     } catch (e, st) {
       debugPrint('Sync Neon au démarrage: $e\n$st');
     } finally {
-      if (mounted) setState(() => _remoteReady = true);
+      if (mounted) {
+        setState(() => _remoteReady = true);
+        _loadOnboardingState();
+      }
     }
+  }
+
+  Future<void> _loadOnboardingState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('profile_onboarding_done_v1') ?? false;
+    if (!mounted) return;
+    setState(() {
+      _onboardingChecked = true;
+      _showOnboarding = !done;
+    });
+  }
+
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('profile_onboarding_done_v1', true);
+    if (!mounted) return;
+    setState(() => _showOnboarding = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedTab = ref.watch(selectedTabProvider);
 
-    if (!_remoteReady) {
+    if (!_remoteReady || !_onboardingChecked) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: const Center(
@@ -242,6 +266,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     ref.listen<AiTone>(aiToneProvider, (prev, next) {
       NeonService().saveAiTonePreference(next.name).catchError((_) {});
     });
+
+    if (_showOnboarding) {
+      return OnboardingScreen(onComplete: _completeOnboarding);
+    }
 
     return Scaffold(
       extendBody: true,

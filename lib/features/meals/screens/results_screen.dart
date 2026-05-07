@@ -478,6 +478,7 @@ class _RecipeRow extends ConsumerWidget {
     final num = (index + 1).toString().padLeft(2, '0');
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         Navigator.push(context, MaterialPageRoute(
           builder: (_) => RecipeScreen(meal: meal),

@@ -1,9 +1,10 @@
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 
 ARG ANTHROPIC_API_KEY
-ARG SPOONACULAR_KEY
-ARG GOOGLE_CSE_KEY
-ARG PEXELS_KEY
+ARG GOOGLE_VISION_API_KEY
+ARG SPOONACULAR_API_KEY
+ARG GOOGLE_CSE_API_KEY
+ARG PEXELS_API_KEY
 ARG NEON_PASSWORD
 
 WORKDIR /app
@@ -12,14 +13,13 @@ COPY pubspec.yaml pubspec.lock* ./
 RUN flutter pub get
 
 COPY . .
-RUN mkdir -p lib/core/config && \
-    ANTHROPIC=$(printf '%s' "${ANTHROPIC_API_KEY}" | tr -d '\n\r') && \
-    SPOONACULAR=$(printf '%s' "${SPOONACULAR_KEY}" | tr -d '\n\r') && \
-    GOOGLE=$(printf '%s' "${GOOGLE_CSE_KEY}" | tr -d '\n\r') && \
-    PEXELS=$(printf '%s' "${PEXELS_KEY}" | tr -d '\n\r') && \
-    NEON=$(printf '%s' "${NEON_PASSWORD}" | tr -d '\n\r') && \
-    printf "const kAnthropicKey = '${ANTHROPIC}';\nconst kSpoonacularKey = '${SPOONACULAR}';\nconst kGoogleCseKey = '${GOOGLE}';\nconst kPexelsKey = '${PEXELS}';\nconst kNeonPassword = '${NEON}';\n" > lib/core/config/app_secrets.dart
-RUN flutter build web --release --pwa-strategy=none
+RUN flutter build web --release --pwa-strategy=none \
+    --dart-define=ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}" \
+    --dart-define=GOOGLE_VISION_API_KEY="${GOOGLE_VISION_API_KEY}" \
+    --dart-define=SPOONACULAR_API_KEY="${SPOONACULAR_API_KEY}" \
+    --dart-define=GOOGLE_CSE_API_KEY="${GOOGLE_CSE_API_KEY}" \
+    --dart-define=PEXELS_API_KEY="${PEXELS_API_KEY}" \
+    --dart-define=NEON_PASSWORD="${NEON_PASSWORD}"
 
 FROM nginx:alpine
 RUN apk add --no-cache gettext

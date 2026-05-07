@@ -497,53 +497,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                                   ),
                                 ),
                               ),
-                              if (hasPhotos && !isScanning)
-                                Positioned(
-                                  left: 72,
-                                  bottom: 10,
-                                  child: GestureDetector(
-                                    onTap: _analyzePhotos,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          height: 34,
-                                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                                          decoration: BoxDecoration(
-                                            color: AppTokens.coral,
-                                            borderRadius: BorderRadius.circular(10),
-                                            border: Border.all(color: Colors.white, width: 1.4),
-                                            boxShadow: const [
-                                              BoxShadow(
-                                                color: Colors.black26,
-                                                blurRadius: 6,
-                                                offset: Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              'envoyer',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w700,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Transform.translate(
-                                          offset: const Offset(-1, 0),
-                                          child: const Icon(
-                                            Icons.arrow_forward_ios_rounded,
-                                            size: 13,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
                             ],
                           ),
                         ),
@@ -582,6 +535,53 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                       ),
                     ),
                   ),
+                  if (hasPhotos && !isScanning)
+                    Positioned(
+                      right: 0,
+                      bottom: 10,
+                      child: GestureDetector(
+                        onTap: _analyzePhotos,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              height: 34,
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              decoration: BoxDecoration(
+                                color: AppTokens.coral,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.white, width: 1.4),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'envoyer',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Transform.translate(
+                              offset: const Offset(-1, 0),
+                              child: const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 13,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

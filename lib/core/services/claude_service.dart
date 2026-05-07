@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
@@ -62,6 +63,9 @@ class ClaudeService {
   }
 
   List<Meal> _ensureUniquePhotos(List<Meal> meals) {
+    final rng = Random();
+    final shuffledFallbackPool = List<String>.from(_uniquePhotoFallbackPool)
+      ..shuffle(rng);
     final used = <String>{};
     var fallbackIndex = 0;
     final result = <Meal>[];
@@ -71,8 +75,8 @@ class ClaudeService {
       var key = _normalizePhotoIdentity(chosen);
 
       if (key.isEmpty || used.contains(key)) {
-        while (fallbackIndex < _uniquePhotoFallbackPool.length) {
-          final candidate = _uniquePhotoFallbackPool[fallbackIndex++];
+        while (fallbackIndex < shuffledFallbackPool.length) {
+          final candidate = shuffledFallbackPool[fallbackIndex++];
           final candidateKey = _normalizePhotoIdentity(candidate);
           if (!used.contains(candidateKey)) {
             chosen = candidate;

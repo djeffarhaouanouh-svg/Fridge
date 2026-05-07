@@ -720,7 +720,7 @@ class _ScanFramePainter extends CustomPainter {
 
     const arm = 28.0;
     const r = 6.0;
-    const bottomCornerDrop = 18.0;
+    const bottomCornerDrop = 34.0;
     final w = size.width;
     final h = size.height;
 

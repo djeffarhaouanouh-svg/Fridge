@@ -141,6 +141,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Étape ${_page + 1}/3',
+              style: GoogleFonts.inter(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: mutedColor,
+              ),
+            ),
             const SizedBox(height: 16),
             Expanded(
               child: PageView(

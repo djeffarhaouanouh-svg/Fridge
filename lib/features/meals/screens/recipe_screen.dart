@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/utils/recipe_ids.dart';
 import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
@@ -26,6 +27,12 @@ class RecipeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final meals = ref.watch(mealsProvider);
+    final currentId = normalizeRecipeId(meal.id);
+    final liveMeal =
+        meals.where((m) => normalizeRecipeId(m.id) == currentId).firstOrNull;
+    final effectiveMeal = liveMeal ?? meal;
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = Theme.of(context).scaffoldBackgroundColor;
     final ink = isDark ? Colors.white : AppTokens.ink;
@@ -61,7 +68,7 @@ class RecipeScreen extends ConsumerWidget {
                     ),
                     Expanded(
                       child: Text(
-                        meal.title,
+                        effectiveMeal.title,
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -95,8 +102,8 @@ class RecipeScreen extends ConsumerWidget {
                               height: 300,
                               width: double.infinity,
                               child: MealImage(
-                                photo: meal.photo,
-                                fallbackKey: meal.title,
+                                photo: effectiveMeal.photo,
+                                fallbackKey: effectiveMeal.title,
                               ),
                             ),
                             Positioned(
@@ -106,7 +113,7 @@ class RecipeScreen extends ConsumerWidget {
                                 behavior: HitTestBehavior.opaque,
                                 onTap: () => ref
                                     .read(mealsProvider.notifier)
-                                    .toggleFavorite(meal.id),
+                                    .toggleFavorite(effectiveMeal.id),
                                 child: Container(
                                   width: 44,
                                   height: 44,
@@ -123,7 +130,7 @@ class RecipeScreen extends ConsumerWidget {
                                     ],
                                   ),
                                   child: Icon(
-                                    meal.isFavorite
+                                    effectiveMeal.isFavorite
                                         ? Icons.favorite_rounded
                                         : Icons.favorite_border_rounded,
                                     size: 22,

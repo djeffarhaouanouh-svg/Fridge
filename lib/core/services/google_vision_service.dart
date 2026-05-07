@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import '../config/app_secrets.dart';
 
 class GoogleVisionService {
   static const _visionApiKey = String.fromEnvironment('GOOGLE_VISION_API_KEY');
@@ -14,7 +13,7 @@ class GoogleVisionService {
         ? _visionApiKey
         : (_geminiApiKey.isNotEmpty
             ? _geminiApiKey
-            : AppSecrets.googleVisionApiKey);
+            : '');
     _model = GenerativeModel(
       model: 'gemini-2.0-flash',
       apiKey: apiKey,

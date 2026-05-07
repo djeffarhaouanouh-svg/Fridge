@@ -14,7 +14,6 @@ class AppSplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF151515) : AppTokens.paper;
-    final titleColor = isDark ? Colors.white : AppTokens.ink;
     final subtitleColor = isDark ? Colors.white70 : AppTokens.muted;
 
     return Scaffold(
@@ -26,19 +25,29 @@ class AppSplashScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(
-                  'icon.js/farfalle.png',
+                Container(
                   width: 82,
                   height: 82,
-                  fit: BoxFit.contain,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : AppTokens.hairline,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.kitchen_outlined,
+                    color: AppTokens.coral,
+                    size: 40,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Fridge',
+                  'fridge·ai',
                   style: GoogleFonts.fraunces(
                     fontSize: 34,
                     fontWeight: FontWeight.w700,
-                    color: titleColor,
+                    color: AppTokens.coral,
                   ),
                 ),
                 const SizedBox(height: 8),

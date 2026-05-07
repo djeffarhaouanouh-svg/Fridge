@@ -405,9 +405,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             ),
 
             // Contrôles bas : miniature + bouton capture
-            // viewPadding.bottom + 8 (margin nav) + 56 (nav height) + 44 (spacing)
+            // Positionnée juste au-dessus de la nav bar.
             Positioned(
-              bottom: MediaQuery.of(context).viewPadding.bottom + 108, left: 32, right: 32,
+              bottom: MediaQuery.of(context).viewPadding.bottom + 76, left: 32, right: 32,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [

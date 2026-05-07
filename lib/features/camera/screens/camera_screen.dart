@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' show lerpDouble;
@@ -404,6 +405,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               ),
             ),
 
+            // Tips défilants
+            Positioned(
+              bottom: MediaQuery.of(context).viewPadding.bottom + 166,
+              left: 40,
+              right: 40,
+              child: const _ScanTips(),
+            ),
+
             // Contrôles bas : miniature + bouton capture
             // Positionnée juste au-dessus de la nav bar.
             Positioned(
@@ -768,6 +777,68 @@ class _ScanFramePainter extends CustomPainter {
 }
 
 enum _CornerType { topLeft, topRight, bottomLeft, bottomRight }
+
+class _ScanTips extends StatefulWidget {
+  const _ScanTips();
+
+  @override
+  State<_ScanTips> createState() => _ScanTipsState();
+}
+
+class _ScanTipsState extends State<_ScanTips> {
+  static const _tips = [
+    'Tu peux envoyer plusieurs photos à la fois',
+    'Mets bien les produits de face',
+    'Plus c\'est lumineux, meilleure est la détection',
+    'Ouvre le frigo en grand pour tout capturer',
+    'Les étiquettes aident à mieux identifier les produits',
+    'Rapproche-toi pour les petits emballages',
+  ];
+
+  int _index = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) setState(() => _index = (_index + 1) % _tips.length);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      transitionBuilder: (child, anim) => FadeTransition(
+        opacity: anim,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.3),
+            end: Offset.zero,
+          ).animate(anim),
+          child: child,
+        ),
+      ),
+      child: Text(
+        _tips[_index],
+        key: ValueKey(_index),
+        textAlign: TextAlign.center,
+        style: GoogleFonts.inter(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w500,
+          color: Colors.white60,
+        ),
+      ),
+    );
+  }
+}
 
 class _Corner extends StatelessWidget {
   final bool topLeft;

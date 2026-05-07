@@ -145,9 +145,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        meals.isEmpty
+                        detectedIngredients.isEmpty
                             ? 'Scanne ton frigo ou ajoute des recettes en favoris pour les voir ici'
-                            : '${meals.length} recette${meals.length > 1 ? 's' : ''} dans ton app',
+                            : 'Voici 3 recettes adaptées à toi',
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w500,

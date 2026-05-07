@@ -8,7 +8,9 @@ import '../../features/profile/providers/profile_provider.dart';
 
 class ClaudeService {
   static const _apiKey = String.fromEnvironment('ANTHROPIC_API_KEY');
+  static const _openAiApiKey = String.fromEnvironment('OPENAI_API_KEY');
   static const _baseUrl = 'https://api.anthropic.com/v1/messages';
+  static const _openAiBaseUrl = 'https://api.openai.com/v1/chat/completions';
   static const _model = 'claude-haiku-4-5-20251001';
 
   Map<String, String> get _headers => {
@@ -138,79 +140,152 @@ class ClaudeService {
     return (jsonDecode(text) as List).cast<String>();
   }
 
-  String _buildProfileContext(UserProfile? p) {
-    if (p == null) return '';
-    final parts = <String>[];
-    if (p.objective != null) {
-      parts.add(switch (p.objective!) {
-        CookingObjective.weightLoss => 'The user wants to lose weight — prefer low-calorie, light recipes.',
-        CookingObjective.muscleGain => 'The user wants to gain muscle — prefer high-protein recipes.',
-        CookingObjective.family     => 'The user cooks for a family — prefer generous, family-friendly recipes.',
-        CookingObjective.passion    => 'The user loves cooking — feel free to suggest elaborate recipes.',
-      });
-    }
-    if (p.cookingLevel != null) {
-      parts.add(switch (p.cookingLevel!) {
-        CookingLevel.beginner     => 'Cooking level: beginner — keep steps simple.',
-        CookingLevel.intermediate => 'Cooking level: intermediate.',
-        CookingLevel.advanced     => 'Cooking level: advanced — complex techniques are welcome.',
-        CookingLevel.expert       => 'Cooking level: expert chef.',
-      });
-    }
-    if (p.diets.isNotEmpty) parts.add('Dietary preferences: ${p.diets.join(', ')}.');
-    if (p.allergies.isNotEmpty) parts.add('ALLERGIES to avoid: ${p.allergies.join(', ')}.');
-    if (p.targetCalories > 0) parts.add('Target: ~${p.targetCalories} kcal per meal.');
-    if (parts.isEmpty) return '';
-    return '\nUser context:\n${parts.map((s) => '- $s').join('\n')}\n';
+  String _goalValue(UserProfile? p) {
+    if (p?.objective == null) return 'non précisé';
+    return switch (p!.objective!) {
+      CookingObjective.weightLoss => 'Perte de poids',
+      CookingObjective.muscleGain => 'Prise de muscle',
+      CookingObjective.family => 'Cuisine familiale',
+      CookingObjective.passion => 'Passion culinaire',
+    };
   }
 
-  Future<List<Meal>> findRecipes(List<String> ingredients, {UserProfile? profile}) async {
-    final profileContext = _buildProfileContext(profile);
-    final response = await http.post(
-      Uri.parse(_baseUrl),
-      headers: _headers,
-      body: jsonEncode({
-        'model': _model,
-        'max_tokens': 4096,
-        'messages': [
-          {
-            'role': 'user',
-            'content': '''Based on these ingredients: ${ingredients.join(', ')}
-$profileContext
-Suggest 3 recipes. Return ONLY a JSON array with this exact structure:
+  String _cookingLevelValue(UserProfile? p) {
+    if (p?.cookingLevel == null) return 'non précisé';
+    return switch (p!.cookingLevel!) {
+      CookingLevel.beginner => 'débutant',
+      CookingLevel.intermediate => 'intermédiaire',
+      CookingLevel.advanced => 'avancé',
+      CookingLevel.expert => 'expert',
+    };
+  }
+
+  String _joinOrNone(Iterable<String> values) =>
+      values.isEmpty ? 'aucun' : values.join(', ');
+
+  String _buildRecipesPrompt({
+    required List<String> ingredients,
+    required UserProfile? profile,
+  }) {
+    return '''Tu es un assistant culinaire intelligent spécialisé dans les recettes réalistes.
+
+MISSION :
+Créer des recettes cohérentes, populaires et réellement cuisinables à partir des ingrédients détectés dans le frigo de l'utilisateur.
+
+DONNÉES UTILISATEUR :
+- Objectif : ${_goalValue(profile)}
+- Niveau de cuisine : ${_cookingLevelValue(profile)}
+- Allergies : ${_joinOrNone(profile?.allergies ?? const <String>{})}
+- Régime alimentaire : ${_joinOrNone(profile?.diets ?? const <String>{})}
+- Équipements disponibles : ${_joinOrNone(profile?.kitchenEquipments ?? const <String>{})}
+
+INGRÉDIENTS DISPONIBLES :
+${ingredients.join(', ')}
+
+RÈGLES IMPORTANTES :
+- Proposer uniquement des recettes réalistes et crédibles
+- Éviter les plats inventés ou les associations étranges
+- Favoriser les recettes populaires et connues
+- Adapter la difficulté au niveau utilisateur
+- Respecter STRICTEMENT le régime alimentaire et les allergies
+- Utiliser uniquement les équipements disponibles
+- Prioriser les ingrédients disponibles
+- Si des ingrédients manquent, les indiquer clairement
+- Éviter les recettes impossibles avec les ingrédients présents
+- Les recettes doivent donner envie et sembler naturelles
+- Ne jamais inventer des techniques culinaires absurdes
+
+STYLE :
+- Moderne
+- Clair
+- Appétissant
+- Naturel
+- Humain
+
+FORMAT JSON :
 [
   {
-    "id": "1",
-    "title": "Recipe Name",
-    "type": "simple",
-    "typeLabel": "Rapide",
-    "emoji": "🍳",
-    "color": "#C8B060",
-    "kcal": 450,
-    "protein": "moyen",
-    "difficulty": "facile",
-    "time": "25 min",
-    "prepTimeMin": 10,
-    "restTimeMin": 0,
-    "cookTimeMin": 15,
-    "locked": false,
-    "photo": "https://images.unsplash.com/photo-XXXXXXXXXXXXXXXXXXX?w=600&q=80",
-    "ingredients": [{"name": "chicken", "qty": "200g", "photo": ""}],
-    "steps": ["Étape 1", "Étape 2"]
+    "title": "",
+    "description": "",
+    "time": "",
+    "difficulty": "",
+    "calories": "",
+    "missingIngredients": [],
+    "ingredientsUsed": [],
+    "steps": [],
+    "whyThisRecipeFitsUser": ""
   }
 ]
 
-Rules:
-- Recipe 1: type="simple", typeLabel="Rapide", emoji="🍳", color="#C8B060", locked=false
-- Recipe 2: type="balanced", typeLabel="Équilibré", emoji="⚖️", color="#82D28C", locked=false
-- Recipe 3: type="stylish", typeLabel="Stylé", emoji="😈", color="#C070C8", locked=true
-- 5-8 ingredients per recipe with quantities
-- 4-6 cooking steps in French
-- Include prepTimeMin, restTimeMin, cookTimeMin as integer minutes (>= 0)
-- protein: "moyen" or "élevé"
-- difficulty: "facile" or "intermédiaire"
-- photo: a real images.unsplash.com URL with a valid photo ID matching the dish (e.g. pasta → photo-1621996346565-e3dbc646d9a9, chicken → photo-1598103442097-8b74394b95c1). Each recipe must have a different photo.
-- Return ONLY the JSON array, nothing else.''',
+Contraintes supplémentaires :
+- Retourne exactement 3 recettes
+- Retourne UNIQUEMENT le JSON, sans texte autour.''';
+  }
+
+  List<Meal> _mapPromptRecipesToMeals(List<dynamic> recipes) {
+    const uuid = Uuid();
+    const cardMeta = <(String, String, String, String, bool)>[
+      ('simple', 'Rapide', '🍳', '#C8B060', false),
+      ('balanced', 'Équilibré', '⚖️', '#82D28C', false),
+      ('stylish', 'Stylé', '😈', '#C070C8', true),
+    ];
+
+    final meals = <Meal>[];
+    for (var i = 0; i < recipes.length && i < 3; i++) {
+      final raw = Map<String, dynamic>.from(recipes[i] as Map);
+      final meta = cardMeta[i];
+      final ingredientsUsed =
+          ((raw['ingredientsUsed'] as List?) ?? const []).map((e) => e.toString()).toList();
+      final steps = ((raw['steps'] as List?) ?? const []).map((e) => e.toString()).toList();
+      final kcal = int.tryParse((raw['calories'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+      final time = (raw['time'] ?? '30 min').toString();
+      final difficulty = (raw['difficulty'] ?? 'facile').toString().toLowerCase();
+
+      meals.add(Meal(
+        id: uuid.v4(),
+        type: meta.$1,
+        typeLabel: meta.$2,
+        emoji: meta.$3,
+        title: (raw['title'] ?? '').toString(),
+        kcal: kcal,
+        protein: 'moyen',
+        difficulty: difficulty.contains('inter') ? 'intermédiaire' : 'facile',
+        time: time,
+        locked: meta.$5,
+        photo: '',
+        ingredients: ingredientsUsed
+            .map((name) => Ingredient(name: name, qty: '', photo: ''))
+            .toList(),
+        steps: steps,
+        color: meta.$4,
+      ));
+    }
+    return meals;
+  }
+
+  Future<List<Meal>> findRecipes(List<String> ingredients, {UserProfile? profile}) async {
+    if (_openAiApiKey.isEmpty) {
+      throw Exception('OPENAI_API_KEY is missing.');
+    }
+
+    final prompt = _buildRecipesPrompt(
+      ingredients: ingredients,
+      profile: profile,
+    );
+
+    final response = await http.post(
+      Uri.parse(_openAiBaseUrl),
+      headers: {
+        'content-type': 'application/json',
+        'authorization': 'Bearer $_openAiApiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4.1-mini',
+        'max_tokens': 2500,
+        'messages': [
+          {
+            'role': 'user',
+            'content': prompt,
           },
         ],
       }),
@@ -218,21 +293,21 @@ Rules:
 
     if (response.statusCode != 200) {
       throw Exception(
-          'Claude recipes ${response.statusCode}: ${response.body}');
+          'OpenAI recipes ${response.statusCode}: ${response.body}');
     }
 
-    final data = jsonDecode(response.body);
-    final text = (data['content'][0]['text'] as String)
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final choices = (data['choices'] as List?) ?? const [];
+    if (choices.isEmpty) return [];
+    final first = choices.first as Map<String, dynamic>;
+    final message = (first['message'] as Map<String, dynamic>?) ?? const {};
+    final text = (message['content'] ?? '')
+        .toString()
         .replaceAll(RegExp(r'```json|```'), '')
         .trim();
 
-    const uuid = Uuid();
     final List<dynamic> recipes = jsonDecode(text);
-    final meals = recipes.map((e) {
-      final raw = Map<String, dynamic>.from(e as Map);
-      raw['id'] = uuid.v4();
-      return Meal.fromJson(raw);
-    }).toList();
+    final meals = _mapPromptRecipesToMeals(recipes);
 
     // Sécurité anti-doublon: aucune recette ne garde la même image qu'une autre.
     return _ensureUniquePhotos(meals);

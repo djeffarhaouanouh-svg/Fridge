@@ -1,42 +1,70 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 
 class GoogleVisionService {
   static const _visionApiKey = String.fromEnvironment('GOOGLE_VISION_API_KEY');
-  static const _geminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
+  static const _endpoint =
+      'https://vision.googleapis.com/v1/images:annotate';
 
-  late final GenerativeModel _model;
-
-  GoogleVisionService() {
-    final apiKey = _visionApiKey.isNotEmpty
-        ? _visionApiKey
-        : (_geminiApiKey.isNotEmpty
-            ? _geminiApiKey
-            : '');
-    _model = GenerativeModel(
-      model: 'gemini-2.0-flash',
-      apiKey: apiKey,
-    );
-  }
+  GoogleVisionService();
 
   Future<List<String>> detectIngredients(Uint8List imageBytes) async {
-    final response = await _model.generateContent([
-      Content.multi([
-        TextPart(
-          'List all food ingredients visible in this image. '
-          'Return ONLY a JSON array of strings in English, '
-          'example: ["chicken","rice","tomatoes"]. Nothing else.',
-        ),
-        DataPart('image/jpeg', imageBytes),
-      ]),
-    ]);
+    if (_visionApiKey.isEmpty) {
+      throw Exception('GOOGLE_VISION_API_KEY is missing.');
+    }
+
+    final response = await http.post(
+      Uri.parse('$_endpoint?key=$_visionApiKey'),
+      headers: const {'content-type': 'application/json'},
+      body: jsonEncode({
+        'requests': [
+          {
+            'image': {'content': base64Encode(imageBytes)},
+            'features': [
+              {'type': 'LABEL_DETECTION', 'maxResults': 20},
+              {'type': 'OBJECT_LOCALIZATION', 'maxResults': 20},
+            ],
+          }
+        ],
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          'Google Vision ${response.statusCode}: ${response.body}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final responses = (data['responses'] as List?) ?? const [];
+    if (responses.isEmpty) return [];
+    final first = responses.first as Map<String, dynamic>;
+
+    if (first['error'] != null) {
+      throw Exception('Google Vision error: ${jsonEncode(first['error'])}');
+    }
 
     try {
-      final text = (response.text ?? '[]')
-          .replaceAll(RegExp(r'```json|```'), '')
-          .trim();
-      return (jsonDecode(text) as List).cast<String>();
+      final out = <String>[];
+      final seen = <String>{};
+
+      final labels = (first['labelAnnotations'] as List?) ?? const [];
+      for (final item in labels) {
+        final desc = ((item as Map)['description'] ?? '').toString().trim();
+        if (desc.isEmpty) continue;
+        final key = desc.toLowerCase();
+        if (seen.add(key)) out.add(desc);
+      }
+
+      final objects = (first['localizedObjectAnnotations'] as List?) ?? const [];
+      for (final item in objects) {
+        final name = ((item as Map)['name'] ?? '').toString().trim();
+        if (name.isEmpty) continue;
+        final key = name.toLowerCase();
+        if (seen.add(key)) out.add(name);
+      }
+
+      return out;
     } catch (_) {
       return [];
     }

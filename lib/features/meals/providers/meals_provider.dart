@@ -74,17 +74,30 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
 
   Future<void> toggleFavorite(String mealId) async {
     final nid = normalizeRecipeId(mealId);
-    final current = state.where((m) => m.id == nid).firstOrNull;
+    final currentIndex = state.indexWhere((m) => m.id == nid);
+    if (currentIndex < 0) return;
+    final current = state[currentIndex];
     if (current == null) return;
     final becomingFavorite = !current.isFavorite;
+    final optimistic = current.copyWith(isFavorite: becomingFavorite);
+
+    // Optimistic UI: l'icône change immédiatement au premier tap.
+    final nextState = List<Meal>.from(state);
+    nextState[currentIndex] = optimistic;
+    state = nextState;
+
     try {
       if (becomingFavorite) {
-        await _db.saveFavorite(current.copyWith(isFavorite: true));
+        await _db.saveFavorite(optimistic);
       } else {
         await _db.removeFavorite(nid);
       }
-      await loadFromDatabase();
     } catch (e, st) {
+      // Rollback local si l'écriture distante échoue.
+      final rollback = List<Meal>.from(state);
+      final idx = rollback.indexWhere((m) => m.id == nid);
+      if (idx >= 0) rollback[idx] = current;
+      state = rollback;
       debugPrint('MealsNotifier toggleFavorite: $e\n$st');
     }
   }

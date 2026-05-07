@@ -26,7 +26,7 @@ class AppSplashScreen extends StatelessWidget {
                   width: 82,
                   height: 82,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.14),
+                    color: Colors.black,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.35),

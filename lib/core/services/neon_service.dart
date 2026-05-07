@@ -878,6 +878,44 @@ CREATE TABLE IF NOT EXISTS meal_plans (
 ''');
   }
 
+  // ── DAILY HERO RECIPES ─────────────────────────────────────────────────────
+
+  Future<({List<Meal> meals, DateTime refreshedAt})?> loadHeroRecipes() async {
+    final rows = await query(
+      '''
+      SELECT recipes_json::text AS recipes_json, refreshed_at::text AS refreshed_at
+      FROM daily_hero_recipes
+      WHERE user_id = \$1::uuid
+      LIMIT 1
+      ''',
+      [kUserId],
+    );
+    if (rows.isEmpty) return null;
+    final raw = rows.first['recipes_json'];
+    final tsRaw = rows.first['refreshed_at'];
+    if (raw == null || tsRaw == null) return null;
+    final refreshedAt = DateTime.parse(tsRaw.toString());
+    final decoded = jsonDecode(raw.toString()) as List<dynamic>;
+    final meals = decoded
+        .map((e) => Meal.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (meals: meals, refreshedAt: refreshedAt);
+  }
+
+  Future<void> saveHeroRecipes(List<Meal> meals) async {
+    await _ensureUserRowExists();
+    await execute(
+      '''
+      INSERT INTO daily_hero_recipes (user_id, recipes_json, refreshed_at)
+      VALUES (\$1::uuid, \$2::jsonb, now())
+      ON CONFLICT (user_id) DO UPDATE SET
+        recipes_json = EXCLUDED.recipes_json,
+        refreshed_at = now()
+      ''',
+      [kUserId, jsonEncode(meals.map((m) => m.toJson()).toList())],
+    );
+  }
+
   /// Recettes issues des scans (JSON), fusionnées par id à chaque nouveau scan.
   Future<List<Meal>> loadScanMeals() async {
     final rows = await query(

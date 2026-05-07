@@ -16,19 +16,18 @@ COPY pubspec.yaml pubspec.lock* ./
 RUN flutter pub get
 
 COPY . .
-RUN SPOONACULAR_FINAL="${SPOONACULAR_API_KEY:-$SPOONACULAR_KEY}" && \
+RUN ANTHROPIC_CLEAN="$(printf '%s' "${ANTHROPIC_API_KEY}" | tr -d '\n\r')" && \
+    VISION_CLEAN="$(printf '%s' "${GOOGLE_VISION_API_KEY}" | tr -d '\n\r')" && \
+    SPOONACULAR_FINAL="${SPOONACULAR_API_KEY:-$SPOONACULAR_KEY}" && \
+    SPOONACULAR_CLEAN="$(printf '%s' "${SPOONACULAR_FINAL}" | tr -d '\n\r')" && \
     GOOGLE_CSE_FINAL="${GOOGLE_CSE_API_KEY:-$GOOGLE_CSE_KEY}" && \
+    GOOGLE_CSE_CLEAN="$(printf '%s' "${GOOGLE_CSE_FINAL}" | tr -d '\n\r')" && \
     PEXELS_FINAL="${PEXELS_API_KEY:-$PEXELS_KEY}" && \
-    cat > /tmp/dart_defines.json <<EOF
-{
-  "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
-  "GOOGLE_VISION_API_KEY": "${GOOGLE_VISION_API_KEY}",
-  "SPOONACULAR_API_KEY": "${SPOONACULAR_FINAL}",
-  "GOOGLE_CSE_API_KEY": "${GOOGLE_CSE_FINAL}",
-  "PEXELS_API_KEY": "${PEXELS_FINAL}",
-  "NEON_PASSWORD": "${NEON_PASSWORD}"
-}
-EOF
+    PEXELS_CLEAN="$(printf '%s' "${PEXELS_FINAL}" | tr -d '\n\r')" && \
+    NEON_CLEAN="$(printf '%s' "${NEON_PASSWORD}" | tr -d '\n\r')" && \
+    printf '{\n  "ANTHROPIC_API_KEY": "%s",\n  "GOOGLE_VISION_API_KEY": "%s",\n  "SPOONACULAR_API_KEY": "%s",\n  "GOOGLE_CSE_API_KEY": "%s",\n  "PEXELS_API_KEY": "%s",\n  "NEON_PASSWORD": "%s"\n}\n' \
+      "${ANTHROPIC_CLEAN}" "${VISION_CLEAN}" "${SPOONACULAR_CLEAN}" "${GOOGLE_CSE_CLEAN}" "${PEXELS_CLEAN}" "${NEON_CLEAN}" \
+      > /tmp/dart_defines.json
 RUN flutter build web --release --pwa-strategy=none \
     --dart-define-from-file=/tmp/dart_defines.json
 

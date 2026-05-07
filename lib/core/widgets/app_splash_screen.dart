@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_tokens.dart';
 
 class AppSplashScreen extends StatelessWidget {
   final String subtitle;
@@ -12,12 +11,10 @@ class AppSplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF151515) : AppTokens.paper;
-    final subtitleColor = isDark ? Colors.white70 : AppTokens.muted;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: primary,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -29,15 +26,15 @@ class AppSplashScreen extends StatelessWidget {
                   width: 82,
                   height: 82,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+                    color: Colors.white.withValues(alpha: 0.14),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isDark ? Colors.white12 : AppTokens.hairline,
+                      color: Colors.white.withValues(alpha: 0.35),
                     ),
                   ),
                   child: const Icon(
                     Icons.kitchen_outlined,
-                    color: AppTokens.coral,
+                    color: Colors.white,
                     size: 40,
                   ),
                 ),
@@ -47,7 +44,7 @@ class AppSplashScreen extends StatelessWidget {
                   style: GoogleFonts.fraunces(
                     fontSize: 34,
                     fontWeight: FontWeight.w700,
-                    color: AppTokens.coral,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -56,7 +53,7 @@ class AppSplashScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 13.5,
-                    color: subtitleColor,
+                    color: Colors.white.withValues(alpha: 0.82),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -65,7 +62,7 @@ class AppSplashScreen extends StatelessWidget {
                   width: 28,
                   height: 28,
                   child: CircularProgressIndicator(
-                    color: AppTokens.coral,
+                    color: Colors.white,
                     strokeWidth: 2.6,
                   ),
                 ),

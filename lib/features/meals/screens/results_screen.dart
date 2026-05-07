@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../meals/providers/meals_provider.dart';
@@ -102,9 +103,41 @@ class ResultsScreen extends ConsumerWidget {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: fridgeIngredients
-                          .map((ing) => _IngredientTag(label: ing))
-                          .toList(),
+                      children: fridgeIngredients.map((ing) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTokens.surface,
+                            borderRadius:
+                                BorderRadius.circular(AppTokens.radiusPill),
+                            border: Border.all(color: AppTokens.hairline),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: Center(
+                                  child: buildIngredientIcon(ing, emojiSize: 15),
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                ing,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppTokens.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 20),
                     Container(height: 1, color: AppTokens.hairlineSoft),

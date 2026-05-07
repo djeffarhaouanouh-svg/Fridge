@@ -97,6 +97,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
     final profile = ref.watch(userProfileProvider);
     final notifier = ref.read(userProfileProvider.notifier);
     final bg = isDark ? const Color(0xFF151515) : AppTokens.paper;
@@ -128,7 +129,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         value: progress.clamp(0, 1),
                         minHeight: 6,
                         backgroundColor: lineBg,
-                        color: AppTokens.coral,
+                        color: primary,
                       ),
                     ),
                   ),
@@ -138,7 +139,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     child: Text(
                       'Passer',
                       style: GoogleFonts.inter(
-                        color: AppTokens.coral,
+                        color: primary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -210,7 +211,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: ElevatedButton(
                   onPressed: _next,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTokens.coral,
+                    backgroundColor: primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -367,6 +368,7 @@ class _OptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
     final baseColor = isDark ? Colors.white70 : const Color(0xFF66707A);
     final textColor = isDark ? Colors.white : AppTokens.ink;
     return InkWell(
@@ -377,7 +379,7 @@ class _OptionTile extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppTokens.coral.withValues(alpha: 0.45) : Colors.transparent,
+            color: selected ? primary.withValues(alpha: 0.45) : Colors.transparent,
           ),
         ),
         child: Column(
@@ -385,7 +387,7 @@ class _OptionTile extends StatelessWidget {
             Icon(
               icon,
               size: 45,
-              color: selected ? AppTokens.coral : baseColor,
+              color: selected ? primary : baseColor,
             ),
             const SizedBox(height: 8),
             Text(

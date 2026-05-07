@@ -720,6 +720,7 @@ class _ScanFramePainter extends CustomPainter {
 
     const arm = 28.0;
     const r = 6.0;
+    const bottomCornerDrop = 18.0;
     final w = size.width;
     final h = size.height;
 
@@ -728,9 +729,9 @@ class _ScanFramePainter extends CustomPainter {
     // Top-right
     _drawCorner(canvas, paint, w, 0, arm, r, _CornerType.topRight);
     // Bottom-left
-    _drawCorner(canvas, paint, 0, h, arm, r, _CornerType.bottomLeft);
+    _drawCorner(canvas, paint, 0, h + bottomCornerDrop, arm, r, _CornerType.bottomLeft);
     // Bottom-right
-    _drawCorner(canvas, paint, w, h, arm, r, _CornerType.bottomRight);
+    _drawCorner(canvas, paint, w, h + bottomCornerDrop, arm, r, _CornerType.bottomRight);
   }
 
   void _drawCorner(Canvas canvas, Paint paint, double x, double y,

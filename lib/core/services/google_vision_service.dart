@@ -3,68 +3,65 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 class GoogleVisionService {
-  static const _visionApiKey = String.fromEnvironment('GOOGLE_VISION_API_KEY');
-  static const _endpoint =
-      'https://vision.googleapis.com/v1/images:annotate';
+  static const _openAiApiKey = String.fromEnvironment('OPENAI_API_KEY');
+  static const _endpoint = 'https://api.openai.com/v1/chat/completions';
 
   GoogleVisionService();
 
   Future<List<String>> detectIngredients(Uint8List imageBytes) async {
-    if (_visionApiKey.isEmpty) {
-      throw Exception('GOOGLE_VISION_API_KEY is missing.');
+    if (_openAiApiKey.isEmpty) {
+      throw Exception('OPENAI_API_KEY is missing.');
     }
 
+    final dataUrl = 'data:image/jpeg;base64,${base64Encode(imageBytes)}';
     final response = await http.post(
-      Uri.parse('$_endpoint?key=$_visionApiKey'),
-      headers: const {'content-type': 'application/json'},
+      Uri.parse(_endpoint),
+      headers: {
+        'content-type': 'application/json',
+        'authorization': 'Bearer $_openAiApiKey',
+      },
       body: jsonEncode({
-        'requests': [
+        'model': 'gpt-4o-mini',
+        'messages': [
           {
-            'image': {'content': base64Encode(imageBytes)},
-            'features': [
-              {'type': 'LABEL_DETECTION', 'maxResults': 20},
-              {'type': 'OBJECT_LOCALIZATION', 'maxResults': 20},
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text':
+                    'Liste les aliments visibles dans cette image. '
+                        'Retourne UNIQUEMENT un tableau JSON de chaînes en français. '
+                        'Exemple: ["tomates","oeufs","fromage"].',
+              },
+              {
+                'type': 'image_url',
+                'image_url': {'url': dataUrl},
+              }
             ],
-          }
+          },
         ],
+        'max_tokens': 300,
       }),
     );
 
     if (response.statusCode != 200) {
-      throw Exception(
-          'Google Vision ${response.statusCode}: ${response.body}');
+      throw Exception('OpenAI vision ${response.statusCode}: ${response.body}');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final responses = (data['responses'] as List?) ?? const [];
-    if (responses.isEmpty) return [];
-    final first = responses.first as Map<String, dynamic>;
-
-    if (first['error'] != null) {
-      throw Exception('Google Vision error: ${jsonEncode(first['error'])}');
-    }
+    final choices = (data['choices'] as List?) ?? const [];
+    if (choices.isEmpty) return [];
+    final first = choices.first as Map<String, dynamic>;
+    final message = (first['message'] as Map<String, dynamic>?) ?? const {};
+    final content = (message['content'] ?? '').toString();
 
     try {
-      final out = <String>[];
-      final seen = <String>{};
-
-      final labels = (first['labelAnnotations'] as List?) ?? const [];
-      for (final item in labels) {
-        final desc = ((item as Map)['description'] ?? '').toString().trim();
-        if (desc.isEmpty) continue;
-        final key = desc.toLowerCase();
-        if (seen.add(key)) out.add(desc);
-      }
-
-      final objects = (first['localizedObjectAnnotations'] as List?) ?? const [];
-      for (final item in objects) {
-        final name = ((item as Map)['name'] ?? '').toString().trim();
-        if (name.isEmpty) continue;
-        final key = name.toLowerCase();
-        if (seen.add(key)) out.add(name);
-      }
-
-      return out;
+      final cleaned = content.replaceAll(RegExp(r'```json|```'), '').trim();
+      return (jsonDecode(cleaned) as List)
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toSet()
+          .toList();
     } catch (_) {
       return [];
     }

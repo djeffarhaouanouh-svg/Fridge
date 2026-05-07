@@ -479,11 +479,9 @@ class _RecipeRow extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () {
-        if (!meal.locked) {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => RecipeScreen(meal: meal),
-          ));
-        }
+        Navigator.push(context, MaterialPageRoute(
+          builder: (_) => RecipeScreen(meal: meal),
+        ));
       },
       child: Column(
         children: [

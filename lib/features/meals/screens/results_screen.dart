@@ -17,9 +17,9 @@ class ResultsScreen extends ConsumerWidget {
     final allMeals = ref.watch(mealsProvider);
     final meals = scanMeals.isNotEmpty ? scanMeals : allMeals;
     final scanIngredients = ref.watch(latestScanIngredientsProvider);
-    final ingredients = scanIngredients.isNotEmpty
-        ? scanIngredients
-        : ref.watch(detectedIngredientsProvider);
+    final fridgeIngredients = ref.watch(detectedIngredientsProvider);
+    final ingredients =
+        scanIngredients.isNotEmpty ? scanIngredients : fridgeIngredients;
 
     return Scaffold(
       backgroundColor: AppTokens.paper,
@@ -54,7 +54,7 @@ class ResultsScreen extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
                 children: [
-                  // Section ingrédients détectés
+                  // Section ingrédients détectés (dernière photo)
                   if (ingredients.isNotEmpty) ...[
                     Text(
                       'DÉTECTÉS · ${ingredients.length}',
@@ -83,6 +83,28 @@ class ResultsScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Section frigo actuel (tous les ingrédients connus)
+                  if (fridgeIngredients.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Mon frigo actuel',
+                      style: GoogleFonts.fraunces(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppTokens.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: fridgeIngredients
+                          .map((ing) => _IngredientTag(label: ing))
+                          .toList(),
                     ),
                     const SizedBox(height: 20),
                     Container(height: 1, color: AppTokens.hairlineSoft),

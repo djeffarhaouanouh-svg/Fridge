@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -511,9 +512,16 @@ class _CookingScreenState extends State<_CookingScreen> {
       setState(() => _isSpeaking = true);
       await _player.stop();
       final audioBytes = await _tts.synthesize(steps[_current]);
-      await _player.play(BytesSource(audioBytes), volume: 1.0);
-    } catch (_) {
-      // Silencieux: l'utilisateur peut continuer la recette même sans audio.
+      final dataUrl = 'data:audio/mpeg;base64,${base64Encode(audioBytes)}';
+      await _player.play(UrlSource(dataUrl), volume: 1.0);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Audio indisponible: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isSpeaking = false);
     }

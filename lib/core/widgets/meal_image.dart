@@ -16,60 +16,60 @@ class MealImage extends StatelessWidget {
 
   static const List<(String, String)> _localRecipePhotoRules = [
     // Bolognese / viande tomate
-    ('bolognese', 'spaghetti bolognese.png'),
-    ('bolognaise', 'spaghetti bolognese.png'),
-    ('boeuf tomate', 'spaghetti bolognese.png'),
-    ('bœuf tomate', 'spaghetti bolognese.png'),
-    ('viande hachee', 'spaghetti bolognese.png'),
-    ('viande hachée', 'spaghetti bolognese.png'),
+    ('bolognese', 'assets/images/spaghetti-bolognese.png'),
+    ('bolognaise', 'assets/images/spaghetti-bolognese.png'),
+    ('boeuf tomate', 'assets/images/spaghetti-bolognese.png'),
+    ('bœuf tomate', 'assets/images/spaghetti-bolognese.png'),
+    ('viande hachee', 'assets/images/spaghetti-bolognese.png'),
+    ('viande hachée', 'assets/images/spaghetti-bolognese.png'),
 
     // Carbonara / lardons
-    ('carbonara', 'spaghetti carbonara.png'),
-    ('carbo', 'spaghetti carbonara.png'),
-    ('lardons', 'spaghetti carbonara.png'),
-    ('jambon creme', 'spaghetti carbonara.png'),
-    ('jambon crème', 'spaghetti carbonara.png'),
+    ('carbonara', 'assets/images/spaghetti-carbonara.png'),
+    ('carbo', 'assets/images/spaghetti-carbonara.png'),
+    ('lardons', 'assets/images/spaghetti-carbonara.png'),
+    ('jambon creme', 'assets/images/spaghetti-carbonara.png'),
+    ('jambon crème', 'assets/images/spaghetti-carbonara.png'),
 
     // Gnocchi / tomate
-    ('gnocchi', 'gnocchi-saucetomate.png'),
-    ('gnocchis', 'gnocchi-saucetomate.png'),
-    ('gnocchi tomate', 'gnocchi-saucetomate.png'),
+    ('gnocchi', 'assets/images/gnocchi-saucetomate.png'),
+    ('gnocchis', 'assets/images/gnocchi-saucetomate.png'),
+    ('gnocchi tomate', 'assets/images/gnocchi-saucetomate.png'),
 
     // Farfalle
     ('farfalle', 'icon.js/farfalle.png'),
 
     // Basilic / pesto-ish
-    ('basilic', 'pates-basilic.png'),
-    ('pesto', 'pates-basilic.png'),
-    ('verde', 'pates-basilic.png'),
+    ('basilic', 'assets/images/pates-basilic.png'),
+    ('pesto', 'assets/images/pates-basilic.png'),
+    ('verde', 'assets/images/pates-basilic.png'),
 
     // Sauce tomate / pasta rouge
-    ('sauce tomate', 'pates-saucetomate.png'),
-    ('saucetomate', 'pates-saucetomate.png'),
-    ('pates tomate', 'pates-saucetomate.png'),
-    ('pâtes tomate', 'pates-saucetomate.png'),
-    ('pasta tomate', 'pates-saucetomate.png'),
-    ('napolitaine', 'pates-saucetomate.png'),
-    ('arrabiata', 'pates-saucetomate.png'),
-    ('arrabbiata', 'pates-saucetomate.png'),
+    ('sauce tomate', 'assets/images/pates-saucetomate.png'),
+    ('saucetomate', 'assets/images/pates-saucetomate.png'),
+    ('pates tomate', 'assets/images/pates-saucetomate.png'),
+    ('pâtes tomate', 'assets/images/pates-saucetomate.png'),
+    ('pasta tomate', 'assets/images/pates-saucetomate.png'),
+    ('napolitaine', 'assets/images/pates-saucetomate.png'),
+    ('arrabiata', 'assets/images/pates-saucetomate.png'),
+    ('arrabbiata', 'assets/images/pates-saucetomate.png'),
 
     // Tomate générique
-    ('tomate', 'pate-saucetomate.png'),
-    ('tomates', 'pate-saucetomate.png'),
+    ('tomate', 'assets/images/pate-saucetomate.png'),
+    ('tomates', 'assets/images/pate-saucetomate.png'),
 
     // Spaghetti / pâtes génériques
-    ('spaghetti', 'spaghetti carbonara-2.png'),
-    ('spaghettis', 'spaghetti carbonara-2.png'),
-    ('pasta', 'spaghetti carbonara-2.png'),
-    ('pates', 'pates-saucetomate.png'),
-    ('pâtes', 'pates-saucetomate.png'),
-    ('penne', 'pates-saucetomate.png'),
-    ('tagliatelle', 'pates-saucetomate.png'),
-    ('linguine', 'pates-saucetomate.png'),
-    ('macaroni', 'pates-saucetomate.png'),
-    ('nouilles', 'pates-saucetomate.png'),
-    ('nouille', 'pates-saucetomate.png'),
-    ('lasagne', 'pates-saucetomate.png'),
+    ('spaghetti', 'assets/images/spaghetti-carbonara-2.png'),
+    ('spaghettis', 'assets/images/spaghetti-carbonara-2.png'),
+    ('pasta', 'assets/images/spaghetti-carbonara-2.png'),
+    ('pates', 'assets/images/pates-saucetomate.png'),
+    ('pâtes', 'assets/images/pates-saucetomate.png'),
+    ('penne', 'assets/images/pates-saucetomate.png'),
+    ('tagliatelle', 'assets/images/pates-saucetomate.png'),
+    ('linguine', 'assets/images/pates-saucetomate.png'),
+    ('macaroni', 'assets/images/pates-saucetomate.png'),
+    ('nouilles', 'assets/images/pates-saucetomate.png'),
+    ('nouille', 'assets/images/pates-saucetomate.png'),
+    ('lasagne', 'assets/images/pates-saucetomate.png'),
   ];
 
   String? _guessLocalAsset() {

@@ -1,5 +1,4 @@
 secrets.json
-lib/core/config/app_secrets.dart
 
 # Miscellaneous
 *.class

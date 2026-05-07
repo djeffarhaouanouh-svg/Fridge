@@ -74,11 +74,4 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-    - gnocchi-saucetomate.png
-    - pate-saucetomate.png
-    - pates-basilic.png
-    - pates-saucetomate.png
-    - spaghetti bolognese.png
-    - spaghetti carbonara.png
-    - spaghetti carbonara-2.png
     - icon.js/farfalle.png

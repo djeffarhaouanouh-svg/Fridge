@@ -40,13 +40,13 @@ class ClaudeService {
   }
 
   static const List<String> _uniquePhotoFallbackPool = [
-    'spaghetti bolognese.png',
-    'spaghetti carbonara.png',
-    'spaghetti carbonara-2.png',
-    'gnocchi-saucetomate.png',
-    'pates-basilic.png',
-    'pates-saucetomate.png',
-    'pate-saucetomate.png',
+    'assets/images/spaghetti-bolognese.png',
+    'assets/images/spaghetti-carbonara.png',
+    'assets/images/spaghetti-carbonara-2.png',
+    'assets/images/gnocchi-saucetomate.png',
+    'assets/images/pates-basilic.png',
+    'assets/images/pates-saucetomate.png',
+    'assets/images/pate-saucetomate.png',
     'icon.js/farfalle.png',
   ];
 

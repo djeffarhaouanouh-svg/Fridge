@@ -194,6 +194,7 @@ RÈGLES IMPORTANTES :
 - Respecter STRICTEMENT le régime alimentaire et les allergies
 - Utiliser uniquement les équipements disponibles
 - Prioriser les ingrédients disponibles
+- Il n'est PAS obligatoire d'utiliser tous les ingrédients détectés dans une même recette
 - Si des ingrédients manquent, les indiquer clairement
 - Éviter les recettes impossibles avec les ingrédients présents
 - Les recettes doivent donner envie et sembler naturelles

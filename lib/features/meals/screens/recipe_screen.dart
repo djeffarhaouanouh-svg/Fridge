@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:audioplayers/audioplayers.dart';
+import '../../../core/services/elevenlabs_tts_service.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/recipe_ids.dart';
 import '../../../core/utils/ingredient_category.dart';
@@ -472,6 +474,9 @@ class _CookingScreen extends StatefulWidget {
 
 class _CookingScreenState extends State<_CookingScreen> {
   int _current = 0;
+  final _tts = ElevenLabsTtsService();
+  final _player = AudioPlayer();
+  bool _isSpeaking = false;
 
   Ingredient? _ingredientForStep(int stepIndex) {
     final list = widget.meal.ingredients;
@@ -484,13 +489,48 @@ class _CookingScreenState extends State<_CookingScreen> {
     final total = widget.meal.steps.length;
     if (_current < total - 1) {
       setState(() => _current++);
+      _speakCurrentStep();
     } else {
       Navigator.pop(context);
     }
   }
 
   void _prev() {
-    if (_current > 0) setState(() => _current--);
+    if (_current > 0) {
+      setState(() => _current--);
+      _speakCurrentStep();
+    }
+  }
+
+  Future<void> _speakCurrentStep() async {
+    if (_isSpeaking) return;
+    final steps = widget.meal.steps;
+    if (steps.isEmpty || _current >= steps.length) return;
+
+    try {
+      setState(() => _isSpeaking = true);
+      await _player.stop();
+      final audioBytes = await _tts.synthesize(steps[_current]);
+      await _player.play(BytesSource(audioBytes), volume: 1.0);
+    } catch (_) {
+      // Silencieux: l'utilisateur peut continuer la recette même sans audio.
+    } finally {
+      if (mounted) setState(() => _isSpeaking = false);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _speakCurrentStep();
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
   }
 
   @override
@@ -636,12 +676,16 @@ class _CookingScreenState extends State<_CookingScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: Tooltip(
-                              message: 'Lecture (bientôt)',
+                              message: 'Relire cette étape',
                               child: IconButton(
-                                onPressed: null,
+                                onPressed: _isSpeaking ? null : _speakCurrentStep,
                                 icon: Icon(
-                                  Icons.volume_up_outlined,
-                                  color: ink.withValues(alpha: 0.35),
+                                  _isSpeaking
+                                      ? Icons.graphic_eq_rounded
+                                      : Icons.volume_up_outlined,
+                                  color: _isSpeaking
+                                      ? AppTokens.coral
+                                      : ink.withValues(alpha: 0.85),
                                   size: 26,
                                 ),
                               ),

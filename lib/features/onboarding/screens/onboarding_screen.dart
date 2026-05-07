@@ -17,47 +17,73 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
-  static const _allergyOptions = [
-    'Gluten',
-    'Lactose',
-    'Noix',
-    'Œufs',
-    'Fruits de mer',
-    'Soja',
+  static const _dietTiles = <_OptionTileData>[
+    _OptionTileData(
+      label: 'Sans produit laitier',
+      icon: Icons.no_drinks_outlined,
+      value: 'Sans lactose',
+    ),
+    _OptionTileData(
+      label: 'Sans gluten',
+      icon: Icons.grain_outlined,
+      value: 'Sans gluten',
+    ),
+    _OptionTileData(
+      label: 'Sans porc',
+      icon: Icons.no_food_outlined,
+      value: 'Sans porc',
+    ),
+    _OptionTileData(
+      label: 'Végétalien\n(vegan)',
+      icon: Icons.eco_outlined,
+      value: 'Végétalien',
+    ),
+    _OptionTileData(
+      label: 'Végétarien',
+      icon: Icons.spa_outlined,
+      value: 'Végétarien',
+    ),
   ];
-  static const _dietOptions = [
-    'Végétarien',
-    'Végétalien',
-    'Halal',
-    'Keto',
-    'Sans gluten',
-    'Sans lactose',
+
+  static const _kitchenTiles = <_OptionTileData>[
+    _OptionTileData(label: 'Micro-ondes', icon: Icons.microwave_outlined, value: 'Micro-ondes'),
+    _OptionTileData(label: 'Four', icon: Icons.local_fire_department_outlined, value: 'Four'),
+    _OptionTileData(label: 'Plaques de\ncuisson', icon: Icons.grid_4x4_outlined, value: 'Plaques de cuisson'),
+    _OptionTileData(label: 'Friteuse', icon: Icons.lunch_dining_outlined, value: 'Friteuse'),
+    _OptionTileData(label: 'Mixeur', icon: Icons.blender_outlined, value: 'Mixeur'),
+    _OptionTileData(label: 'Robot cuiseur', icon: Icons.soup_kitchen_outlined, value: 'Robot cuiseur'),
+    _OptionTileData(label: 'Air-fryer', icon: Icons.kitchen_outlined, value: 'Air-fryer'),
   ];
-  static const _kitchenOptions = [
-    'Micro-ondes',
-    'Four',
-    'Plaques de cuisson',
-    'Friteuse',
-    'Mixeur',
-    'Robot cuiseur',
-    'Air-fryer',
+
+  static const _goalTiles = <_ObjectiveTileData>[
+    _ObjectiveTileData(label: 'Perte de poids', icon: Icons.monitor_weight_outlined, value: CookingObjective.weightLoss),
+    _ObjectiveTileData(label: 'Prise de masse', icon: Icons.fitness_center_outlined, value: CookingObjective.muscleGain),
+    _ObjectiveTileData(label: 'Famille', icon: Icons.groups_outlined, value: CookingObjective.family),
+    _ObjectiveTileData(label: 'Passion cuisine', icon: Icons.restaurant_menu_outlined, value: CookingObjective.passion),
+  ];
+
+  static const _levelTiles = <_LevelTileData>[
+    _LevelTileData(label: 'Débutant', icon: Icons.looks_one_outlined, value: CookingLevel.beginner),
+    _LevelTileData(label: 'Intermédiaire', icon: Icons.looks_two_outlined, value: CookingLevel.intermediate),
+    _LevelTileData(label: 'Avancé', icon: Icons.looks_3_outlined, value: CookingLevel.advanced),
+    _LevelTileData(label: 'Expert', icon: Icons.workspace_premium_outlined, value: CookingLevel.expert),
   ];
 
   void _next() {
-    if (_page < 2) {
-      _controller.nextPage(
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOut,
-      );
+    if (_page >= 3) {
+      widget.onComplete();
       return;
     }
-    widget.onComplete();
+    _controller.nextPage(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _back() {
     if (_page == 0) return;
     _controller.previousPage(
-      duration: const Duration(milliseconds: 240),
+      duration: const Duration(milliseconds: 220),
       curve: Curves.easeOut,
     );
   }
@@ -73,196 +99,132 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final profile = ref.watch(userProfileProvider);
     final notifier = ref.read(userProfileProvider.notifier);
-    final textColor = isDark ? Colors.white : AppTokens.ink;
-    final mutedColor = isDark ? Colors.white70 : AppTokens.muted;
-    final cardBg = isDark ? const Color(0xFF1E1E1E) : AppTokens.surface;
+    final bg = isDark ? const Color(0xFF151515) : AppTokens.paper;
+    final titleColor = isDark ? Colors.white : AppTokens.ink;
+    final subtitleColor = isDark ? Colors.white70 : AppTokens.inkSoft;
+    final lineBg = isDark ? Colors.white24 : AppTokens.hairline;
+    final progress = (_page + 1) / 4;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: bg,
       body: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
               child: Row(
                 children: [
+                  IconButton(
+                    onPressed: _page == 0 ? null : _back,
+                    icon: Icon(
+                      Icons.arrow_back_rounded,
+                      color: _page == 0 ? subtitleColor.withValues(alpha: 0.45) : titleColor,
+                    ),
+                  ),
                   Expanded(
-                    child: Text(
-                      'Personnalise ton expérience',
-                      style: GoogleFonts.fraunces(
-                        fontSize: 25,
-                        fontWeight: FontWeight.w700,
-                        color: textColor,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: progress.clamp(0, 1),
+                        minHeight: 6,
+                        backgroundColor: lineBg,
+                        color: AppTokens.coral,
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   TextButton(
                     onPressed: widget.onComplete,
                     child: Text(
                       'Passer',
                       style: GoogleFonts.inter(
                         color: AppTokens.coral,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Réponds à ces questions pour des recettes vraiment adaptées.',
-                  style: GoogleFonts.inter(fontSize: 13.5, color: mutedColor),
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              height: 6,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  3,
-                  (i) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: _page == i ? 26 : 8,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: _page == i
-                          ? AppTokens.coral
-                          : (isDark ? Colors.white24 : AppTokens.hairline),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Étape ${_page + 1}/3',
-              style: GoogleFonts.inter(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: mutedColor,
-              ),
-            ),
-            const SizedBox(height: 16),
             Expanded(
               child: PageView(
                 controller: _controller,
-                onPageChanged: (value) => setState(() => _page = value),
+                onPageChanged: (v) => setState(() => _page = v),
                 children: [
-                  _OnboardingPage(
-                    cardBg: cardBg,
-                    children: [
-                      _SingleChoiceQuestion<CookingObjective>(
-                        title: 'Objectif',
-                        icon: Icons.flag_outlined,
-                        selected: profile.objective,
-                        options: const {
-                          CookingObjective.weightLoss: 'Perte de poids',
-                          CookingObjective.muscleGain: 'Prise de masse',
-                          CookingObjective.family: 'Famille',
-                          CookingObjective.passion: 'Passion cuisine',
-                        },
-                        onSelect: (value) => notifier.setObjective(value),
-                      ),
-                      _SingleChoiceQuestion<CookingLevel>(
-                        title: 'Niveau de cuisine',
-                        icon: Icons.auto_awesome_outlined,
-                        selected: profile.cookingLevel,
-                        options: const {
-                          CookingLevel.beginner: 'Débutant',
-                          CookingLevel.intermediate: 'Intermédiaire',
-                          CookingLevel.advanced: 'Avancé',
-                          CookingLevel.expert: 'Expert',
-                        },
-                        onSelect: (value) => notifier.setCookingLevel(value),
-                      ),
-                    ],
+                  _QuestionPage(
+                    title: 'Objectif',
+                    subtitle: 'Quel est votre objectif principal ?',
+                    child: _SingleChoiceGrid<CookingObjective>(
+                      options: _goalTiles
+                          .map((tile) => _SelectableTile<CookingObjective>(
+                                value: tile.value,
+                                label: tile.label,
+                                icon: tile.icon,
+                              ))
+                          .toList(),
+                      selected: profile.objective,
+                      onSelect: notifier.setObjective,
+                    ),
                   ),
-                  _OnboardingPage(
-                    cardBg: cardBg,
-                    children: [
-                      _MultiChoiceQuestion(
-                        title: 'Allergies',
-                        icon: Icons.warning_amber_outlined,
-                        selected: profile.allergies,
-                        options: _allergyOptions,
-                        onToggle: notifier.toggleAllergy,
-                      ),
-                      _MultiChoiceQuestion(
-                        title: 'Régime',
-                        icon: Icons.restaurant_menu_outlined,
-                        selected: profile.diets,
-                        options: _dietOptions,
-                        onToggle: notifier.toggleDiet,
-                      ),
-                    ],
+                  _QuestionPage(
+                    title: 'Niveau de cuisine',
+                    subtitle: 'Quel est votre niveau actuel ?',
+                    child: _SingleChoiceGrid<CookingLevel>(
+                      options: _levelTiles
+                          .map((tile) => _SelectableTile<CookingLevel>(
+                                value: tile.value,
+                                label: tile.label,
+                                icon: tile.icon,
+                              ))
+                          .toList(),
+                      selected: profile.cookingLevel,
+                      onSelect: notifier.setCookingLevel,
+                    ),
                   ),
-                  _OnboardingPage(
-                    cardBg: cardBg,
-                    children: [
-                      _MultiChoiceQuestion(
-                        title: 'Votre cuisine',
-                        icon: Icons.kitchen_outlined,
-                        selected: profile.kitchenEquipments,
-                        options: _kitchenOptions,
-                        onToggle: notifier.toggleKitchenEquipment,
-                      ),
-                    ],
+                  _QuestionPage(
+                    title: 'Votre régime',
+                    subtitle: 'Avez-vous un régime particulier ?',
+                    child: _MultiChoiceGrid(
+                      options: _dietTiles,
+                      selected: profile.diets,
+                      onToggle: notifier.toggleDiet,
+                    ),
+                  ),
+                  _QuestionPage(
+                    title: 'Votre cuisine',
+                    subtitle: 'Quels sont vos équipements de cuisine ?',
+                    child: _MultiChoiceGrid(
+                      options: _kitchenTiles,
+                      selected: profile.kitchenEquipments,
+                      onToggle: notifier.toggleKitchenEquipment,
+                    ),
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _page == 0 ? null : _back,
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: isDark ? Colors.white24 : AppTokens.hairline,
-                        ),
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                        ),
-                      ),
-                      child: Text(
-                        'Retour',
-                        style: GoogleFonts.inter(
-                          color: _page == 0 ? mutedColor : textColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _next,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTokens.coral,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTokens.radiusPill),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _next,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTokens.coral,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                        ),
-                      ),
-                      child: Text(
-                        _page == 2 ? 'Terminer' : 'Continuer',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-                      ),
+                  child: Text(
+                    _page == 3 ? 'Terminer' : 'Suivant',
+                    style: GoogleFonts.inter(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ],
@@ -272,172 +234,221 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
-class _OnboardingPage extends StatelessWidget {
-  final List<Widget> children;
-  final Color cardBg;
+class _QuestionPage extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget child;
 
-  const _OnboardingPage({required this.children, required this.cardBg});
+  const _QuestionPage({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-      itemBuilder: (_, i) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-          border: Border.all(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white12
-                : AppTokens.hairline,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : AppTokens.ink;
+    final subtitleColor = isDark ? Colors.white70 : AppTokens.ink;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: Column(
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.fraunces(
+              fontSize: 44,
+              fontWeight: FontWeight.w700,
+              color: titleColor,
+            ),
           ),
-        ),
-        child: children[i],
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              height: 1.3,
+              color: subtitleColor,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Expanded(child: child),
+        ],
       ),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemCount: children.length,
     );
   }
 }
 
-class _SingleChoiceQuestion<T> extends StatelessWidget {
-  final String title;
-  final IconData icon;
+class _SingleChoiceGrid<T> extends StatelessWidget {
+  final List<_SelectableTile<T>> options;
   final T? selected;
-  final Map<T, String> options;
   final ValueChanged<T> onSelect;
 
-  const _SingleChoiceQuestion({
-    required this.title,
-    required this.icon,
-    required this.selected,
+  const _SingleChoiceGrid({
     required this.options,
+    required this.selected,
     required this.onSelect,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : AppTokens.ink;
-    final muted = isDark ? Colors.white70 : AppTokens.muted;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 18, color: muted),
-            const SizedBox(width: 10),
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: textColor,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: options.entries.map((entry) {
-            final isSelected = selected == entry.key;
-            return ChoiceChip(
-              selected: isSelected,
-              label: Text(entry.value),
-              onSelected: (_) => onSelect(entry.key),
-              selectedColor: AppTokens.coralSoft,
-              backgroundColor: isDark ? const Color(0xFF262626) : Colors.white,
-              labelStyle: GoogleFonts.inter(
-                color: isSelected ? AppTokens.coral : textColor,
-                fontWeight: FontWeight.w600,
-              ),
-              side: BorderSide(
-                color: isSelected
-                    ? AppTokens.coral
-                    : (isDark ? Colors.white24 : AppTokens.hairline),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+    return GridView.builder(
+      itemCount: options.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 14,
+        childAspectRatio: 1.3,
+      ),
+      itemBuilder: (_, i) {
+        final item = options[i];
+        final isSelected = selected == item.value;
+        return _OptionTile(
+          label: item.label,
+          icon: item.icon,
+          selected: isSelected,
+          onTap: () => onSelect(item.value),
+        );
+      },
     );
   }
 }
 
-class _MultiChoiceQuestion extends StatelessWidget {
-  final String title;
-  final IconData icon;
+class _MultiChoiceGrid extends StatelessWidget {
+  final List<_OptionTileData> options;
   final Set<String> selected;
-  final List<String> options;
   final ValueChanged<String> onToggle;
 
-  const _MultiChoiceQuestion({
-    required this.title,
-    required this.icon,
-    required this.selected,
+  const _MultiChoiceGrid({
     required this.options,
+    required this.selected,
     required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : AppTokens.ink;
-    final muted = isDark ? Colors.white70 : AppTokens.muted;
+    return GridView.builder(
+      itemCount: options.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 8,
+        childAspectRatio: 0.9,
+      ),
+      itemBuilder: (_, i) {
+        final item = options[i];
+        final isSelected = selected.contains(item.value);
+        return _OptionTile(
+          label: item.label,
+          icon: item.icon,
+          selected: isSelected,
+          onTap: () => onToggle(item.value),
+        );
+      },
+    );
+  }
+}
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+class _OptionTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _OptionTile({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.white70 : const Color(0xFF66707A);
+    final textColor = isDark ? Colors.white : AppTokens.ink;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? AppTokens.coral.withValues(alpha: 0.45) : Colors.transparent,
+          ),
+        ),
+        child: Column(
           children: [
-            Icon(icon, size: 18, color: muted),
-            const SizedBox(width: 10),
+            Icon(
+              icon,
+              size: 45,
+              color: selected ? AppTokens.coral : baseColor,
+            ),
+            const SizedBox(height: 8),
             Text(
-              title,
+              label,
+              textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 15,
-                fontWeight: FontWeight.w700,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 color: textColor,
+                height: 1.15,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: options.map((item) {
-            final isSelected = selected.contains(item);
-            return FilterChip(
-              selected: isSelected,
-              label: Text(item),
-              onSelected: (_) => onToggle(item),
-              selectedColor: AppTokens.coralSoft,
-              checkmarkColor: AppTokens.coral,
-              backgroundColor: isDark ? const Color(0xFF262626) : Colors.white,
-              labelStyle: GoogleFonts.inter(
-                color: isSelected ? AppTokens.coral : textColor,
-                fontWeight: FontWeight.w600,
-              ),
-              side: BorderSide(
-                color: isSelected
-                    ? AppTokens.coral
-                    : (isDark ? Colors.white24 : AppTokens.hairline),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+      ),
     );
   }
+}
+
+class _OptionTileData {
+  final String label;
+  final IconData icon;
+  final String value;
+
+  const _OptionTileData({
+    required this.label,
+    required this.icon,
+    required this.value,
+  });
+}
+
+class _SelectableTile<T> {
+  final T value;
+  final String label;
+  final IconData icon;
+
+  const _SelectableTile({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
+}
+
+class _ObjectiveTileData {
+  final String label;
+  final IconData icon;
+  final CookingObjective value;
+
+  const _ObjectiveTileData({
+    required this.label,
+    required this.icon,
+    required this.value,
+  });
+}
+
+class _LevelTileData {
+  final String label;
+  final IconData icon;
+  final CookingLevel value;
+
+  const _LevelTileData({
+    required this.label,
+    required this.icon,
+    required this.value,
+  });
 }

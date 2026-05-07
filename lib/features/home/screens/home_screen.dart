@@ -169,14 +169,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       itemBuilder: (context, i) => GestureDetector(
                         onTap: () {
                           final meal = heroMeals[i];
-                          if (!meal.locked) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => RecipeScreen(meal: meal),
-                              ),
-                            );
-                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RecipeScreen(meal: meal),
+                            ),
+                          );
                         },
                         child: _HeroCard(meal: heroMeals[i], index: i),
                       ),
@@ -399,12 +397,10 @@ class _CompactCard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
-        if (!meal.locked) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => RecipeScreen(meal: meal)),
-          );
-        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => RecipeScreen(meal: meal)),
+        );
       },
       child: Container(
         width: 148,

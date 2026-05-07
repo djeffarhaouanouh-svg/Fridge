@@ -110,7 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             TextSpan(
                               text: 'Qu\'est-ce qu\'on mange ',
                               style: GoogleFonts.fraunces(
-                                fontSize: 27,
+                                fontSize: 25,
                                 fontWeight: FontWeight.w700,
                                   color: titleColor,
                                 height: 1.2,
@@ -119,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             TextSpan(
                               text: 'ce soir',
                               style: GoogleFonts.fraunces(
-                                fontSize: 27,
+                                fontSize: 25,
                                 fontWeight: FontWeight.w700,
                                 color: AppTokens.coral,
                                 fontStyle: FontStyle.italic,
@@ -129,7 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             TextSpan(
                               text: ' ?',
                               style: GoogleFonts.fraunces(
-                                fontSize: 27,
+                                fontSize: 25,
                                 fontWeight: FontWeight.w700,
                                   color: titleColor,
                                 height: 1.2,

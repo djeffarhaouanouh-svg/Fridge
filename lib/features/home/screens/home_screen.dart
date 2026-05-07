@@ -423,25 +423,29 @@ class _CompactCard extends ConsumerWidget {
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => ref
-                            .read(mealsProvider.notifier)
-                            .toggleFavorite(meal.id),
-                        child: Container(
-                          width: 30,
-                          height: 30,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.92),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            meal.isFavorite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            size: 16,
-                            color: AppTokens.coral,
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        alignment: Alignment.center,
+                        child: Material(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () => ref
+                                .read(mealsProvider.notifier)
+                                .toggleFavorite(meal.id),
+                            child: SizedBox(
+                              width: 30,
+                              height: 30,
+                              child: Icon(
+                                meal.isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                size: 16,
+                                color: AppTokens.coral,
+                              ),
+                            ),
                           ),
                         ),
                       ),

@@ -109,32 +109,29 @@ class RecipeScreen extends ConsumerWidget {
                             Positioned(
                               top: 12,
                               right: 12,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => ref
-                                    .read(mealsProvider.notifier)
-                                    .toggleFavorite(effectiveMeal.id),
-                                child: Container(
-                                  width: 44,
-                                  height: 44,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.92),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.12),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
+                              child: Container(
+                                width: 54,
+                                height: 54,
+                                alignment: Alignment.center,
+                                child: Material(
+                                  color: Colors.white.withValues(alpha: 0.92),
+                                  shape: const CircleBorder(),
+                                  child: InkWell(
+                                    customBorder: const CircleBorder(),
+                                    onTap: () => ref
+                                        .read(mealsProvider.notifier)
+                                        .toggleFavorite(effectiveMeal.id),
+                                    child: SizedBox(
+                                      width: 44,
+                                      height: 44,
+                                      child: Icon(
+                                        effectiveMeal.isFavorite
+                                            ? Icons.favorite_rounded
+                                            : Icons.favorite_border_rounded,
+                                        size: 22,
+                                        color: AppTokens.coral,
                                       ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    effectiveMeal.isFavorite
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    size: 22,
-                                    color: AppTokens.coral,
+                                    ),
                                   ),
                                 ),
                               ),

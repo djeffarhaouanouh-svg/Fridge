@@ -147,7 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Text(
                         detectedIngredients.isEmpty
                             ? 'Scanne ton frigo ou ajoute des recettes en favoris pour les voir ici'
-                            : 'Voici 3 recettes adaptées à toi',
+                            : 'Voici 3 recettes adaptées',
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w500,

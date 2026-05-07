@@ -339,6 +339,68 @@ class RecipeScreen extends ConsumerWidget {
                   if (meal.steps.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF1E1E1E)
+                                : const Color(0xFFF3F0EA),
+                            borderRadius:
+                                BorderRadius.circular(AppTokens.radiusMd),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Étapes',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: ink,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              ...List.generate(meal.steps.length, (i) {
+                                return Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: i == meal.steps.length - 1 ? 0 : 10,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${i + 1}. ',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppTokens.coral,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          meal.steps[i],
+                                          style: GoogleFonts.inter(
+                                            fontSize: 13.5,
+                                            height: 1.5,
+                                            color: ink,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  if (meal.steps.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
                         padding: const EdgeInsets.fromLTRB(18, 52, 18, 62),
                         child: _CommencerRecetteButton(
                           onTap: () => Navigator.push(
@@ -475,6 +537,7 @@ class _CookingScreen extends StatefulWidget {
 
 class _CookingScreenState extends State<_CookingScreen> {
   int _current = 0;
+  bool _showIntro = true;
   final _tts = ElevenLabsTtsService();
   final _player = AudioPlayer();
   bool _isSpeaking = false;
@@ -487,6 +550,11 @@ class _CookingScreenState extends State<_CookingScreen> {
   }
 
   void _next() {
+    if (_showIntro) {
+      setState(() => _showIntro = false);
+      _speakCurrentStep();
+      return;
+    }
     final total = widget.meal.steps.length;
     if (_current < total - 1) {
       setState(() => _current++);
@@ -530,9 +598,6 @@ class _CookingScreenState extends State<_CookingScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _speakCurrentStep();
-    });
   }
 
   @override
@@ -563,6 +628,124 @@ class _CookingScreenState extends State<_CookingScreen> {
     final hair = isDark ? Colors.white24 : AppTokens.hairlineSoft;
     final surface = isDark ? const Color(0xFF2A2A2A) : AppTokens.surface;
     final ing = _ingredientForStep(_current);
+
+    if (_showIntro) {
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        child: Scaffold(
+          backgroundColor: bg,
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(Icons.close_rounded, color: ink, size: 24),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Ingrédients nécessaires',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.fraunces(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: ink,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: surface,
+                        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                        border: Border.all(color: hair),
+                      ),
+                      child: ListView.separated(
+                        itemCount: widget.meal.ingredients.length,
+                        separatorBuilder: (_, __) => Divider(color: hair, height: 14),
+                        itemBuilder: (_, i) {
+                          final ingredient = widget.meal.ingredients[i];
+                          return Row(
+                            children: [
+                              SizedBox(
+                                width: 26,
+                                height: 26,
+                                child: Center(
+                                  child: buildIngredientIcon(
+                                    ingredient.name,
+                                    emojiSize: 18,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  ingredient.name,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: ink,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                ingredient.qty,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: muted,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Material(
+                    color: AppTokens.coral,
+                    borderRadius: BorderRadius.circular(999),
+                    child: InkWell(
+                      onTap: _next,
+                      borderRadius: BorderRadius.circular(999),
+                      splashColor: Colors.white24,
+                      highlightColor: Colors.white10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: AppTokens.coralDeep, width: 1.5),
+                        ),
+                        child: Text(
+                          'Démarrer la recette',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,

@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/push_notifications_service.dart';
 import 'core/theme/app_tokens.dart';
+import 'core/widgets/app_splash_screen.dart';
 import 'features/auth/screens/auth_screen.dart';
 import 'features/meals/models/meal.dart';
 import 'features/meals/providers/meals_provider.dart';
@@ -94,6 +95,16 @@ class FridgeApp extends ConsumerWidget {
           surface: AppTokens.surface,
         ),
         textTheme: GoogleFonts.interTextTheme(),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        focusColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        iconButtonTheme: IconButtonThemeData(
+          style: ButtonStyle(
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+            splashFactory: NoSplash.splashFactory,
+          ),
+        ),
       ),
       darkTheme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF151515),
@@ -102,6 +113,16 @@ class FridgeApp extends ConsumerWidget {
           surface: Color(0xFF1E1E1E),
         ),
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        focusColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        iconButtonTheme: IconButtonThemeData(
+          style: ButtonStyle(
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+            splashFactory: NoSplash.splashFactory,
+          ),
+        ),
       ),
       themeMode: themeMode,
       home: const AuthGate(),
@@ -136,11 +157,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   Widget build(BuildContext context) {
     if (!_checked) {
-      return const Scaffold(
-        backgroundColor: AppTokens.paper,
-        body: Center(
-          child: CircularProgressIndicator(color: AppTokens.coral),
-        ),
+      return const AppSplashScreen(
+        subtitle: 'Vérification de la session...',
       );
     }
     final isLoggedIn = ref.watch(authStateProvider);
@@ -245,11 +263,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final selectedTab = ref.watch(selectedTabProvider);
 
     if (!_remoteReady || !_onboardingChecked) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: const Center(
-          child: CircularProgressIndicator(color: AppTokens.coral),
-        ),
+      return const AppSplashScreen(
+        subtitle: 'Chargement de tes recettes et préférences...',
       );
     }
 

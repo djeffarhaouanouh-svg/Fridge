@@ -280,15 +280,30 @@ class ProfileScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Infos compte (sans bulle avatar)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Text(profile.name,
-                        style: GoogleFonts.fraunces(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : AppTokens.ink,
+                      Expanded(
+                        child: Text(profile.name,
+                          style: GoogleFonts.fraunces(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : AppTokens.ink,
+                          ),
                         ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        ),
+                        icon: Icon(
+                          Icons.settings_outlined,
+                          color: isDark ? Colors.white70 : AppTokens.inkSoft,
+                          size: 22,
+                        ),
+                        tooltip: 'Paramètres',
                       ),
                     ],
                   ),

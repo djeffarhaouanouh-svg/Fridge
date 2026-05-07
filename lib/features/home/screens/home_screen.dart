@@ -8,6 +8,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../providers/daily_hero_provider.dart';
 import '../../meals/models/meal.dart';
 import '../../meals/screens/recipe_screen.dart';
 
@@ -32,7 +33,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final meals = ref.watch(mealsProvider);
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
-    final heroMeals = meals.take(3).toList();
+    final heroAsync = ref.watch(dailyHeroRecipesProvider);
+    final heroMeals = heroAsync.maybeWhen(
+      data: (list) => list.isNotEmpty ? list : _mockPopularMeals.take(3).toList(),
+      orElse: () => _mockPopularMeals.take(3).toList(),
+    );
     final firstName = ref.watch(userProfileProvider).name.split(' ').first;
     final themePreference = ref.watch(themePreferenceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -160,25 +165,85 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverToBoxAdapter(
               child: Column(
                 children: [
-                  SizedBox(
-                    height: 280,
-                    child: PageView.builder(
-                      controller: _heroController,
-                      onPageChanged: (i) => setState(() => _heroPage = i),
-                      itemCount: heroMeals.length,
-                      itemBuilder: (context, i) => GestureDetector(
-                        onTap: () {
-                          final meal = heroMeals[i];
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => RecipeScreen(meal: meal),
+                  if (heroAsync.isLoading)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              color: AppTokens.coral,
                             ),
-                          );
-                        },
-                        child: _HeroCard(meal: heroMeals[i], index: i),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Génération de tes recettes du soir…',
+                            style: GoogleFonts.inter(
+                              fontSize: 11.5,
+                              color: AppTokens.muted,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  Stack(
+                    children: [
+                      SizedBox(
+                        height: 280,
+                        child: PageView.builder(
+                          controller: _heroController,
+                          onPageChanged: (i) => setState(() => _heroPage = i),
+                          itemCount: heroMeals.length,
+                          itemBuilder: (context, i) => GestureDetector(
+                            onTap: () {
+                              final meal = heroMeals[i];
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => RecipeScreen(meal: meal),
+                                ),
+                              );
+                            },
+                            child: _HeroCard(meal: heroMeals[i], index: i),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 12,
+                        right: 28,
+                        child: GestureDetector(
+                          onTap: heroAsync.isLoading
+                              ? null
+                              : () => ref
+                                  .read(dailyHeroRecipesProvider.notifier)
+                                  .forceRefresh(),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              shape: BoxShape.circle,
+                            ),
+                            child: heroAsync.isLoading
+                                ? Padding(
+                                    padding: const EdgeInsets.all(7),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.refresh_rounded,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 14),
                   Row(
@@ -217,32 +282,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           SliverToBoxAdapter(
-            child: meals.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
-                    child: Text(
-                      'Aucune recette enregistrée pour l’instant.',
-                      style: GoogleFonts.inter(
-                        fontSize: 13.5,
-                        color: AppTokens.muted,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  )
-                : SizedBox(
-                    height: 215,
-                    child: ListView.builder(
-                      primary: false,
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics(),
-                      ),
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                      itemCount: meals.length,
-                      itemBuilder: (context, i) =>
-                          _CompactCard(meal: meals[i]),
-                    ),
-                  ),
+            child: SizedBox(
+              height: 215,
+              child: ListView.builder(
+                primary: false,
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                itemCount: meals.isEmpty
+                    ? _mockPopularMeals.length
+                    : meals.length,
+                itemBuilder: (context, i) => _CompactCard(
+                  meal: meals.isEmpty ? _mockPopularMeals[i] : meals[i],
+                ),
+              ),
+            ),
           ),
 
           SliverToBoxAdapter(
@@ -283,6 +339,90 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 }
+
+final List<Meal> _mockPopularMeals = [
+  Meal(
+    id: 'mock_1',
+    type: 'balanced',
+    typeLabel: 'Équilibré',
+    emoji: '🥑',
+    title: 'Avocat farci à la tomate et mâche',
+    kcal: 320,
+    protein: 'moyen',
+    difficulty: 'facile',
+    time: '15 min',
+    locked: false,
+    photo: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+    ingredients: [],
+    steps: [],
+    color: '#82D28C',
+    isFavorite: true,
+  ),
+  Meal(
+    id: 'mock_2',
+    type: 'simple',
+    typeLabel: 'Simple',
+    emoji: '🍝',
+    title: 'Spaghetti carbonara maison',
+    kcal: 520,
+    protein: 'élevé',
+    difficulty: 'intermédiaire',
+    time: '25 min',
+    locked: false,
+    photo: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400',
+    ingredients: [],
+    steps: [],
+    color: '#F2C94C',
+  ),
+  Meal(
+    id: 'mock_3',
+    type: 'stylish',
+    typeLabel: 'Stylé',
+    emoji: '🥗',
+    title: 'Salade niçoise légère',
+    kcal: 280,
+    protein: 'moyen',
+    difficulty: 'facile',
+    time: '20 min',
+    locked: false,
+    photo: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=400',
+    ingredients: [],
+    steps: [],
+    color: '#6FCF97',
+  ),
+  Meal(
+    id: 'mock_4',
+    type: 'balanced',
+    typeLabel: 'Équilibré',
+    emoji: '🍗',
+    title: 'Poulet rôti aux herbes de Provence',
+    kcal: 450,
+    protein: 'élevé',
+    difficulty: 'facile',
+    time: '45 min',
+    locked: false,
+    photo: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?w=400',
+    ingredients: [],
+    steps: [],
+    color: '#F2994A',
+  ),
+  Meal(
+    id: 'mock_5',
+    type: 'simple',
+    typeLabel: 'Simple',
+    emoji: '🍲',
+    title: 'Soupe de lentilles corail au curry',
+    kcal: 360,
+    protein: 'élevé',
+    difficulty: 'facile',
+    time: '30 min',
+    locked: false,
+    photo: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=400',
+    ingredients: [],
+    steps: [],
+    color: '#EB5757',
+  ),
+];
 
 class _HeroCard extends ConsumerWidget {
   final Meal meal;

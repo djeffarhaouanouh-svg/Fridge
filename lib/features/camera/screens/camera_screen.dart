@@ -720,14 +720,15 @@ class _ScanFramePainter extends CustomPainter {
 
     const arm = 28.0;
     const r = 6.0;
-    const bottomCornerDrop = 34.0;
+    const topCornerLift = 10.0;
+    const bottomCornerDrop = 46.0;
     final w = size.width;
     final h = size.height;
 
     // Top-left
-    _drawCorner(canvas, paint, 0, 0, arm, r, _CornerType.topLeft);
+    _drawCorner(canvas, paint, 0, -topCornerLift, arm, r, _CornerType.topLeft);
     // Top-right
-    _drawCorner(canvas, paint, w, 0, arm, r, _CornerType.topRight);
+    _drawCorner(canvas, paint, w, -topCornerLift, arm, r, _CornerType.topRight);
     // Bottom-left
     _drawCorner(canvas, paint, 0, h + bottomCornerDrop, arm, r, _CornerType.bottomLeft);
     // Bottom-right

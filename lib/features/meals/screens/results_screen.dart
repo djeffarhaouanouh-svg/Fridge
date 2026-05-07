@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../core/widgets/glass_button.dart';
+import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
 import 'recipe_screen.dart';
@@ -22,6 +23,7 @@ class ResultsScreen extends ConsumerWidget {
         : ref.watch(detectedIngredientsProvider);
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: AppTokens.paper,
       body: SafeArea(
         child: Column(
@@ -146,6 +148,7 @@ class ResultsScreen extends ConsumerWidget {
           ],
         ),
       ),
+      bottomNavigationBar: const BottomNav(),
     );
   }
 }

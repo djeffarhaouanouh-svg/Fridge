@@ -356,7 +356,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisCount: 2,
                   mainAxisSpacing: 18,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.64,
+                  childAspectRatio: 0.72,
                 ),
                 itemBuilder: (context, i) => _LargeCollectionCard(
                   data: _mockHomeCollections[i],
@@ -460,7 +460,7 @@ final List<_HomeCollectionCardData> _mockHomeCollections = [
   _HomeCollectionCardData(
     title: 'Étudiant fauché',
     imageUrl:
-        'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=900',
+        'C:/Users/Thomas/.cursor/projects/c-Users-Thomas-Downloads-fridge-app/assets/c__Users_Thomas_AppData_Roaming_Cursor_User_workspaceStorage_a6d9a68e699442995fb252014bacbcb5_images_image-36a83d7e-6d72-46bf-aee2-3af595ea3950.png',
     rating: 4.7,
     reviews: 192,
   ),

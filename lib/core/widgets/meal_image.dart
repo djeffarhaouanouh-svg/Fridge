@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
 import '../theme/app_tokens.dart';
 
 class MealImage extends StatelessWidget {
@@ -107,6 +108,16 @@ class MealImage extends StatelessWidget {
       );
     }
 
+    if (_looksLikeFilePath(photo)) {
+      return Image.file(
+        File(photo),
+        fit: fit,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => Container(color: AppTokens.placeholder),
+      );
+    }
+
     if (localAsset != null) {
       return Image.asset(
         localAsset,
@@ -123,5 +134,11 @@ class MealImage extends StatelessWidget {
       placeholder: (_, __) => Container(color: AppTokens.placeholder),
       errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
     );
+  }
+
+  bool _looksLikeFilePath(String value) {
+    if (value.startsWith('/') || value.startsWith(r'\\')) return true;
+    final windowsPathRegex = RegExp(r'^[a-zA-Z]:[\\/]');
+    return windowsPathRegex.hasMatch(value);
   }
 }

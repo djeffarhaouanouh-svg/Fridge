@@ -158,9 +158,12 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   Future<void> toggleAllergy(String v) async {
     final s = Set<String>.from(state.allergies);
     if (v == 'Aucune') {
-      s.contains(v) ? s.remove(v) : s
-        ..clear()
-        ..add(v);
+      if (s.contains(v)) {
+        s.remove(v);
+      } else {
+        s.clear();
+        s.add(v);
+      }
     } else {
       s.remove('Aucune');
       s.contains(v) ? s.remove(v) : s.add(v);
@@ -176,9 +179,12 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   Future<void> toggleDiet(String v) async {
     final s = Set<String>.from(state.diets);
     if (v == 'Aucun') {
-      s.contains(v) ? s.remove(v) : s
-        ..clear()
-        ..add(v);
+      if (s.contains(v)) {
+        s.remove(v);
+      } else {
+        s.clear();
+        s.add(v);
+      }
     } else {
       s.remove('Aucun');
       s.contains(v) ? s.remove(v) : s.add(v);

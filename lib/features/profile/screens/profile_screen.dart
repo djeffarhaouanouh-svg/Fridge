@@ -250,7 +250,6 @@ class ProfileScreen extends ConsumerWidget {
     final profile = ref.watch(userProfileProvider);
     final notifier = ref.read(userProfileProvider.notifier);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
-    final allMeals = ref.watch(mealsProvider);
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
     final recentlyViewed = ref.watch(recentlyViewedProvider);
     final loginStreak = ref.watch(loginStreakProvider);
@@ -556,43 +555,50 @@ class ProfileScreen extends ConsumerWidget {
               _Divider(),
             ],
 
-            // ── 4b. Recettes générées ────────────────────────────────
-            if (allMeals.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-                child: Row(
-                  children: [
-                    _SectionTitle(title: 'Recettes générées'),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppTokens.coralSoft,
-                        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                      ),
-                      child: Text(
-                        '${allMeals.length}',
-                        style: GoogleFonts.inter(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppTokens.coral,
+            // ── 4b. Recettes adaptées ────────────────────────────────
+            Builder(builder: (context) {
+              final adaptedMeals = ref.watch(adaptedMealsProvider);
+              if (adaptedMeals.isEmpty) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+                    child: Row(
+                      children: [
+                        _SectionTitle(title: 'Recettes générées'),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppTokens.coralSoft,
+                            borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                          ),
+                          child: Text(
+                            '${adaptedMeals.length}',
+                            style: GoogleFonts.inter(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppTokens.coral,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 160,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                  itemCount: allMeals.length,
-                  itemBuilder: (_, i) => _MealCard(meal: allMeals[i]),
-                ),
-              ),
-              _Divider(),
-            ],
+                  ),
+                  SizedBox(
+                    height: 160,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                      itemCount: adaptedMeals.length,
+                      itemBuilder: (_, i) => _MealCard(meal: adaptedMeals[i]),
+                    ),
+                  ),
+                  _Divider(),
+                ],
+              );
+            }),
 
             // ── 4c. Dernières recettes vues ──────────────────────────
             if (recentlyViewed.isNotEmpty) ...[

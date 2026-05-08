@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/recipe_ids.dart';
 import '../models/meal.dart';
 import '../../../core/services/neon_service.dart';
@@ -21,6 +22,40 @@ final scanStatusProvider = StateProvider<ScanStatus>((ref) => ScanStatus.idle);
 final detectedIngredientsProvider = StateProvider<List<String>>((ref) => []);
 final latestScanIngredientsProvider = StateProvider<List<String>>((ref) => []);
 final latestScanMealsProvider = StateProvider<List<Meal>>((ref) => []);
+
+/// Recettes adaptées via "Adapter avec mes ingrédients" — persiste entre sessions.
+final adaptedMealsProvider =
+    StateNotifierProvider<AdaptedMealsNotifier, List<Meal>>(
+  (ref) => AdaptedMealsNotifier(),
+);
+
+class AdaptedMealsNotifier extends StateNotifier<List<Meal>> {
+  static const _key = 'adapted_meals_json';
+
+  AdaptedMealsNotifier() : super([]) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_key);
+      if (raw == null) return;
+      final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+      state = list.map(Meal.fromJson).toList();
+    } catch (_) {}
+  }
+
+  Future<void> addAdapted(Meal meal) async {
+    // Évite les doublons par id
+    if (state.any((m) => m.id == meal.id)) return;
+    state = [meal, ...state];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_key, jsonEncode(state.map((m) => m.toJson()).toList()));
+    } catch (_) {}
+  }
+}
 
 final mealsProvider = StateNotifierProvider<MealsNotifier, List<Meal>>((ref) {
   return MealsNotifier();

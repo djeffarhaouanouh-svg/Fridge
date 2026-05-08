@@ -520,6 +520,8 @@ class _AdaptRecipeButtonState extends ConsumerState<_AdaptRecipeButton> {
           ),
         );
       } else {
+        await ref.read(adaptedMealsProvider.notifier).addAdapted(adapted);
+        if (!mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => RecipeScreen(meal: adapted)),

@@ -350,7 +350,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: SizedBox(
-                height: 250,
+                height: 286,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(
@@ -381,7 +381,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: SizedBox(
-                height: 250,
+                height: 286,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(
@@ -396,7 +396,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 110)),
+          const SliverToBoxAdapter(child: SizedBox(height: 36)),
         ],
       ),
     );
@@ -923,7 +923,7 @@ class _LargeCollectionCard extends ConsumerWidget {
         );
       },
       child: Container(
-        width: 160,
+        width: 170,
         margin: const EdgeInsets.only(right: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

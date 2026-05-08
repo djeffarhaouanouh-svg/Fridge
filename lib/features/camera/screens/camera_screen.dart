@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
 import '../../../core/services/google_vision_service.dart';
@@ -276,6 +277,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       }
 
       ref.read(scanStatusProvider.notifier).state = ScanStatus.done;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_scan_date', DateTime.now().toIso8601String());
       setState(() => _photos.clear());
       if (mounted) {
         Navigator.push(

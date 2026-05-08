@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/services/auth_service.dart';
@@ -391,7 +392,7 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionTitle(title: 'Mon frigo actuel'),
+                  _FridgeSectionTitle(),
                   const SizedBox(height: 14),
                   if (detectedIngredients.isEmpty)
                     Container(
@@ -1407,6 +1408,56 @@ class _Divider extends StatelessWidget {
         thickness: 1,
         color: isDark ? Colors.white12 : AppTokens.hairline,
       ),
+    );
+  }
+}
+
+class _FridgeSectionTitle extends ConsumerWidget {
+  const _FridgeSectionTitle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return FutureBuilder<String?>(
+      future: SharedPreferences.getInstance()
+          .then((p) => p.getString('last_scan_date')),
+      builder: (context, snap) {
+        String? subtitle;
+        if (snap.hasData && snap.data != null) {
+          final last = DateTime.tryParse(snap.data!);
+          if (last != null) {
+            final days = DateTime.now().difference(last).inDays;
+            subtitle = days == 0
+                ? "(scanné aujourd'hui)"
+                : days == 1
+                    ? "(il y a 1 jour)"
+                    : "(il y a $days jours)";
+          }
+        }
+        return Row(
+          children: [
+            Text(
+              'Mon frigo actuel',
+              style: GoogleFonts.fraunces(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppTokens.ink,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(width: 6),
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  fontSize: 11.5,
+                  color: isDark ? Colors.white54 : AppTokens.muted,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }

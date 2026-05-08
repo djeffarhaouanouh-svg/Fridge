@@ -62,8 +62,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _ObjectiveTileData(label: 'Famille', icon: Icons.groups_outlined, value: CookingObjective.family),
     _ObjectiveTileData(label: 'Apprendre à cuisiner', icon: Icons.school_outlined, value: CookingObjective.learn),
     _ObjectiveTileData(label: 'Passion cuisine', icon: Icons.restaurant_menu_outlined, value: CookingObjective.passion),
-    _ObjectiveTileData(label: 'Petit budget', icon: Icons.savings_outlined, value: CookingObjective.budget),
-    _ObjectiveTileData(label: 'Repas rapides', icon: Icons.timer_outlined, value: CookingObjective.quick),
   ];
 
   static const _levelTiles = <_LevelTileData>[

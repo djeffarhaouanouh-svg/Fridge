@@ -153,8 +153,6 @@ class ClaudeService {
       CookingObjective.passion => 'Passion culinaire',
       CookingObjective.healthy => 'Manger sainement',
       CookingObjective.learn => 'Apprendre à cuisiner',
-      CookingObjective.budget => 'Petit budget',
-      CookingObjective.quick => 'Repas rapides',
     };
   }
 

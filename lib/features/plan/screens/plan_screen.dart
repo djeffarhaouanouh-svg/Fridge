@@ -242,7 +242,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       style: GoogleFonts.fraunces(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white54 : AppTokens.muted,
+                        color: isDark ? Colors.white70 : AppTokens.inkSoft,
                       ),
                     ),
                   ),

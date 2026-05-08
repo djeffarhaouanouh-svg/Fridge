@@ -157,7 +157,14 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
 
   Future<void> toggleAllergy(String v) async {
     final s = Set<String>.from(state.allergies);
-    s.contains(v) ? s.remove(v) : s.add(v);
+    if (v == 'Aucune') {
+      s.contains(v) ? s.remove(v) : s
+        ..clear()
+        ..add(v);
+    } else {
+      s.remove('Aucune');
+      s.contains(v) ? s.remove(v) : s.add(v);
+    }
     state = state.copyWith(allergies: s);
     try {
       await _db.saveAllergies(s.toList());
@@ -168,7 +175,14 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
 
   Future<void> toggleDiet(String v) async {
     final s = Set<String>.from(state.diets);
-    s.contains(v) ? s.remove(v) : s.add(v);
+    if (v == 'Aucun') {
+      s.contains(v) ? s.remove(v) : s
+        ..clear()
+        ..add(v);
+    } else {
+      s.remove('Aucun');
+      s.contains(v) ? s.remove(v) : s.add(v);
+    }
     state = state.copyWith(diets: s);
     try {
       await _db.saveDiets(s.toList());

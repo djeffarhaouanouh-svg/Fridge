@@ -185,7 +185,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
           const SliverToBoxAdapter(child: AppHeader(brand: true)),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 110),
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

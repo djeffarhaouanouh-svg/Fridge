@@ -10,6 +10,11 @@ final dailyHeroRecipesProvider =
   DailyHeroRecipesNotifier.new,
 );
 
+final marmitonBudgetRecipesProvider = FutureProvider<List<Meal>>((ref) async {
+  final db = NeonService();
+  return db.loadMarmitonRecipes(limit: 20);
+});
+
 class DailyHeroRecipesNotifier extends AsyncNotifier<List<Meal>> {
   static const _refreshIntervalHours = 48;
   final _db = NeonService();

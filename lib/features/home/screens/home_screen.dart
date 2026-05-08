@@ -76,7 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 10)),
+          const SliverToBoxAdapter(child: SizedBox(height: 7)),
 
           SliverToBoxAdapter(
             child: Padding(
@@ -366,7 +366,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
+              padding: const EdgeInsets.fromLTRB(18, 7, 18, 8),
               child: Text(
                 _mockHomeSections[1].title,
                 style: GoogleFonts.fraunces(

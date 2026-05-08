@@ -332,13 +332,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
           ),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 30, 18, 14),
               child: Text(
                 'Étudiant fauché',
                 style: GoogleFonts.fraunces(
-                  fontSize: 17,
+                  fontSize: 19,
                   fontWeight: FontWeight.w600,
                   color: titleColor,
                 ),
@@ -363,7 +364,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Text(
                 'Salades',
                 style: GoogleFonts.fraunces(
-                  fontSize: 17,
+                  fontSize: 19,
                   fontWeight: FontWeight.w600,
                   color: titleColor,
                 ),
@@ -477,7 +478,7 @@ final List<Meal> _mockPopularMeals = [
 final List<_HomeCollectionCardData> _mockHomeCollections = [
   _HomeCollectionCardData(
     title: 'Étudiant fauché',
-    imageUrl: 'assets/images/user-home-card.png',
+    imageUrl: 'assets/images/spaghetti-bolognese.png',
     rating: 4.7,
     reviews: 192,
   ),

@@ -233,7 +233,20 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       ),
                     )),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+
+                  Center(
+                    child: Text(
+                      'Ici, planifie ta semaine et compte tes calories',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.fraunces(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white54 : AppTokens.muted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                   _MealRow(
                     label: 'DÉJEUNER',
@@ -314,20 +327,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       ),
                     )),
                   ),
-                  const SizedBox(height: 28),
-
-                  Center(
-                    child: Text(
-                      'Ici, planifie ta semaine et compte tes calories',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.fraunces(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white54 : AppTokens.muted,
-                      ),
-                    ),
-                  ),
-
                   if (isLoading)
                     const Padding(
                       padding: EdgeInsets.only(top: 16),

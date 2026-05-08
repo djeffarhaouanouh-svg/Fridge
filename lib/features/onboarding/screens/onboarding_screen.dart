@@ -5,7 +5,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../profile/providers/profile_provider.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
-  final VoidCallback onComplete;
+  final ValueChanged<String> onComplete;
 
   const OnboardingScreen({super.key, required this.onComplete});
 
@@ -15,34 +15,15 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
+  final _nameCtrl = TextEditingController();
   int _page = 0;
 
-  static const _dietTiles = <_OptionTileData>[
-    _OptionTileData(
-      label: 'Sans produit laitier',
-      icon: Icons.no_drinks_outlined,
-      value: 'Sans lactose',
-    ),
-    _OptionTileData(
-      label: 'Sans gluten',
-      icon: Icons.grain_outlined,
-      value: 'Sans gluten',
-    ),
-    _OptionTileData(
-      label: 'Sans porc',
-      icon: Icons.no_food_outlined,
-      value: 'Sans porc',
-    ),
-    _OptionTileData(
-      label: 'Végétalien\n(vegan)',
-      icon: Icons.eco_outlined,
-      value: 'Végétalien',
-    ),
-    _OptionTileData(
-      label: 'Végétarien',
-      icon: Icons.spa_outlined,
-      value: 'Végétarien',
-    ),
+  static const _goalTiles = <_ObjectiveTileData>[
+    _ObjectiveTileData(label: 'Perte de poids', icon: Icons.monitor_weight_outlined, value: CookingObjective.weightLoss),
+    _ObjectiveTileData(label: 'Prise de masse', icon: Icons.fitness_center_outlined, value: CookingObjective.muscleGain),
+    _ObjectiveTileData(label: 'Manger sainement', icon: Icons.eco_outlined, value: CookingObjective.healthy),
+    _ObjectiveTileData(label: 'Apprendre à cuisiner', icon: Icons.school_outlined, value: CookingObjective.learn),
+    _ObjectiveTileData(label: 'Garder la ligne', icon: Icons.straighten_outlined, value: CookingObjective.maintain),
   ];
 
   static const _kitchenTiles = <_OptionTileData>[
@@ -55,24 +36,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _OptionTileData(label: 'Air-fryer', icon: Icons.kitchen_outlined, value: 'Air-fryer'),
   ];
 
-  static const _goalTiles = <_ObjectiveTileData>[
-    _ObjectiveTileData(label: 'Perte de poids', icon: Icons.monitor_weight_outlined, value: CookingObjective.weightLoss),
-    _ObjectiveTileData(label: 'Prise de masse', icon: Icons.fitness_center_outlined, value: CookingObjective.muscleGain),
-    _ObjectiveTileData(label: 'Manger sainement', icon: Icons.eco_outlined, value: CookingObjective.healthy),
-    _ObjectiveTileData(label: 'Apprendre à cuisiner', icon: Icons.school_outlined, value: CookingObjective.learn),
-    _ObjectiveTileData(label: 'Garder la ligne', icon: Icons.straighten_outlined, value: CookingObjective.maintain),
-  ];
-
-  static const _levelTiles = <_LevelTileData>[
-    _LevelTileData(label: 'Débutant', icon: Icons.looks_one_outlined, value: CookingLevel.beginner),
-    _LevelTileData(label: 'Intermédiaire', icon: Icons.looks_two_outlined, value: CookingLevel.intermediate),
-    _LevelTileData(label: 'Avancé', icon: Icons.looks_3_outlined, value: CookingLevel.advanced),
-    _LevelTileData(label: 'Expert', icon: Icons.workspace_premium_outlined, value: CookingLevel.expert),
-  ];
-
   void _next() {
-    if (_page >= 3) {
-      widget.onComplete();
+    if (_page == 0 && _nameCtrl.text.trim().isEmpty) return;
+    if (_page >= 2) {
+      widget.onComplete(_nameCtrl.text.trim());
       return;
     }
     _controller.nextPage(
@@ -92,6 +59,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void dispose() {
     _controller.dispose();
+    _nameCtrl.dispose();
     super.dispose();
   }
 
@@ -105,7 +73,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final titleColor = isDark ? Colors.white : AppTokens.ink;
     final subtitleColor = isDark ? Colors.white70 : AppTokens.inkSoft;
     final lineBg = isDark ? Colors.white24 : AppTokens.hairline;
-    final progress = (_page + 1) / 4;
+    final progress = (_page + 1) / 3;
 
     return Scaffold(
       backgroundColor: bg,
@@ -135,66 +103,81 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  TextButton(
-                    onPressed: widget.onComplete,
-                    child: Text(
-                      'Passer',
-                      style: GoogleFonts.inter(
-                        color: primary,
-                        fontWeight: FontWeight.w700,
+                  if (_page > 0)
+                    TextButton(
+                      onPressed: () => widget.onComplete(_nameCtrl.text.trim().isEmpty ? 'Utilisateur' : _nameCtrl.text.trim()),
+                      child: Text(
+                        'Passer',
+                        style: GoogleFonts.inter(color: primary, fontWeight: FontWeight.w700),
                       ),
-                    ),
-                  ),
+                    )
+                  else
+                    const SizedBox(width: 60),
                 ],
               ),
             ),
             Expanded(
               child: PageView(
                 controller: _controller,
+                physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (v) => setState(() => _page = v),
                 children: [
+                  // ── Page 0 : Prénom ──────────────────────────────────
+                  _QuestionPage(
+                    title: 'Bonjour !',
+                    subtitle: 'Comment tu veux qu\'on t\'appelle ?',
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: TextField(
+                        controller: _nameCtrl,
+                        autofocus: true,
+                        textCapitalization: TextCapitalization.words,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _next(),
+                        onChanged: (_) => setState(() {}),
+                        style: GoogleFonts.fraunces(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          color: titleColor,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Ton prénom…',
+                          hintStyle: GoogleFonts.fraunces(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white24 : AppTokens.hairline,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: primary, width: 2),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ── Page 1 : Objectif ────────────────────────────────
                   _QuestionPage(
                     title: 'Objectif',
-                    subtitle: 'Quel est votre objectif principal ?',
+                    subtitle: 'Quel est ton objectif principal ?',
                     child: _SingleChoiceGrid<CookingObjective>(
                       options: _goalTiles
-                          .map((tile) => _SelectableTile<CookingObjective>(
-                                value: tile.value,
-                                label: tile.label,
-                                icon: tile.icon,
+                          .map((t) => _SelectableTile<CookingObjective>(
+                                value: t.value,
+                                label: t.label,
+                                icon: t.icon,
                               ))
                           .toList(),
                       selected: profile.objective,
                       onSelect: notifier.setObjective,
                     ),
                   ),
+
+                  // ── Page 2 : Votre cuisine ───────────────────────────
                   _QuestionPage(
-                    title: 'Niveau de cuisine',
-                    subtitle: 'Quel est votre niveau actuel ?',
-                    child: _SingleChoiceGrid<CookingLevel>(
-                      options: _levelTiles
-                          .map((tile) => _SelectableTile<CookingLevel>(
-                                value: tile.value,
-                                label: tile.label,
-                                icon: tile.icon,
-                              ))
-                          .toList(),
-                      selected: profile.cookingLevel,
-                      onSelect: notifier.setCookingLevel,
-                    ),
-                  ),
-                  _QuestionPage(
-                    title: 'Votre régime',
-                    subtitle: 'Avez-vous un régime particulier ?',
-                    child: _MultiChoiceGrid(
-                      options: _dietTiles,
-                      selected: profile.diets,
-                      onToggle: notifier.toggleDiet,
-                    ),
-                  ),
-                  _QuestionPage(
-                    title: 'Votre cuisine',
-                    subtitle: 'Quels sont vos équipements de cuisine ?',
+                    title: 'Ta cuisine',
+                    subtitle: 'Quels équipements tu as ?',
                     child: _MultiChoiceGrid(
                       options: _kitchenTiles,
                       selected: profile.kitchenEquipments,
@@ -210,9 +193,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _next,
+                  onPressed: (_page == 0 && _nameCtrl.text.trim().isEmpty) ? null : _next,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primary,
+                    disabledBackgroundColor: primary.withValues(alpha: 0.35),
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -220,11 +204,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                   child: Text(
-                    _page == 3 ? 'Terminer' : 'Suivant',
-                    style: GoogleFonts.inter(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    _page == 2 ? 'Terminer' : 'Suivant',
+                    style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -255,10 +236,10 @@ class _QuestionPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            textAlign: TextAlign.center,
             style: GoogleFonts.fraunces(
               fontSize: 44,
               fontWeight: FontWeight.w700,
@@ -268,12 +249,7 @@ class _QuestionPage extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             subtitle,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              height: 1.3,
-              color: subtitleColor,
-            ),
+            style: GoogleFonts.inter(fontSize: 18, height: 1.3, color: subtitleColor),
           ),
           const SizedBox(height: 24),
           Expanded(child: child),
@@ -385,11 +361,7 @@ class _OptionTile extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 45,
-              color: selected ? primary : baseColor,
-            ),
+            Icon(icon, size: 45, color: selected ? primary : baseColor),
             const SizedBox(height: 8),
             Text(
               label,
@@ -413,11 +385,7 @@ class _OptionTileData {
   final IconData icon;
   final String value;
 
-  const _OptionTileData({
-    required this.label,
-    required this.icon,
-    required this.value,
-  });
+  const _OptionTileData({required this.label, required this.icon, required this.value});
 }
 
 class _SelectableTile<T> {
@@ -425,11 +393,7 @@ class _SelectableTile<T> {
   final String label;
   final IconData icon;
 
-  const _SelectableTile({
-    required this.value,
-    required this.label,
-    required this.icon,
-  });
+  const _SelectableTile({required this.value, required this.label, required this.icon});
 }
 
 class _ObjectiveTileData {
@@ -437,21 +401,5 @@ class _ObjectiveTileData {
   final IconData icon;
   final CookingObjective value;
 
-  const _ObjectiveTileData({
-    required this.label,
-    required this.icon,
-    required this.value,
-  });
-}
-
-class _LevelTileData {
-  final String label;
-  final IconData icon;
-  final CookingLevel value;
-
-  const _LevelTileData({
-    required this.label,
-    required this.icon,
-    required this.value,
-  });
+  const _ObjectiveTileData({required this.label, required this.icon, required this.value});
 }

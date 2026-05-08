@@ -108,6 +108,21 @@ class AuthService {
     NeonService.clearCurrentUser();
   }
 
+  static Future<void> autoRegister(String name) async {
+    final userId = const Uuid().v4();
+    final shortId = userId.replaceAll('-', '').substring(0, 10);
+    final email = 'user-$shortId@fridge.local';
+    final db = NeonService();
+    try {
+      await db.execute('''
+        INSERT INTO users (id, name, email)
+        VALUES (\$1, \$2, \$3)
+        ON CONFLICT (id) DO NOTHING
+      ''', [userId, name, email]);
+    } catch (_) {}
+    await _saveSession(userId, name, email);
+  }
+
   static Future<void> updateName(String userId, String name) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kUserName, name);

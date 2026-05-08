@@ -11,7 +11,6 @@ import 'core/services/auth_service.dart';
 import 'core/services/push_notifications_service.dart';
 import 'core/theme/app_tokens.dart';
 import 'core/widgets/app_splash_screen.dart';
-import 'features/auth/screens/auth_screen.dart';
 import 'features/meals/models/meal.dart';
 import 'features/meals/providers/meals_provider.dart';
 import 'features/navigation/widgets/bottom_nav.dart';
@@ -165,10 +164,12 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     }
   }
 
-  Future<void> _completeOnboarding() async {
+  Future<void> _completeOnboarding(String name) async {
+    await AuthService.autoRegister(name);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('profile_onboarding_done_v1', true);
     if (!mounted) return;
+    ref.read(authStateProvider.notifier).state = true;
     setState(() => _showOnboarding = false);
   }
 
@@ -179,11 +180,11 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         subtitle: 'Vérification de la session...',
       );
     }
-    if (_showOnboarding) {
+    final isLoggedIn = ref.watch(authStateProvider);
+    if (_showOnboarding || !isLoggedIn) {
       return OnboardingScreen(onComplete: _completeOnboarding);
     }
-    final isLoggedIn = ref.watch(authStateProvider);
-    return isLoggedIn ? const MainScreen() : const AuthScreen();
+    return const MainScreen();
   }
 }
 

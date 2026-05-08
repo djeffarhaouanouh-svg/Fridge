@@ -38,12 +38,12 @@ class UserProfile {
   final int targetFats;
 
   const UserProfile({
-    this.name = 'Thomas',
-    this.email = 'thomas@fridge.ai',
+    this.name = '',
+    this.email = '',
     this.objective,
-    this.cookingLevel,
-    this.allergies = const {},
-    this.diets = const {},
+    this.cookingLevel = CookingLevel.beginner,
+    this.allergies = const {'Aucune'},
+    this.diets = const {'Aucun'},
     this.kitchenEquipments = const {},
     this.notifExpiry = true,
     this.notifSuggestion = true,

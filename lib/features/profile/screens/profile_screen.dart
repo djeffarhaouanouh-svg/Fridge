@@ -916,6 +916,8 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.logout_outlined,
               onTap: () async {
                 await AuthService.logout();
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('profile_onboarding_done_v1', false);
                 if (context.mounted) {
                   ref.read(authStateProvider.notifier).state = false;
                 }

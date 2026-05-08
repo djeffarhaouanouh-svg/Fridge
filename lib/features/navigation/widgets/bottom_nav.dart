@@ -113,9 +113,9 @@ class BottomNav extends ConsumerWidget {
                 ],
               ),
               child: const Icon(
-                Icons.camera_alt_rounded,
+                Icons.filter_center_focus,
                 color: Colors.white,
-                size: 22,
+                size: 24,
               ),
             ),
           ),

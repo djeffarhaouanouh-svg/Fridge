@@ -6,120 +6,130 @@ import '../../../core/theme/app_tokens.dart';
 final selectedTabProvider = StateProvider<int>((ref) => 0);
 
 class BottomNav extends ConsumerWidget {
+  /// Si true, ferme la route courante (ex. écran recette) avant de changer d’onglet.
   final bool popRouteFirst;
+
   const BottomNav({super.key, this.popRouteFirst = false});
-
-  static const _tabIndices = [0, 1, 3];
-  static const _tabIcons = [
-    Icons.home_rounded,
-    Icons.calendar_month_rounded,
-    Icons.person_rounded,
-  ];
-
-  void _navigate(BuildContext context, WidgetRef ref, int index) {
-    if (popRouteFirst && Navigator.canPop(context)) {
-      Navigator.pop(context);
-    }
-    ref.read(selectedTabProvider.notifier).state = index;
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(selectedTabProvider);
     final bottom = MediaQuery.of(context).viewPadding.bottom;
 
+    const icons = [
+      Icons.home_rounded,
+      Icons.calendar_month_rounded,
+      Icons.camera_alt_rounded,
+      Icons.person_rounded,
+    ];
+    const count = 4;
+    const pillW = 50.0;
+    const pillH = 34.0;
+    const navH = 56.0;
+
     return Padding(
-      padding: EdgeInsets.fromLTRB(24, 0, 24, bottom + 8),
-      child: Row(
-        children: [
-          // ── Glass pill (3 tabs) ──────────────────────────────────
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                child: Container(
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      width: 1,
+      padding: EdgeInsets.fromLTRB(40, 0, 40, bottom + 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(999),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final tabW = constraints.maxWidth / count;
+              final pillLeft = selected * tabW + (tabW - pillW) / 2;
+
+              return Container(
+                height: navH,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 4),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    // Top inner highlight
+                    Positioned(
+                      top: 0, left: 0, right: 0,
+                      child: Container(
+                        height: 1,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(999)),
+                          gradient: LinearGradient(colors: [
+                            Colors.white.withValues(alpha: 0.2),
+                            Colors.white.withValues(alpha: 0.0),
+                          ]),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: List.generate(3, (i) {
-                      final tabIdx = _tabIndices[i];
-                      final isActive = selected == tabIdx;
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () => _navigate(context, ref, tabIdx),
-                          behavior: HitTestBehavior.opaque,
-                          child: Center(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 220),
-                              curve: Curves.easeInOutCubic,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 18, vertical: 9),
-                              decoration: BoxDecoration(
-                                color: isActive
-                                    ? Colors.white.withValues(alpha: 0.18)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Icon(
-                                _tabIcons[i],
-                                size: 20,
-                                color: isActive
-                                    ? AppTokens.coral
-                                    : Colors.white.withValues(alpha: 0.55),
+                    ),
+
+                    // Sliding pill — un seul widget qui se déplace
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeInOutCubic,
+                      left: pillLeft,
+                      top: (navH - pillH) / 2,
+                      width: pillW,
+                      height: pillH,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+
+                    // Icônes
+                    Positioned.fill(
+                      child: Row(
+                        children: List.generate(count, (i) {
+                          final isActive = i == selected;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                if (popRouteFirst &&
+                                    Navigator.canPop(context)) {
+                                  Navigator.pop(context);
+                                }
+                                ref.read(selectedTabProvider.notifier).state = i;
+                              },
+                              behavior: HitTestBehavior.opaque,
+                              child: Center(
+                                child: TweenAnimationBuilder<Color?>(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOutCubic,
+                                  tween: ColorTween(
+                                    begin: isActive
+                                        ? Colors.white.withValues(alpha: 0.55)
+                                        : AppTokens.coral,
+                                    end: isActive
+                                        ? AppTokens.coral
+                                        : Colors.white.withValues(alpha: 0.55),
+                                  ),
+                                  builder: (_, color, __) => Icon(
+                                    icons[i],
+                                    size: 19,
+                                    color: color,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
+              );
+            },
           ),
-
-          const SizedBox(width: 14),
-
-          // ── Camera button ────────────────────────────────────────
-          GestureDetector(
-            onTap: () => _navigate(context, ref, 2),
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1C1C1C),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTokens.coral.withValues(alpha: 0.55),
-                    blurRadius: 18,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.camera_alt_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

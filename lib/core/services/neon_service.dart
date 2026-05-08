@@ -518,17 +518,27 @@ class NeonService {
         final dynamic rawIngredients =
             map['ingredients_json'] ?? map['ingredients'];
         if (rawIngredients is List) {
-          return rawIngredients.map((e) {
+          final result = <Ingredient>[];
+          for (final e in rawIngredients) {
             if (e is Map) {
               final m = Map<String, dynamic>.from(e as Map);
-              return Ingredient(
+              result.add(Ingredient(
                 name: (m['name'] ?? m['ingredient'] ?? '').toString(),
                 qty: (m['qty'] ?? m['quantity'] ?? '').toString(),
                 photo: (m['photo'] ?? m['image'] ?? '').toString(),
-              );
+              ));
+            } else {
+              final str = e.toString().trim();
+              if (str.contains('|')) {
+                result.addAll(
+                  str.split(RegExp(r'\|+')).map((s) => s.trim()).where((s) => s.isNotEmpty).map((s) => Ingredient(name: s, qty: '', photo: '')),
+                );
+              } else if (str.isNotEmpty) {
+                result.add(Ingredient(name: str, qty: '', photo: ''));
+              }
             }
-            return Ingredient(name: e.toString(), qty: '', photo: '');
-          }).toList();
+          }
+          return result;
         }
         if (rawIngredients is String && rawIngredients.trim().isNotEmpty) {
           try {
@@ -561,10 +571,18 @@ class NeonService {
         final dynamic rawSteps =
             map['steps_json'] ?? map['steps'] ?? map['instructions'];
         if (rawSteps is List) {
-          return rawSteps
-              .map((e) => e.toString())
-              .where((e) => e.isNotEmpty)
-              .toList();
+          final result = <String>[];
+          for (final e in rawSteps) {
+            final str = e.toString().trim();
+            if (str.contains('||')) {
+              result.addAll(str.split('||').map((s) => s.trim()).where((s) => s.isNotEmpty));
+            } else if (str.contains('|')) {
+              result.addAll(str.split('|').map((s) => s.trim()).where((s) => s.isNotEmpty));
+            } else if (str.isNotEmpty) {
+              result.add(str);
+            }
+          }
+          return result;
         }
         if (rawSteps is String && rawSteps.trim().isNotEmpty) {
           try {

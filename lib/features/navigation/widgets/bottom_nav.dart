@@ -13,7 +13,7 @@ class BottomNav extends ConsumerWidget {
   static const _tabIcons = [
     Icons.home_rounded,
     Icons.calendar_month_rounded,
-    Icons.bookmark_rounded,
+    Icons.person_rounded,
   ];
 
   void _navigate(BuildContext context, WidgetRef ref, int index) {

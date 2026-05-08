@@ -334,7 +334,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 28, 18, 12),
+              padding: const EdgeInsets.fromLTRB(18, 44, 18, 12),
               child: Text(
                 _mockHomeSections[0].title,
                 style: GoogleFonts.fraunces(

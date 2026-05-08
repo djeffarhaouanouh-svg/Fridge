@@ -22,6 +22,10 @@ class PlanScreen extends ConsumerStatefulWidget {
 
 class _PlanScreenState extends ConsumerState<PlanScreen> {
   int _selectedDayIndex = 0;
+  int _weekOffset = 0;
+  final Set<String> _likedDays = {};
+  final Set<String> _dislikedDays = {};
+  final Set<String> _allergyDays = {};
 
   final _dayScrollController = ScrollController();
 
@@ -63,7 +67,9 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
   List<DateTime> get _days {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    return List.generate(7, (i) => today.add(Duration(days: i)));
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final weekStart = monday.add(Duration(days: _weekOffset * 7));
+    return List.generate(7, (i) => weekStart.add(Duration(days: i)));
   }
 
   int _weekNumber(DateTime date) {
@@ -80,6 +86,17 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
   void _selectDay(int i) {
     setState(() => _selectedDayIndex = i);
     _scrollToDay(i);
+  }
+
+  void _prevWeek() => setState(() { _weekOffset--; _selectedDayIndex = 0; });
+  void _nextWeek() => setState(() { _weekOffset++; _selectedDayIndex = 0; });
+
+  void _resetSelectedDay() {
+    final key = _isoDate(_days[_selectedDayIndex]);
+    final sels = Map<String, Meal>.from(ref.read(planMealSelectionsProvider));
+    sels.remove('${key}_Déjeuner');
+    sels.remove('${key}_Dîner');
+    ref.read(planMealSelectionsProvider.notifier).state = sels;
   }
 
   void _scrollToDay(int i) {
@@ -166,18 +183,11 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final slotAnalyses = ref.watch(planSlotAnalysisProvider);
     final isLoading = status == PlanStatus.loading;
     final days = _days;
-    final weekNum = _weekNumber(days.first);
     final planMap = {for (final d in weekPlan) d.date: d};
     final frDays = days.map((d) => _weekdayToFr[d.weekday]!).toList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : AppTokens.ink;
     final mutedColor = isDark ? Colors.white70 : AppTokens.muted;
-
-    final start = days.first;
-    final end = days.last;
-    final dateRange = start.month == end.month
-        ? '${start.day} — ${end.day} ${_frMonths[start.month - 1]} ${start.year}'
-        : '${start.day} ${_frMonths[start.month - 1]} — ${end.day} ${_frMonths[end.month - 1]} ${end.year}';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -190,73 +200,56 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RichText(
-                    text: TextSpan(children: [
-                      TextSpan(
-                        text: 'Sem. ',
-                        style: GoogleFonts.fraunces(
-                          fontSize: 26, fontWeight: FontWeight.w700, color: titleColor,
-                        ),
-                      ),
-                      TextSpan(
-                        text: '$weekNum',
-                        style: GoogleFonts.fraunces(
-                          fontSize: 26, fontWeight: FontWeight.w700, color: AppTokens.coral,
-                        ),
-                      ),
-                    ]),
+                  _WeekSelectorCard(
+                    days: days,
+                    frDays: frDays,
+                    selectedIndex: _selectedDayIndex,
+                    likedDays: _likedDays,
+                    dislikedDays: _dislikedDays,
+                    allergyDays: _allergyDays,
+                    frMonths: _frMonths,
+                    onDayTap: _selectDay,
+                    onPrev: _prevWeek,
+                    onNext: _nextWeek,
+                    onLike: () {
+                      final key = _isoDate(days[_selectedDayIndex]);
+                      setState(() {
+                        if (_likedDays.contains(key)) {
+                          _likedDays.remove(key);
+                        } else {
+                          _likedDays.add(key);
+                          _dislikedDays.remove(key);
+                        }
+                      });
+                    },
+                    onDislike: () {
+                      final key = _isoDate(days[_selectedDayIndex]);
+                      setState(() {
+                        if (_dislikedDays.contains(key)) {
+                          _dislikedDays.remove(key);
+                        } else {
+                          _dislikedDays.add(key);
+                          _likedDays.remove(key);
+                        }
+                      });
+                    },
+                    onAllergy: () {
+                      final key = _isoDate(days[_selectedDayIndex]);
+                      setState(() {
+                        if (_allergyDays.contains(key)) {
+                          _allergyDays.remove(key);
+                        } else {
+                          _allergyDays.add(key);
+                        }
+                      });
+                    },
+                    onHabitudes: () {},
+                    onReset: _resetSelectedDay,
+                    isDark: isDark,
+                    titleColor: titleColor,
+                    mutedColor: mutedColor,
                   ),
-                  const SizedBox(height: 2),
-                  Text(dateRange,
-                    style: GoogleFonts.inter(
-                      fontSize: 13, fontWeight: FontWeight.w500, color: mutedColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Sélecteur de jours
-                  SizedBox(
-                    height: 64,
-                    child: ListView.builder(
-                      controller: _dayScrollController,
-                      scrollDirection: Axis.horizontal,
-                      itemCount: days.length,
-                      itemBuilder: (_, i) {
-                        final isActive = i == _selectedDayIndex;
-                        return GestureDetector(
-                          onTap: () => _selectDay(i),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isActive ? AppTokens.coral : (isDark ? const Color(0xFF1E1E1E) : AppTokens.surface),
-                              borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(frDays[i],
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11, fontWeight: FontWeight.w600,
-                                    color: isActive ? Colors.white : mutedColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text('${days[i].day}',
-                                  style: GoogleFonts.fraunces(
-                                    fontSize: 17, fontWeight: FontWeight.w700,
-                                    color: isActive ? Colors.white : titleColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   _MealRow(
                     label: 'DÉJEUNER',
@@ -338,6 +331,269 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     );
   }
 }
+
+// ─── Carte sélecteur de semaine ─────────────────────────────────────────────
+
+class _WeekSelectorCard extends StatelessWidget {
+  final List<DateTime> days;
+  final List<String> frDays;
+  final int selectedIndex;
+  final Set<String> likedDays;
+  final Set<String> dislikedDays;
+  final Set<String> allergyDays;
+  final List<String> frMonths;
+  final void Function(int) onDayTap;
+  final VoidCallback onPrev;
+  final VoidCallback onNext;
+  final VoidCallback onLike;
+  final VoidCallback onDislike;
+  final VoidCallback onAllergy;
+  final VoidCallback onHabitudes;
+  final VoidCallback onReset;
+  final bool isDark;
+  final Color titleColor;
+  final Color mutedColor;
+
+  const _WeekSelectorCard({
+    required this.days,
+    required this.frDays,
+    required this.selectedIndex,
+    required this.likedDays,
+    required this.dislikedDays,
+    required this.allergyDays,
+    required this.frMonths,
+    required this.onDayTap,
+    required this.onPrev,
+    required this.onNext,
+    required this.onLike,
+    required this.onDislike,
+    required this.onAllergy,
+    required this.onHabitudes,
+    required this.onReset,
+    required this.isDark,
+    required this.titleColor,
+    required this.mutedColor,
+  });
+
+  static String _iso(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  String _rangeTitle() {
+    final s = days.first;
+    final e = days.last;
+    if (s.month == e.month) {
+      return 'du ${s.day} au ${e.day} ${frMonths[s.month - 1]}';
+    }
+    return 'du ${s.day} ${frMonths[s.month - 1]} au ${e.day} ${frMonths[e.month - 1]}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+    final dividerColor = isDark ? Colors.white12 : AppTokens.hairline;
+    final selectedKey = _iso(days[selectedIndex]);
+    final isLiked = likedDays.contains(selectedKey);
+    final isDisliked = dislikedDays.contains(selectedKey);
+    final isAllergy = allergyDays.contains(selectedKey);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+        border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline),
+      ),
+      child: Column(
+        children: [
+          // ── Navigation header ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
+            child: Row(
+              children: [
+                _NavArrow(icon: Icons.chevron_left, onTap: onPrev),
+                Expanded(
+                  child: Text(
+                    _rangeTitle(),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: titleColor,
+                    ),
+                  ),
+                ),
+                _NavArrow(icon: Icons.chevron_right, onTap: onNext),
+              ],
+            ),
+          ),
+
+          // ── Days grid ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            child: Row(
+              children: List.generate(7, (i) {
+                final isActive = i == selectedIndex;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => onDayTap(i),
+                    child: Column(
+                      children: [
+                        Text(
+                          frDays[i],
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isActive ? AppTokens.coral : mutedColor,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: isActive ? AppTokens.coral : Colors.transparent,
+                            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${days[i].day}',
+                              style: GoogleFonts.fraunces(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: isActive ? Colors.white : titleColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+
+          const SizedBox(height: 4),
+          Divider(height: 1, thickness: 1, color: dividerColor, indent: 14, endIndent: 14),
+
+          // ── Action buttons ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _ActionBtn(
+                  icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                  label: 'J\'aime',
+                  onTap: onLike,
+                  active: isLiked,
+                  isDark: isDark,
+                ),
+                _ActionBtn(
+                  icon: isDisliked
+                      ? Icons.do_not_disturb_alt
+                      : Icons.do_not_disturb_alt_outlined,
+                  label: 'J\'aime pas',
+                  onTap: onDislike,
+                  active: isDisliked,
+                  isDark: isDark,
+                ),
+                _ActionBtn(
+                  icon: isAllergy
+                      ? Icons.warning_amber
+                      : Icons.warning_amber_outlined,
+                  label: 'Allergie',
+                  onTap: onAllergy,
+                  active: isAllergy,
+                  isDark: isDark,
+                ),
+                _ActionBtn(
+                  icon: Icons.tune_outlined,
+                  label: 'Habitudes',
+                  onTap: onHabitudes,
+                  isDark: isDark,
+                ),
+                _ActionBtn(
+                  icon: Icons.refresh_rounded,
+                  label: 'Réinitialiser',
+                  onTap: onReset,
+                  isDark: isDark,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavArrow extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _NavArrow({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 30,
+        height: 30,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: const BoxDecoration(
+          color: AppTokens.coral,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+}
+
+class _ActionBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+  final bool isDark;
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.active = false,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active
+        ? AppTokens.coral
+        : (isDark ? Colors.white60 : AppTokens.muted);
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 22, color: color),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Rangée repas ────────────────────────────────────────────────────────────
 
 class _MealRow extends StatelessWidget {
   final String label;

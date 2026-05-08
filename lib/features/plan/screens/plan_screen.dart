@@ -899,15 +899,17 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              const Icon(Icons.add_circle_outline,
-                                                color: AppTokens.muted, size: 36),
+                                              Icon(Icons.add_circle_outline,
+                                                color: Theme.of(context).brightness == Brightness.dark
+                                                    ? Colors.white70 : AppTokens.ink,
+                                                size: 36),
                                               const SizedBox(height: 10),
                                               Text('Ajoute une photo ou choisis un plat',
                                                 style: GoogleFonts.inter(
                                                   fontSize: 13.5,
                                                   color: Theme.of(context).brightness == Brightness.dark
-                                                      ? Colors.white70 : AppTokens.muted,
-                                                  fontWeight: FontWeight.w500,
+                                                      ? Colors.white70 : AppTokens.ink,
+                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             ],

@@ -407,7 +407,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
             // Tips défilants
             Positioned(
-              bottom: MediaQuery.of(context).viewPadding.bottom + 206,
+              bottom: MediaQuery.of(context).viewPadding.bottom + 180,
               left: 40,
               right: 40,
               child: const _ScanTips(),

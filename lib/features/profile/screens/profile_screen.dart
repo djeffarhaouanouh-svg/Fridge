@@ -268,7 +268,7 @@ class ProfileScreen extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 110),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 80),
           children: [
             const AppHeader(brand: true),
             const SizedBox(height: 12),

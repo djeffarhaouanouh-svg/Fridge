@@ -899,17 +899,25 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(Icons.add_circle_outline,
-                                                color: Theme.of(context).brightness == Brightness.dark
-                                                    ? Colors.white70 : AppTokens.ink,
+                                              const Icon(Icons.add_circle_outline,
+                                                color: AppTokens.coral,
                                                 size: 36),
                                               const SizedBox(height: 10),
-                                              Text('Ajoute une photo ou choisis un plat',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 13.5,
-                                                  color: Theme.of(context).brightness == Brightness.dark
-                                                      ? Colors.white70 : AppTokens.ink,
-                                                  fontWeight: FontWeight.w600,
+                                              RichText(
+                                                textAlign: TextAlign.center,
+                                                text: TextSpan(
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13.5,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Theme.of(context).brightness == Brightness.dark
+                                                        ? Colors.white70 : AppTokens.ink,
+                                                  ),
+                                                  children: [
+                                                    const TextSpan(text: 'Ajoute une '),
+                                                    TextSpan(text: 'photo', style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppTokens.coral)),
+                                                    const TextSpan(text: ' ou choisis un '),
+                                                    TextSpan(text: 'plat', style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppTokens.coral)),
+                                                  ],
                                                 ),
                                               ),
                                             ],

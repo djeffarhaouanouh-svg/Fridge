@@ -34,28 +34,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final meals = ref.watch(mealsProvider);
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
     final heroAsync = ref.watch(dailyHeroRecipesProvider);
-    final marmitonBudgetAsync = ref.watch(marmitonBudgetRecipesProvider);
     final heroMeals = heroAsync.maybeWhen(
       data: (list) => list.isNotEmpty ? list : _mockPopularMeals.take(3).toList(),
       orElse: () => _mockPopularMeals.take(3).toList(),
-    );
-    final budgetCards = marmitonBudgetAsync.maybeWhen(
-      data: (list) {
-        if (list.isEmpty) return _mockHomeSections[0].cards;
-        return list
-            .asMap()
-            .entries
-            .map(
-              (entry) => _HomeCollectionCardData(
-                title: entry.value.title,
-                imageUrl: entry.value.photo,
-                rating: 4.5 + ((entry.key % 3) * 0.1),
-                meal: entry.value,
-              ),
-            )
-            .toList();
-      },
-      orElse: () => _mockHomeSections[0].cards,
     );
     final firstName = ref.watch(userProfileProvider).name.split(' ').first;
     final themePreference = ref.watch(themePreferenceProvider);
@@ -374,9 +355,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   physics: const BouncingScrollPhysics(
                     parent: AlwaysScrollableScrollPhysics(),
                   ),
-                  itemCount: budgetCards.length,
+                  itemCount: _mockHomeSections[0].cards.length,
                   itemBuilder: (context, i) => _LargeCollectionCard(
-                    data: budgetCards[i],
+                    data: _mockHomeSections[0].cards[i],
                   ),
                 ),
               ),

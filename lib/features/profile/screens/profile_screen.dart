@@ -556,8 +556,46 @@ class ProfileScreen extends ConsumerWidget {
               _Divider(),
             ],
 
-            // ── 4b. Dernières recettes vues ──────────────────────────
-            if (recentlyViewed.isNotEmpty || allMeals.isNotEmpty) ...[
+            // ── 4b. Recettes générées ────────────────────────────────
+            if (allMeals.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+                child: Row(
+                  children: [
+                    _SectionTitle(title: 'Recettes générées'),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppTokens.coralSoft,
+                        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                      ),
+                      child: Text(
+                        '${allMeals.length}',
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppTokens.coral,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 160,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                  itemCount: allMeals.length,
+                  itemBuilder: (_, i) => _MealCard(meal: allMeals[i]),
+                ),
+              ),
+              _Divider(),
+            ],
+
+            // ── 4c. Dernières recettes vues ──────────────────────────
+            if (recentlyViewed.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
                 child: _SectionTitle(title: 'Dernières recettes'),
@@ -567,11 +605,8 @@ class ProfileScreen extends ConsumerWidget {
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                  itemCount: (recentlyViewed.isNotEmpty ? recentlyViewed : allMeals).length,
-                  itemBuilder: (_, i) {
-                    final meals = recentlyViewed.isNotEmpty ? recentlyViewed : allMeals;
-                    return _MealCard(meal: meals[i]);
-                  },
+                  itemCount: recentlyViewed.length,
+                  itemBuilder: (_, i) => _MealCard(meal: recentlyViewed[i]),
                 ),
               ),
               _Divider(),

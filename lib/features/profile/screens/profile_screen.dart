@@ -559,7 +559,6 @@ class ProfileScreen extends ConsumerWidget {
             // ── 4b. Recettes adaptées ────────────────────────────────
             Builder(builder: (context) {
               final adaptedMeals = ref.watch(adaptedMealsProvider);
-              if (adaptedMeals.isEmpty) return const SizedBox.shrink();
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -568,45 +567,92 @@ class ProfileScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         _SectionTitle(title: 'Recettes générées'),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppTokens.coralSoft,
-                            borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                          ),
-                          child: Text(
-                            '${adaptedMeals.length}',
-                            style: GoogleFonts.inter(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppTokens.coral,
+                        if (adaptedMeals.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppTokens.coralSoft,
+                              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                            ),
+                            child: Text(
+                              '${adaptedMeals.length}',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppTokens.coral,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
-                  SizedBox(
-                    height: 160,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                      itemCount: adaptedMeals.length,
-                      itemBuilder: (_, i) => _MealCard(meal: adaptedMeals[i]),
+                  if (adaptedMeals.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E1E1E) : AppTokens.surface,
+                          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.auto_awesome_outlined, color: AppTokens.muted, size: 28),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Adapte une recette avec ton frigo',
+                              style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      height: 160,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                        itemCount: adaptedMeals.length,
+                        itemBuilder: (_, i) => _MealCard(meal: adaptedMeals[i]),
+                      ),
                     ),
-                  ),
                   _Divider(),
                 ],
               );
             }),
 
             // ── 4c. Dernières recettes vues ──────────────────────────
-            if (recentlyViewed.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+              child: _SectionTitle(title: 'Dernières recettes'),
+            ),
+            if (recentlyViewed.isEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-                child: _SectionTitle(title: 'Dernières recettes'),
-              ),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E1E) : AppTokens.surface,
+                    borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.history_outlined, color: AppTokens.muted, size: 28),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Aucune recette consultée',
+                        style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
               SizedBox(
                 height: 160,
                 child: ListView.builder(
@@ -616,34 +662,6 @@ class ProfileScreen extends ConsumerWidget {
                   itemBuilder: (_, i) => _MealCard(meal: recentlyViewed[i]),
                 ),
               ),
-              _Divider(),
-            ],
-
-            // ── 6. Notifications ─────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionTitle(title: 'Notifications'),
-                  const SizedBox(height: 4),
-                  _SwitchRow(
-                    label: 'Recette du jour',
-                    subtitle: 'Suggestion personnalisée',
-                    value: profile.notifSuggestion,
-                    onChanged: (v) => notifier.setNotif(suggestion: v),
-                  ),
-                  _SwitchRow(
-                    label: 'Ce que tu peux cuisiner',
-                    subtitle: 'Basé sur ton frigo actuel',
-                    value: profile.notifFridge,
-                    onChanged: (v) => notifier.setNotif(fridge: v),
-                    isLast: true,
-                  ),
-                ],
-              ),
-            ),
-
             _Divider(),
 
             // ── 7. Abonnement ────────────────────────────────────────
@@ -706,11 +724,6 @@ class ProfileScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
               child: _SectionTitle(title: 'Paramètres'),
-            ),
-            _SettingRow(
-              label: 'Mes photos',
-              icon: Icons.photo_library_outlined,
-              onTap: () => _showUserPhotosSheet(context, ref),
             ),
             _SettingRow(
               label: 'Paramètres',
@@ -839,6 +852,35 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 16),
           children: [
+            _SettingRow(
+              label: 'Mes photos',
+              icon: Icons.photo_library_outlined,
+              onTap: () => _showUserPhotosSheet(context, ref),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionTitle(title: 'Notifications'),
+                  const SizedBox(height: 4),
+                  _SwitchRow(
+                    label: 'Recette du jour',
+                    subtitle: 'Suggestion personnalisée',
+                    value: profile.notifSuggestion,
+                    onChanged: (v) => notifier.setNotif(suggestion: v),
+                  ),
+                  _SwitchRow(
+                    label: 'Ce que tu peux cuisiner',
+                    subtitle: 'Basé sur ton frigo actuel',
+                    value: profile.notifFridge,
+                    onChanged: (v) => notifier.setNotif(fridge: v),
+                    isLast: true,
+                  ),
+                ],
+              ),
+            ),
+            _Divider(),
             _SettingRow(
               label: 'Langue',
               value: 'Français',

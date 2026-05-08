@@ -44,7 +44,7 @@ class UserProfile {
     this.cookingLevel = CookingLevel.beginner,
     this.allergies = const {'Aucune'},
     this.diets = const {'Aucun'},
-    this.kitchenEquipments = const {},
+    this.kitchenEquipments = const {'Four', 'Micro-ondes'},
     this.notifExpiry = true,
     this.notifSuggestion = true,
     this.notifFridge = true,
@@ -116,11 +116,11 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       final notifRow = p['notifications'] as Map<String, dynamic>?;
 
       state = state.copyWith(
-        cookingLevel: _parseLevel(userRow?['cooking_level'] as String?),
+        cookingLevel: _parseLevel(userRow?['cooking_level'] as String?) ?? CookingLevel.beginner,
         objective: _parseObjective(goalStr),
-        allergies: Set<String>.from(allergies),
-        diets: Set<String>.from(diets),
-        kitchenEquipments: Set<String>.from(kitchenEquipments),
+        allergies: allergies.isEmpty ? const {'Aucune'} : Set<String>.from(allergies),
+        diets: diets.isEmpty ? const {'Aucun'} : Set<String>.from(diets),
+        kitchenEquipments: kitchenEquipments.isEmpty ? const {'Four', 'Micro-ondes'} : Set<String>.from(kitchenEquipments),
         targetCalories: nutRow?['calories'] as int? ?? 2000,
         targetProtein: nutRow?['proteins'] as int? ?? 150,
         targetCarbs: nutRow?['carbs'] as int? ?? 200,

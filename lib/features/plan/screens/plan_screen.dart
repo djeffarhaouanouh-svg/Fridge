@@ -1038,38 +1038,40 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                       ),
                     ),
 
-                  const SizedBox(height: 8),
-                  _SectionTitle(title: 'Étudiant fauché'),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 160,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _budgetMeals.length,
-                      itemBuilder: (_, i) => _MealPickCard(
-                        meal: _budgetMeals[i],
-                        isSelected: _selected?.id == _budgetMeals[i].id,
-                        onTap: () => _selectMeal(_budgetMeals[i]),
+                  if (meal == null && _pickedPhoto == null && _analysis == null) ...[
+                    const SizedBox(height: 8),
+                    _SectionTitle(title: 'Étudiant fauché'),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 160,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _budgetMeals.length,
+                        itemBuilder: (_, i) => _MealPickCard(
+                          meal: _budgetMeals[i],
+                          isSelected: _selected?.id == _budgetMeals[i].id,
+                          onTap: () => _selectMeal(_budgetMeals[i]),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  _SectionTitle(title: 'Salades'),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 160,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _saladMeals.length,
-                      itemBuilder: (_, i) => _MealPickCard(
-                        meal: _saladMeals[i],
-                        isSelected: _selected?.id == _saladMeals[i].id,
-                        onTap: () => _selectMeal(_saladMeals[i]),
+                    _SectionTitle(title: 'Salades'),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 160,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _saladMeals.length,
+                        itemBuilder: (_, i) => _MealPickCard(
+                          meal: _saladMeals[i],
+                          isSelected: _selected?.id == _saladMeals[i].id,
+                          onTap: () => _selectMeal(_saladMeals[i]),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
+                  ],
                 ],
               ),
             ),
@@ -1371,25 +1373,24 @@ class _MealPickCard extends ConsumerWidget {
                       fallbackKey: meal.title,
                     ),
                   ),
-                  if (!isSelected)
-                    Positioned(
-                      top: 6, right: 6,
-                      child: GestureDetector(
-                        onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
-                        child: Container(
-                          width: 28, height: 28,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            size: 15,
-                            color: isFav ? AppTokens.coral : Colors.white,
-                          ),
+                  Positioned(
+                    top: 6, right: 6,
+                    child: GestureDetector(
+                      onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
+                      child: Container(
+                        width: 28, height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          size: 15,
+                          color: isFav ? AppTokens.coral : Colors.white,
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),

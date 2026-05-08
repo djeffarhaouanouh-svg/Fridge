@@ -337,7 +337,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 30, 18, 14),
               child: Text(
-                'Étudiant fauché',
+                _mockHomeSections[0].title,
                 style: GoogleFonts.fraunces(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -349,12 +349,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                children: [
-                  Expanded(child: _LargeCollectionCard(data: _mockHomeCollections[0])),
-                  const SizedBox(width: 12),
-                  Expanded(child: _LargeCollectionCard(data: _mockHomeCollections[1])),
-                ],
+              child: SizedBox(
+                height: 286,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  itemCount: _mockHomeSections[0].cards.length,
+                  itemBuilder: (context, i) => _LargeCollectionCard(
+                    data: _mockHomeSections[0].cards[i],
+                  ),
+                ),
               ),
             ),
           ),
@@ -362,7 +368,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
               child: Text(
-                'Salades',
+                _mockHomeSections[1].title,
                 style: GoogleFonts.fraunces(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -374,12 +380,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                children: [
-                  Expanded(child: _LargeCollectionCard(data: _mockHomeCollections[2])),
-                  const SizedBox(width: 12),
-                  Expanded(child: _LargeCollectionCard(data: _mockHomeCollections[3])),
-                ],
+              child: SizedBox(
+                height: 286,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  itemCount: _mockHomeSections[1].cards.length,
+                  itemBuilder: (context, i) => _LargeCollectionCard(
+                    data: _mockHomeSections[1].cards[i],
+                  ),
+                ),
               ),
             ),
           ),
@@ -475,47 +487,166 @@ final List<Meal> _mockPopularMeals = [
   ),
 ];
 
-final List<_HomeCollectionCardData> _mockHomeCollections = [
-  _HomeCollectionCardData(
+final List<_HomeCollectionSection> _mockHomeSections = [
+  _HomeCollectionSection(
     title: 'Étudiant fauché',
-    imageUrl: 'assets/images/spaghetti-bolognese.png',
-    rating: 4.7,
-    reviews: 192,
+    cards: [
+      _HomeCollectionCardData(
+        title: 'Pâtes bolognaise budget',
+        imageUrl: 'assets/images/spaghetti-bolognese.png',
+        rating: 4.7,
+        meal: Meal(
+          id: 'home_budget_1',
+          type: 'simple',
+          typeLabel: 'Simple',
+          emoji: '🍝',
+          title: 'Pâtes bolognaise budget',
+          kcal: 560,
+          protein: 'moyen',
+          difficulty: 'facile',
+          time: '18 min',
+          locked: false,
+          photo: 'assets/images/spaghetti-bolognese.png',
+          ingredients: [],
+          steps: [],
+          color: '#F2994A',
+        ),
+      ),
+      _HomeCollectionCardData(
+        title: 'Ramen minute',
+        imageUrl: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900',
+        rating: 4.6,
+        meal: Meal(
+          id: 'home_budget_2',
+          type: 'simple',
+          typeLabel: 'Simple',
+          emoji: '🍜',
+          title: 'Ramen minute',
+          kcal: 490,
+          protein: 'moyen',
+          difficulty: 'facile',
+          time: '16 min',
+          locked: false,
+          photo: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900',
+          ingredients: [],
+          steps: [],
+          color: '#F2C94C',
+        ),
+      ),
+      _HomeCollectionCardData(
+        title: 'Riz sauté économique',
+        imageUrl: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=900',
+        rating: 4.5,
+        meal: Meal(
+          id: 'home_budget_3',
+          type: 'balanced',
+          typeLabel: 'Équilibré',
+          emoji: '🍚',
+          title: 'Riz sauté économique',
+          kcal: 430,
+          protein: 'moyen',
+          difficulty: 'facile',
+          time: '20 min',
+          locked: false,
+          photo: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=900',
+          ingredients: [],
+          steps: [],
+          color: '#6FCF97',
+        ),
+      ),
+    ],
   ),
-  _HomeCollectionCardData(
-    title: 'Plats express',
-    imageUrl:
-        'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900',
-    rating: 4.6,
-    reviews: 158,
-  ),
-  _HomeCollectionCardData(
+  _HomeCollectionSection(
     title: 'Salades',
-    imageUrl:
-        'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=900',
-    rating: 4.8,
-    reviews: 141,
-  ),
-  _HomeCollectionCardData(
-    title: 'Desserts maison',
-    imageUrl:
-        'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=900',
-    rating: 4.5,
-    reviews: 117,
+    cards: [
+      _HomeCollectionCardData(
+        title: 'César légère',
+        imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=900',
+        rating: 4.8,
+        meal: Meal(
+          id: 'home_salad_1',
+          type: 'balanced',
+          typeLabel: 'Équilibré',
+          emoji: '🥗',
+          title: 'César légère',
+          kcal: 340,
+          protein: 'moyen',
+          difficulty: 'facile',
+          time: '14 min',
+          locked: false,
+          photo: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=900',
+          ingredients: [],
+          steps: [],
+          color: '#82D28C',
+        ),
+      ),
+      _HomeCollectionCardData(
+        title: 'Bowl avocat-feta',
+        imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900',
+        rating: 4.7,
+        meal: Meal(
+          id: 'home_salad_2',
+          type: 'stylish',
+          typeLabel: 'Stylé',
+          emoji: '🥑',
+          title: 'Bowl avocat-feta',
+          kcal: 360,
+          protein: 'moyen',
+          difficulty: 'facile',
+          time: '12 min',
+          locked: false,
+          photo: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900',
+          ingredients: [],
+          steps: [],
+          color: '#6FCF97',
+        ),
+      ),
+      _HomeCollectionCardData(
+        title: 'Salade de quinoa',
+        imageUrl: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=900',
+        rating: 4.6,
+        meal: Meal(
+          id: 'home_salad_3',
+          type: 'balanced',
+          typeLabel: 'Équilibré',
+          emoji: '🥗',
+          title: 'Salade de quinoa',
+          kcal: 320,
+          protein: 'moyen',
+          difficulty: 'facile',
+          time: '15 min',
+          locked: false,
+          photo: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=900',
+          ingredients: [],
+          steps: [],
+          color: '#27AE60',
+        ),
+      ),
+    ],
   ),
 ];
+
+class _HomeCollectionSection {
+  final String title;
+  final List<_HomeCollectionCardData> cards;
+
+  const _HomeCollectionSection({
+    required this.title,
+    required this.cards,
+  });
+}
 
 class _HomeCollectionCardData {
   final String title;
   final String imageUrl;
   final double rating;
-  final int reviews;
+  final Meal meal;
 
   const _HomeCollectionCardData({
     required this.title,
     required this.imageUrl,
     required this.rating,
-    required this.reviews,
+    required this.meal,
   });
 }
 
@@ -777,83 +908,83 @@ class _IngredientPill extends ConsumerWidget {
   }
 }
 
-class _LargeCollectionCard extends StatelessWidget {
+class _LargeCollectionCard extends ConsumerWidget {
   final _HomeCollectionCardData data;
   const _LargeCollectionCard({required this.data});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AspectRatio(
-          aspectRatio: 1.0,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                MealImage(
-                  photo: data.imageUrl,
-                  fallbackKey: data.title,
-                ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.28),
-                      ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => RecipeScreen(meal: data.meal)),
+        );
+      },
+      child: Container(
+        width: 170,
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 1.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    MealImage(
+                      photo: data.imageUrl,
+                      fallbackKey: data.title,
                     ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.28),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              data.title,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppTokens.ink,
+                height: 1.15,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 5),
+            Row(
+              children: [
+                Icon(Icons.star_rounded, size: 14, color: AppTokens.coral),
+                const SizedBox(width: 4),
+                Text(
+                  '${data.rating.toStringAsFixed(1)} · ${data.meal.time}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : AppTokens.ink,
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          data.title,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : AppTokens.ink,
-            height: 1.15,
-          ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 5),
-        Row(
-          children: [
-            ...List.generate(
-              5,
-              (_) => Icon(Icons.star_rounded, size: 15, color: AppTokens.coral),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '${data.rating.toStringAsFixed(1)}/5',
-              style: GoogleFonts.inter(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : AppTokens.ink,
-              ),
-            ),
           ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          '(${data.reviews} avis)',
-          style: GoogleFonts.inter(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white70 : AppTokens.muted,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

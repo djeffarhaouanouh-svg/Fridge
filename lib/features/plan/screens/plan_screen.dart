@@ -206,7 +206,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     titleColor: titleColor,
                     mutedColor: mutedColor,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 22),
 
                   Center(
                     child: Text(
@@ -219,7 +219,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 28),
 
                   _MealRow(
                     label: 'PETIT DÉJEUNER',

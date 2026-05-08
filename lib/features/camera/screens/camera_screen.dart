@@ -832,7 +832,7 @@ class _ScanTipsState extends State<_ScanTips> {
         textAlign: TextAlign.center,
         style: GoogleFonts.inter(
           fontSize: 12.5,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w700,
           color: Colors.white60,
         ),
       ),

@@ -44,6 +44,7 @@ class RecipeScreen extends ConsumerWidget {
     final muted = isDark ? Colors.white70 : AppTokens.muted;
     final surface = isDark ? const Color(0xFF2A2A2A) : Colors.white;
     final hair = isDark ? Colors.white24 : AppTokens.hairline;
+    final recipeBottomSafeSpace = MediaQuery.of(context).viewPadding.bottom + 92;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
@@ -403,7 +404,7 @@ class RecipeScreen extends ConsumerWidget {
                   if (meal.steps.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 52, 18, 62),
+                        padding: EdgeInsets.fromLTRB(18, 52, 18, recipeBottomSafeSpace),
                         child: _CommencerRecetteButton(
                           onTap: () => Navigator.push(
                             context,
@@ -415,7 +416,7 @@ class RecipeScreen extends ConsumerWidget {
                       ),
                     ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
                 ],
               ),
             ),

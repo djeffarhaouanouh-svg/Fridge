@@ -335,7 +335,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 30, 18, 14),
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
               child: Text(
                 _mockHomeSections[0].title,
                 style: GoogleFonts.fraunces(
@@ -350,7 +350,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: SizedBox(
-                height: 286,
+                height: 250,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(
@@ -366,7 +366,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 10),
               child: Text(
                 _mockHomeSections[1].title,
                 style: GoogleFonts.fraunces(
@@ -381,7 +381,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: SizedBox(
-                height: 286,
+                height: 250,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(
@@ -923,7 +923,7 @@ class _LargeCollectionCard extends ConsumerWidget {
         );
       },
       child: Container(
-        width: 170,
+        width: 160,
         margin: const EdgeInsets.only(right: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

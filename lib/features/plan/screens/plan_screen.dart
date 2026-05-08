@@ -443,7 +443,7 @@ class _MealRow extends StatelessWidget {
                       child: Builder(builder: (_) {
                         final customPhoto = slotPhotos[_slotKey(days[i], mealType)];
                         if (selectedMeal != null) {
-                          return SizedBox(height: 80, width: 110, child: MealImage(photo: selectedMeal.photo));
+                          return SizedBox(height: 80, width: 110, child: MealImage(photo: selectedMeal.photo, fallbackKey: selectedMeal.title));
                         }
                         if (customPhoto != null) {
                           return SizedBox(height: 80, width: 110, child: Image.memory(customPhoto, fit: BoxFit.cover));
@@ -472,7 +472,9 @@ class _MealRow extends StatelessWidget {
                           const SizedBox(height: 2),
                           Builder(builder: (_) {
                             final analysis = slotAnalyses[_slotKey(days[i], mealType)];
-                            final kcal = analysis != null ? analysis['kcal'] : null;
+                            final analysisKcal = analysis?['kcal'];
+                            final mealKcal = selectedMeals[i]?.kcal;
+                            final kcal = analysisKcal ?? (mealKcal != null && mealKcal > 0 ? mealKcal : null);
                             final displayText = kcal != null
                                 ? '$kcal kcal'
                                 : (mealName.isNotEmpty ? mealName : '—');

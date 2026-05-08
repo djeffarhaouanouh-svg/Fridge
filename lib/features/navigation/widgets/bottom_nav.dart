@@ -35,6 +35,7 @@ class BottomNav extends ConsumerWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(14, 0, 14, bottom + 8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // ── Glass pill (3 tabs) ──────────────────────────────────
           SizedBox(

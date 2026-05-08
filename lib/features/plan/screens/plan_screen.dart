@@ -259,6 +259,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
                   _MealRow(
                     label: 'DÉJEUNER',
+                    mealType: 'Déjeuner',
                     days: days,
                     frDays: frDays,
                     slotPhotos: slotPhotos,
@@ -284,6 +285,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
                   _MealRow(
                     label: 'DÎNER',
+                    mealType: 'Dîner',
                     days: days,
                     frDays: frDays,
                     slotPhotos: slotPhotos,
@@ -336,6 +338,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
 class _MealRow extends StatelessWidget {
   final String label;
+  final String mealType;
   final List<DateTime> days;
   final List<String> frDays;
   final List<String> meals;
@@ -347,6 +350,7 @@ class _MealRow extends StatelessWidget {
 
   const _MealRow({
     required this.label,
+    required this.mealType,
     required this.days,
     required this.frDays,
     required this.meals,
@@ -357,10 +361,10 @@ class _MealRow extends StatelessWidget {
     this.onCardTap,
   });
 
-  static String _slotKey(DateTime day, String label) =>
+  static String _slotKey(DateTime day, String mealType) =>
       '${day.year.toString().padLeft(4, '0')}-'
       '${day.month.toString().padLeft(2, '0')}-'
-      '${day.day.toString().padLeft(2, '0')}_$label';
+      '${day.day.toString().padLeft(2, '0')}_$mealType';
 
   @override
   Widget build(BuildContext context) {
@@ -432,7 +436,7 @@ class _MealRow extends StatelessWidget {
                         top: Radius.circular(AppTokens.radiusMd),
                       ),
                       child: Builder(builder: (_) {
-                        final customPhoto = slotPhotos[_slotKey(days[i], label)];
+                        final customPhoto = slotPhotos[_slotKey(days[i], mealType)];
                         if (selectedMeal != null) {
                           return SizedBox(height: 80, width: 110, child: MealImage(photo: selectedMeal.photo));
                         }
@@ -820,7 +824,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
                   const SizedBox(height: 28),
 
-                  if (meal == null && _pickedPhoto == null && availableFavorites.isNotEmpty) ...[
+                  if (meal == null && _pickedPhoto == null && _analysis == null && availableFavorites.isNotEmpty) ...[
                     _SectionTitle(title: 'Mes favoris'),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -838,7 +842,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  if (meal == null && _pickedPhoto == null && availableAllMeals.isNotEmpty) ...[
+                  if (meal == null && _pickedPhoto == null && _analysis == null && availableAllMeals.isNotEmpty) ...[
                     _SectionTitle(title: 'Plats de mon frigo'),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -858,6 +862,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
                   if (meal == null &&
                       _pickedPhoto == null &&
+                      _analysis == null &&
                       availableFavorites.isEmpty &&
                       availableAllMeals.isEmpty)
                     Padding(

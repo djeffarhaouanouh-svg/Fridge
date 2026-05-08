@@ -317,6 +317,55 @@ Contraintes supplémentaires :
     return _ensureUniquePhotos(meals);
   }
 
+  Future<Map<String, dynamic>> analyzePhoto(Uint8List imageBytes) async {
+    if (_openAiApiKey.isEmpty) {
+      throw Exception('OPENAI_API_KEY is missing.');
+    }
+    final base64Image = base64Encode(imageBytes);
+    final response = await http.post(
+      Uri.parse(_openAiBaseUrl),
+      headers: {
+        'content-type': 'application/json',
+        'authorization': 'Bearer $_openAiApiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4o-mini',
+        'max_tokens': 600,
+        'messages': [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'image_url',
+                'image_url': {'url': 'data:image/jpeg;base64,$base64Image'},
+              },
+              {
+                'type': 'text',
+                'text':
+                    'Analyse ce plat cuisiné. Retourne UNIQUEMENT un JSON:\n'
+                    '{"dish_name":"nom en français","portion":"ex: 1 assiette ~300g",'
+                    '"kcal":0,"proteins":0,"carbs":0,"fats":0,'
+                    '"ingredients":["..."]}\n'
+                    'Kcal et macros pour la portion visible. Retourne UNIQUEMENT le JSON.',
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('OpenAI analyze ${response.statusCode}: ${response.body}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final text =
+        (((data['choices'] as List).first as Map)['message']['content'] as String)
+            .replaceAll(RegExp(r'```json|```'), '')
+            .trim();
+    return jsonDecode(text) as Map<String, dynamic>;
+  }
+
   Future<List<DayPlan>> generateWeekPlan(List<Uint8List> photos) async {
     final today = DateTime.now();
     final days = List.generate(7, (i) {

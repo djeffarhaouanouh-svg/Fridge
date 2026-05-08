@@ -136,3 +136,6 @@ final recentlyViewedProvider = StateProvider<List<Meal>>((ref) => []);
 
 // Clé : "${isoDate}_${mealType}", ex: "2026-05-03_Petit-déj"
 final planMealSelectionsProvider = StateProvider<Map<String, Meal>>((ref) => {});
+
+// Photos custom ajoutées sur un créneau du planning (clé identique)
+final planSlotPhotosProvider = StateProvider<Map<String, Uint8List>>((ref) => {});

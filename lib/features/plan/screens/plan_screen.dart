@@ -1,6 +1,8 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/glass_button.dart';
@@ -136,6 +138,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final status = ref.watch(planStatusProvider);
     final weekPlan = ref.watch(weekPlanProvider);
     final selections = ref.watch(planMealSelectionsProvider);
+    final slotPhotos = ref.watch(planSlotPhotosProvider);
     final isLoading = status == PlanStatus.loading;
     final days = _days;
     final weekNum = _weekNumber(days.first);
@@ -234,6 +237,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     label: 'DÉJEUNER',
                     days: days,
                     frDays: frDays,
+                    slotPhotos: slotPhotos,
                     meals: List.generate(days.length, (i) {
                       final key = '${_isoDate(days[i])}_Déjeuner';
                       return selections[key]?.title ?? planMap[_isoDate(days[i])]?.lunch.name ?? '';
@@ -258,6 +262,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     label: 'DÎNER',
                     days: days,
                     frDays: frDays,
+                    slotPhotos: slotPhotos,
                     meals: List.generate(days.length, (i) {
                       final key = '${_isoDate(days[i])}_Dîner';
                       return selections[key]?.title ?? planMap[_isoDate(days[i])]?.dinner.name ?? '';
@@ -280,10 +285,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
                   Center(
                     child: Text(
-                      'Ici, planifie ta semaine',
+                      'Ici, planifie ta semaine et compte tes calories',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.fraunces(
-                        fontSize: 22,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: isDark ? Colors.white54 : AppTokens.muted,
                       ),
@@ -314,6 +319,7 @@ class _MealRow extends StatelessWidget {
   final ScrollController scrollController;
   final int selectedDayIndex;
   final void Function(int)? onCardTap;
+  final Map<String, Uint8List> slotPhotos;
 
   const _MealRow({
     required this.label,
@@ -323,8 +329,14 @@ class _MealRow extends StatelessWidget {
     required this.selectedMeals,
     required this.scrollController,
     required this.selectedDayIndex,
+    required this.slotPhotos,
     this.onCardTap,
   });
+
+  static String _slotKey(DateTime day, String label) =>
+      '${day.year.toString().padLeft(4, '0')}-'
+      '${day.month.toString().padLeft(2, '0')}-'
+      '${day.day.toString().padLeft(2, '0')}_$label';
 
   @override
   Widget build(BuildContext context) {
@@ -395,16 +407,23 @@ class _MealRow extends StatelessWidget {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(AppTokens.radiusMd),
                       ),
-                      child: selectedMeal != null
-                          ? SizedBox(height: 80, width: 110, child: MealImage(photo: selectedMeal.photo))
-                          : Container(
-                              height: 80,
-                              color: AppTokens.placeholder,
-                              child: Center(
-                                child: Icon(Icons.image_not_supported_outlined,
-                                  color: AppTokens.placeholderDeep, size: 22),
-                              ),
-                            ),
+                      child: Builder(builder: (_) {
+                        final customPhoto = slotPhotos[_slotKey(days[i], label)];
+                        if (selectedMeal != null) {
+                          return SizedBox(height: 80, width: 110, child: MealImage(photo: selectedMeal.photo));
+                        }
+                        if (customPhoto != null) {
+                          return SizedBox(height: 80, width: 110, child: Image.memory(customPhoto, fit: BoxFit.cover));
+                        }
+                        return Container(
+                          height: 80,
+                          color: AppTokens.placeholder,
+                          child: Center(
+                            child: Icon(Icons.image_not_supported_outlined,
+                              color: AppTokens.placeholderDeep, size: 22),
+                          ),
+                        );
+                      }),
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
@@ -463,6 +482,10 @@ class PlanMealDetailScreen extends ConsumerStatefulWidget {
 class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
   Meal? _selected;
   bool _initialized = false;
+  Uint8List? _pickedPhoto;
+  Map<String, dynamic>? _analysis;
+  bool _analyzing = false;
+  final _picker = ImagePicker();
 
   String get _slotKey {
     final d = widget.day;
@@ -470,10 +493,14 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
   }
 
   void _selectMeal(Meal meal) {
-    setState(() => _selected = meal);
+    setState(() { _selected = meal; _pickedPhoto = null; _analysis = null; });
     final current = Map<String, Meal>.from(ref.read(planMealSelectionsProvider));
     current[_slotKey] = meal;
     ref.read(planMealSelectionsProvider.notifier).state = current;
+    // Retire la photo custom si une recette est choisie
+    final photos = Map<String, Uint8List>.from(ref.read(planSlotPhotosProvider));
+    photos.remove(_slotKey);
+    ref.read(planSlotPhotosProvider.notifier).state = photos;
   }
 
   void _removeMeal() {
@@ -483,6 +510,62 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
     ref.read(planMealSelectionsProvider.notifier).state = current;
   }
 
+  void _removePhoto() {
+    setState(() { _pickedPhoto = null; _analysis = null; _analyzing = false; });
+    final photos = Map<String, Uint8List>.from(ref.read(planSlotPhotosProvider));
+    photos.remove(_slotKey);
+    ref.read(planSlotPhotosProvider.notifier).state = photos;
+  }
+
+  Future<void> _pickPhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF2A2420),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 36, height: 4,
+              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            _SourceTile(icon: Icons.camera_alt_outlined, label: 'Prendre une photo',
+              onTap: () => Navigator.pop(context, ImageSource.camera)),
+            const SizedBox(height: 12),
+            _SourceTile(icon: Icons.photo_library_outlined, label: 'Choisir dans la galerie',
+              onTap: () => Navigator.pop(context, ImageSource.gallery)),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final photo = await _picker.pickImage(source: source, imageQuality: 80);
+    if (photo == null || !mounted) return;
+    final bytes = await photo.readAsBytes();
+
+    setState(() { _pickedPhoto = bytes; _selected = null; _analysis = null; _analyzing = true; });
+
+    final photos = Map<String, Uint8List>.from(ref.read(planSlotPhotosProvider));
+    photos[_slotKey] = bytes;
+    ref.read(planSlotPhotosProvider.notifier).state = photos;
+
+    final sels = Map<String, Meal>.from(ref.read(planMealSelectionsProvider));
+    sels.remove(_slotKey);
+    ref.read(planMealSelectionsProvider.notifier).state = sels;
+
+    try {
+      final result = await ClaudeService().analyzePhoto(bytes);
+      if (mounted) setState(() { _analysis = result; _analyzing = false; });
+    } catch (_) {
+      if (mounted) setState(() => _analyzing = false);
+    }
+  }
+
   static const _frMonths = [
     'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
     'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
@@ -490,11 +573,12 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Restore selection from provider on first build
     if (!_initialized) {
       _initialized = true;
       final saved = ref.read(planMealSelectionsProvider)[_slotKey];
       if (saved != null) _selected = saved;
+      final savedPhoto = ref.read(planSlotPhotosProvider)[_slotKey];
+      if (savedPhoto != null) _pickedPhoto = savedPhoto;
     }
 
     final allMeals = ref.watch(mealsProvider);
@@ -574,65 +658,77 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                       children: [
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
-                          child: meal != null
+                          child: _pickedPhoto != null
                               ? SizedBox(
-                                  key: ValueKey(meal.id),
+                                  key: const ValueKey('custom'),
                                   height: 200,
                                   width: double.infinity,
-                                  child: MealImage(
-                                    photo: meal.photo,
-                                    fallbackKey: meal.title,
-                                  ),
+                                  child: Image.memory(_pickedPhoto!, fit: BoxFit.cover),
                                 )
-                              : Container(
-                                  key: const ValueKey('empty'),
-                                  height: 200,
-                                  color: AppTokens.surface,
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.add_circle_outline,
-                                          color: AppTokens.muted, size: 36),
-                                        const SizedBox(height: 10),
-                                        Text('Choisis un plat ci-dessous',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 13.5,
-                                            color: Theme.of(context).brightness == Brightness.dark
-                                                ? Colors.white70
-                                                : AppTokens.muted,
-                                            fontWeight: FontWeight.w500,
+                              : meal != null
+                                  ? SizedBox(
+                                      key: ValueKey(meal.id),
+                                      height: 200,
+                                      width: double.infinity,
+                                      child: MealImage(photo: meal.photo, fallbackKey: meal.title),
+                                    )
+                                  : GestureDetector(
+                                      key: const ValueKey('empty'),
+                                      onTap: _pickPhoto,
+                                      child: Container(
+                                        height: 200,
+                                        color: AppTokens.surface,
+                                        child: Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.add_circle_outline,
+                                                color: AppTokens.muted, size: 36),
+                                              const SizedBox(height: 10),
+                                              Text('Ajoute une photo ou choisis un plat',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13.5,
+                                                  color: Theme.of(context).brightness == Brightness.dark
+                                                      ? Colors.white70 : AppTokens.muted,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                ),
                         ),
-                        if (meal != null)
+                        if (_pickedPhoto != null || meal != null)
                           Positioned(
-                            top: 10,
-                            right: 10,
+                            top: 10, right: 10,
                             child: GestureDetector(
-                              onTap: _removeMeal,
+                              onTap: _pickedPhoto != null ? _removePhoto : _removeMeal,
                               child: Container(
-                                width: 38,
-                                height: 38,
+                                width: 38, height: 38,
                                 decoration: BoxDecoration(
-                                  color: Colors.red.shade600,
-                                  shape: BoxShape.circle,
+                                  color: Colors.red.shade600, shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
-                                  Icons.delete_outline,
-                                  size: 22,
-                                  color: Colors.white,
-                                ),
+                                child: const Icon(Icons.delete_outline, size: 22, color: Colors.white),
                               ),
                             ),
                           ),
                       ],
                     ),
                   ),
+
+                  // Analyse IA
+                  if (_analyzing) ...[
+                    const SizedBox(height: 16),
+                    const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppTokens.coral)),
+                    const SizedBox(height: 8),
+                    Center(child: Text('Analyse du plat en cours…',
+                      style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted))),
+                  ],
+                  if (_analysis != null && !_analyzing) ...[
+                    const SizedBox(height: 16),
+                    _AnalysisCard(analysis: _analysis!),
+                  ],
 
                   // Données du plat sélectionné
                   if (meal != null) ...[
@@ -783,6 +879,113 @@ class _InfoChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SourceTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _SourceTile({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white12, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTokens.coral, size: 22),
+            const SizedBox(width: 14),
+            Text(label, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AnalysisCard extends StatelessWidget {
+  final Map<String, dynamic> analysis;
+  const _AnalysisCard({required this.analysis});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ink = isDark ? Colors.white : AppTokens.ink;
+    final muted = isDark ? Colors.white70 : AppTokens.muted;
+    final surface = isDark ? const Color(0xFF1E1E1E) : AppTokens.surface;
+
+    final dishName = (analysis['dish_name'] ?? 'Plat analysé').toString();
+    final portion = (analysis['portion'] ?? '').toString();
+    final kcal = analysis['kcal'] ?? 0;
+    final proteins = analysis['proteins'] ?? 0;
+    final carbs = analysis['carbs'] ?? 0;
+    final fats = analysis['fats'] ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(dishName,
+            style: GoogleFonts.fraunces(fontSize: 18, fontWeight: FontWeight.w700, color: ink)),
+          if (portion.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(portion, style: GoogleFonts.inter(fontSize: 12.5, color: muted)),
+          ],
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _MacroTile(label: 'Calories', value: '$kcal', unit: 'kcal', highlight: true),
+              _MacroTile(label: 'Protéines', value: '$proteins', unit: 'g'),
+              _MacroTile(label: 'Glucides', value: '$carbs', unit: 'g'),
+              _MacroTile(label: 'Lipides', value: '$fats', unit: 'g'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MacroTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final bool highlight;
+  const _MacroTile({required this.label, required this.value, required this.unit, this.highlight = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ink = isDark ? Colors.white : AppTokens.ink;
+    final muted = isDark ? Colors.white60 : AppTokens.muted;
+    return Column(
+      children: [
+        Text('$value $unit',
+          style: GoogleFonts.fraunces(
+            fontSize: highlight ? 20 : 16,
+            fontWeight: FontWeight.w700,
+            color: highlight ? AppTokens.coral : ink,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(label, style: GoogleFonts.inter(fontSize: 11, color: muted, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 }

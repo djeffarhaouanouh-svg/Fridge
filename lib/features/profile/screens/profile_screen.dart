@@ -307,40 +307,6 @@ class ProfileScreen extends ConsumerWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 22),
-
-                  _SettingRow(
-                    label: 'Objectif',
-                    value: _objectiveLabel(profile.objective),
-                    icon: Icons.flag_outlined,
-                    onTap: () => _showObjectiveSheet(context, notifier),
-                  ),
-                  _SettingRow(
-                    label: 'Niveau de cuisine',
-                    value: _cookingLevelLabel(profile.cookingLevel),
-                    icon: Icons.auto_awesome_outlined,
-                    onTap: () => _showCookingLevelSheet(context, notifier),
-                  ),
-                  _SettingRow(
-                    label: 'Allergies',
-                    value: _joinOrNone(profile.allergies),
-                    icon: Icons.warning_amber_outlined,
-                    onTap: () => _showAllergiesSheet(context, ref, notifier),
-                  ),
-                  _SettingRow(
-                    label: 'Regime',
-                    value: _joinOrNone(profile.diets),
-                    icon: Icons.restaurant_menu_outlined,
-                    onTap: () => _showDietsSheet(context, ref, notifier),
-                  ),
-                  _SettingRow(
-                    label: 'Votre cuisine',
-                    value: _joinOrNone(profile.kitchenEquipments),
-                    icon: Icons.kitchen_outlined,
-                    isLast: true,
-                    onTap: () =>
-                        _showKitchenEquipmentsSheet(context, ref, notifier),
-                  ),
                 ],
               ),
             ),
@@ -534,6 +500,41 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+
+            _Divider(),
+
+            // ── Préférences culinaires ───────────────────────────────
+            _SettingRow(
+              label: 'Objectif',
+              value: _objectiveLabel(profile.objective),
+              icon: Icons.flag_outlined,
+              onTap: () => _showObjectiveSheet(context, notifier),
+            ),
+            _SettingRow(
+              label: 'Niveau de cuisine',
+              value: _cookingLevelLabel(profile.cookingLevel),
+              icon: Icons.auto_awesome_outlined,
+              onTap: () => _showCookingLevelSheet(context, notifier),
+            ),
+            _SettingRow(
+              label: 'Allergies',
+              value: _joinOrNone(profile.allergies),
+              icon: Icons.warning_amber_outlined,
+              onTap: () => _showAllergiesSheet(context, ref, notifier),
+            ),
+            _SettingRow(
+              label: 'Regime',
+              value: _joinOrNone(profile.diets),
+              icon: Icons.restaurant_menu_outlined,
+              onTap: () => _showDietsSheet(context, ref, notifier),
+            ),
+            _SettingRow(
+              label: 'Votre cuisine',
+              value: _joinOrNone(profile.kitchenEquipments),
+              icon: Icons.kitchen_outlined,
+              isLast: true,
+              onTap: () => _showKitchenEquipmentsSheet(context, ref, notifier),
             ),
 
             _Divider(),

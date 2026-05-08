@@ -291,7 +291,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 36, 18, 14),
               child: Text(
-                'Recette pour toi',
+                'Depuis ton dernier scan',
                 style: GoogleFonts.fraunces(
                   fontSize: 19,
                   fontWeight: FontWeight.w600,

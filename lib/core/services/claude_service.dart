@@ -149,8 +149,7 @@ class ClaudeService {
     return switch (p!.objective!) {
       CookingObjective.weightLoss => 'Perte de poids',
       CookingObjective.muscleGain => 'Prise de muscle',
-      CookingObjective.family => 'Cuisine familiale',
-      CookingObjective.passion => 'Passion culinaire',
+
       CookingObjective.healthy => 'Manger sainement',
       CookingObjective.learn => 'Apprendre à cuisiner',
     };

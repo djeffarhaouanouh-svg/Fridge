@@ -4,7 +4,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/services/neon_service.dart';
 import '../../../core/services/user_service.dart';
 
-enum CookingObjective { weightLoss, muscleGain, family, passion, healthy, learn }
+enum CookingObjective { weightLoss, muscleGain, healthy, learn }
 enum CookingLevel { beginner, intermediate, advanced, expert }
 enum AiTone { coach, chef, ami }
 enum ThemePreference { light, dark }
@@ -267,8 +267,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   static String? _objectiveToDb(CookingObjective? o) => switch (o) {
         CookingObjective.weightLoss => 'perte_poids',
         CookingObjective.muscleGain => 'prise_masse',
-        CookingObjective.family => 'famille',
-        CookingObjective.passion => 'passion_cuisine',
+
         CookingObjective.healthy => 'manger_sainement',
         CookingObjective.learn => 'apprendre_cuisiner',
         null => null,
@@ -277,8 +276,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   static CookingObjective? _parseObjective(String? v) => switch (v) {
         'perte_poids' => CookingObjective.weightLoss,
         'prise_masse' => CookingObjective.muscleGain,
-        'famille' => CookingObjective.family,
-        'passion_cuisine' => CookingObjective.passion,
+
         'manger_sainement' => CookingObjective.healthy,
         'apprendre_cuisiner' => CookingObjective.learn,
         _ => null,

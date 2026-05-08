@@ -1041,8 +1041,7 @@ void _showThemeSheet(BuildContext context, WidgetRef ref) {
 String _objectiveLabel(CookingObjective? objective) => switch (objective) {
       CookingObjective.weightLoss => 'Perte de poids',
       CookingObjective.muscleGain => 'Prise de masse',
-      CookingObjective.family => 'Famille',
-      CookingObjective.passion => 'Passion cuisine',
+
       CookingObjective.healthy => 'Manger sainement',
       CookingObjective.learn => 'Apprendre à cuisiner',
       null => 'Non défini',
@@ -1086,16 +1085,8 @@ void _showObjectiveSheet(
             onTap: () { notifier.setObjective(CookingObjective.healthy); Navigator.pop(context); },
           ),
           ListTile(
-            title: Text('Famille', style: TextStyle(color: _sheetText(context))),
-            onTap: () { notifier.setObjective(CookingObjective.family); Navigator.pop(context); },
-          ),
-          ListTile(
             title: Text('Apprendre à cuisiner', style: TextStyle(color: _sheetText(context))),
             onTap: () { notifier.setObjective(CookingObjective.learn); Navigator.pop(context); },
-          ),
-          ListTile(
-            title: Text('Passion cuisine', style: TextStyle(color: _sheetText(context))),
-            onTap: () { notifier.setObjective(CookingObjective.passion); Navigator.pop(context); },
           ),
         ],
       ),

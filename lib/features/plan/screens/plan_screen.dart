@@ -1037,6 +1037,39 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                         ),
                       ),
                     ),
+
+                  const SizedBox(height: 8),
+                  _SectionTitle(title: 'Étudiant fauché'),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 160,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _budgetMeals.length,
+                      itemBuilder: (_, i) => _MealPickCard(
+                        meal: _budgetMeals[i],
+                        isSelected: _selected?.id == _budgetMeals[i].id,
+                        onTap: () => _selectMeal(_budgetMeals[i]),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  _SectionTitle(title: 'Salades'),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 160,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _saladMeals.length,
+                      itemBuilder: (_, i) => _MealPickCard(
+                        meal: _saladMeals[i],
+                        isSelected: _selected?.id == _saladMeals[i].id,
+                        onTap: () => _selectMeal(_saladMeals[i]),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -1232,6 +1265,68 @@ class _MacroTile extends StatelessWidget {
     );
   }
 }
+
+// ─── Collections statiques ───────────────────────────────────────────────────
+
+final _budgetMeals = [
+  Meal(
+    id: 'plan_budget_1', type: 'simple', typeLabel: 'Simple', emoji: '🍝',
+    title: 'Pâtes bolognaise budget', kcal: 560, protein: 'moyen',
+    difficulty: 'facile', time: '18 min', locked: false,
+    photo: 'assets/images/spaghetti-bolognese.png', color: '#F2994A',
+    ingredients: [Ingredient(name: 'Pâtes', qty: '120 g', photo: ''), Ingredient(name: 'Boeuf haché', qty: '150 g', photo: ''), Ingredient(name: 'Sauce tomate', qty: '200 ml', photo: '')],
+    steps: ['Fais cuire les pâtes dans une eau salée.', 'Poêle chaude: saisis le boeuf puis ajoute la sauce tomate.', 'Mélange avec les pâtes et sers bien chaud.'],
+    prepTimeMin: 6, cookTimeMin: 12,
+  ),
+  Meal(
+    id: 'plan_budget_2', type: 'simple', typeLabel: 'Simple', emoji: '🍜',
+    title: 'Ramen minute', kcal: 490, protein: 'moyen',
+    difficulty: 'facile', time: '16 min', locked: false,
+    photo: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900', color: '#F2C94C',
+    ingredients: [Ingredient(name: 'Nouilles', qty: '1 paquet', photo: ''), Ingredient(name: 'Oeuf', qty: '1', photo: ''), Ingredient(name: 'Bouillon', qty: '350 ml', photo: '')],
+    steps: ['Porte le bouillon a frémissement.', 'Ajoute les nouilles et cuis 3 à 4 minutes.', 'Termine avec l oeuf mollet.'],
+    prepTimeMin: 4, cookTimeMin: 12,
+  ),
+  Meal(
+    id: 'plan_budget_3', type: 'balanced', typeLabel: 'Équilibré', emoji: '🍚',
+    title: 'Riz sauté économique', kcal: 430, protein: 'moyen',
+    difficulty: 'facile', time: '20 min', locked: false,
+    photo: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=900', color: '#6FCF97',
+    ingredients: [Ingredient(name: 'Riz cuit', qty: '180 g', photo: ''), Ingredient(name: 'Carotte', qty: '1', photo: ''), Ingredient(name: 'Oeuf', qty: '1', photo: '')],
+    steps: ['Fais revenir les légumes en petits dés.', 'Ajoute le riz, puis saisis à feu vif 3 minutes.', 'Pousse le riz sur le côté et brouille l oeuf avant de mélanger.'],
+    prepTimeMin: 7, cookTimeMin: 13,
+  ),
+];
+
+final _saladMeals = [
+  Meal(
+    id: 'plan_salad_1', type: 'balanced', typeLabel: 'Équilibré', emoji: '🥗',
+    title: 'César légère', kcal: 340, protein: 'moyen',
+    difficulty: 'facile', time: '14 min', locked: false,
+    photo: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=900', color: '#82D28C',
+    ingredients: [Ingredient(name: 'Laitue', qty: '1/2', photo: ''), Ingredient(name: 'Poulet', qty: '120 g', photo: ''), Ingredient(name: 'Parmesan', qty: '20 g', photo: '')],
+    steps: ['Coupe la laitue et prépare les copeaux de parmesan.', 'Poêle le poulet assaisonné puis tranche-le.', 'Mélange avec la sauce césar et les croûtons.'],
+    prepTimeMin: 8, cookTimeMin: 6,
+  ),
+  Meal(
+    id: 'plan_salad_2', type: 'stylish', typeLabel: 'Stylé', emoji: '🥑',
+    title: 'Bowl avocat-feta', kcal: 360, protein: 'moyen',
+    difficulty: 'facile', time: '12 min', locked: false,
+    photo: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900', color: '#6FCF97',
+    ingredients: [Ingredient(name: 'Avocat', qty: '1', photo: ''), Ingredient(name: 'Feta', qty: '60 g', photo: ''), Ingredient(name: 'Concombre', qty: '1/2', photo: '')],
+    steps: ['Coupe tous les ingrédients en cubes.', 'Ajoute un filet d huile d olive et du citron.', 'Assaisonne puis mélange délicatement.'],
+    prepTimeMin: 10, cookTimeMin: 2,
+  ),
+  Meal(
+    id: 'plan_salad_3', type: 'balanced', typeLabel: 'Équilibré', emoji: '🥗',
+    title: 'Salade de quinoa', kcal: 320, protein: 'moyen',
+    difficulty: 'facile', time: '15 min', locked: false,
+    photo: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=900', color: '#27AE60',
+    ingredients: [Ingredient(name: 'Quinoa', qty: '80 g', photo: ''), Ingredient(name: 'Tomates cerises', qty: '8', photo: ''), Ingredient(name: 'Menthe', qty: '6 feuilles', photo: '')],
+    steps: ['Rince puis cuis le quinoa dans deux volumes d eau.', 'Laisse tiédir et ajoute tomates et herbes.', 'Assaisonne avec citron, huile d olive et sel.'],
+    prepTimeMin: 9, cookTimeMin: 6,
+  ),
+];
 
 class _MealPickCard extends StatelessWidget {
   final Meal meal;

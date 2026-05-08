@@ -548,7 +548,7 @@ class NeonService {
             }
           } catch (_) {}
           return rawIngredients
-              .split(',')
+              .split(RegExp(r'[,|]+'))
               .map((e) => e.trim())
               .where((e) => e.isNotEmpty)
               .map((e) => Ingredient(name: e, qty: '', photo: ''))
@@ -577,7 +577,7 @@ class NeonService {
             }
           } catch (_) {}
           return rawSteps
-              .split(RegExp(r'[\n\r]+'))
+              .split(RegExp(r'[\n\r|]+'))
               .map((e) => e.trim())
               .where((e) => e.isNotEmpty)
               .toList();

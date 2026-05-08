@@ -23,9 +23,6 @@ class PlanScreen extends ConsumerStatefulWidget {
 class _PlanScreenState extends ConsumerState<PlanScreen> {
   int _selectedDayIndex = 0;
   int _weekOffset = 0;
-  final Set<String> _likedDays = {};
-  final Set<String> _dislikedDays = {};
-  final Set<String> _allergyDays = {};
 
   final _dayScrollController = ScrollController();
 
@@ -90,14 +87,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
   void _prevWeek() => setState(() { _weekOffset--; _selectedDayIndex = 0; });
   void _nextWeek() => setState(() { _weekOffset++; _selectedDayIndex = 0; });
-
-  void _resetSelectedDay() {
-    final key = _isoDate(_days[_selectedDayIndex]);
-    final sels = Map<String, Meal>.from(ref.read(planMealSelectionsProvider));
-    sels.remove('${key}_Déjeuner');
-    sels.remove('${key}_Dîner');
-    ref.read(planMealSelectionsProvider.notifier).state = sels;
-  }
 
   void _scrollToDay(int i) {
     final screenW = MediaQuery.of(context).size.width;
@@ -204,47 +193,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     days: days,
                     frDays: frDays,
                     selectedIndex: _selectedDayIndex,
-                    likedDays: _likedDays,
-                    dislikedDays: _dislikedDays,
-                    allergyDays: _allergyDays,
                     frMonths: _frMonths,
                     onDayTap: _selectDay,
                     onPrev: _prevWeek,
                     onNext: _nextWeek,
-                    onLike: () {
-                      final key = _isoDate(days[_selectedDayIndex]);
-                      setState(() {
-                        if (_likedDays.contains(key)) {
-                          _likedDays.remove(key);
-                        } else {
-                          _likedDays.add(key);
-                          _dislikedDays.remove(key);
-                        }
-                      });
-                    },
-                    onDislike: () {
-                      final key = _isoDate(days[_selectedDayIndex]);
-                      setState(() {
-                        if (_dislikedDays.contains(key)) {
-                          _dislikedDays.remove(key);
-                        } else {
-                          _dislikedDays.add(key);
-                          _likedDays.remove(key);
-                        }
-                      });
-                    },
-                    onAllergy: () {
-                      final key = _isoDate(days[_selectedDayIndex]);
-                      setState(() {
-                        if (_allergyDays.contains(key)) {
-                          _allergyDays.remove(key);
-                        } else {
-                          _allergyDays.add(key);
-                        }
-                      });
-                    },
-                    onHabitudes: () {},
-                    onReset: _resetSelectedDay,
                     isDark: isDark,
                     titleColor: titleColor,
                     mutedColor: mutedColor,
@@ -338,18 +290,10 @@ class _WeekSelectorCard extends StatelessWidget {
   final List<DateTime> days;
   final List<String> frDays;
   final int selectedIndex;
-  final Set<String> likedDays;
-  final Set<String> dislikedDays;
-  final Set<String> allergyDays;
   final List<String> frMonths;
   final void Function(int) onDayTap;
   final VoidCallback onPrev;
   final VoidCallback onNext;
-  final VoidCallback onLike;
-  final VoidCallback onDislike;
-  final VoidCallback onAllergy;
-  final VoidCallback onHabitudes;
-  final VoidCallback onReset;
   final bool isDark;
   final Color titleColor;
   final Color mutedColor;
@@ -358,27 +302,14 @@ class _WeekSelectorCard extends StatelessWidget {
     required this.days,
     required this.frDays,
     required this.selectedIndex,
-    required this.likedDays,
-    required this.dislikedDays,
-    required this.allergyDays,
     required this.frMonths,
     required this.onDayTap,
     required this.onPrev,
     required this.onNext,
-    required this.onLike,
-    required this.onDislike,
-    required this.onAllergy,
-    required this.onHabitudes,
-    required this.onReset,
     required this.isDark,
     required this.titleColor,
     required this.mutedColor,
   });
-
-  static String _iso(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}-'
-      '${d.month.toString().padLeft(2, '0')}-'
-      '${d.day.toString().padLeft(2, '0')}';
 
   String _rangeTitle() {
     final s = days.first;
@@ -392,11 +323,6 @@ class _WeekSelectorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
-    final dividerColor = isDark ? Colors.white12 : AppTokens.hairline;
-    final selectedKey = _iso(days[selectedIndex]);
-    final isLiked = likedDays.contains(selectedKey);
-    final isDisliked = dislikedDays.contains(selectedKey);
-    final isAllergy = allergyDays.contains(selectedKey);
 
     return Container(
       decoration: BoxDecoration(
@@ -475,55 +401,7 @@ class _WeekSelectorCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 4),
-          Divider(height: 1, thickness: 1, color: dividerColor, indent: 14, endIndent: 14),
-
-          // ── Action buttons ──
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _ActionBtn(
-                  icon: isLiked ? Icons.favorite : Icons.favorite_border,
-                  label: 'J\'aime',
-                  onTap: onLike,
-                  active: isLiked,
-                  isDark: isDark,
-                ),
-                _ActionBtn(
-                  icon: isDisliked
-                      ? Icons.do_not_disturb_alt
-                      : Icons.do_not_disturb_alt_outlined,
-                  label: 'J\'aime pas',
-                  onTap: onDislike,
-                  active: isDisliked,
-                  isDark: isDark,
-                ),
-                _ActionBtn(
-                  icon: isAllergy
-                      ? Icons.warning_amber
-                      : Icons.warning_amber_outlined,
-                  label: 'Allergie',
-                  onTap: onAllergy,
-                  active: isAllergy,
-                  isDark: isDark,
-                ),
-                _ActionBtn(
-                  icon: Icons.tune_outlined,
-                  label: 'Habitudes',
-                  onTap: onHabitudes,
-                  isDark: isDark,
-                ),
-                _ActionBtn(
-                  icon: Icons.refresh_rounded,
-                  label: 'Réinitialiser',
-                  onTap: onReset,
-                  isDark: isDark,
-                ),
-              ],
-            ),
-          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -548,46 +426,6 @@ class _NavArrow extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white, size: 20),
-      ),
-    );
-  }
-}
-
-class _ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-  final bool isDark;
-  const _ActionBtn({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.active = false,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active
-        ? AppTokens.coral
-        : (isDark ? Colors.white60 : AppTokens.muted);
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 22, color: color),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 9,
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
-          ),
-        ],
       ),
     );
   }

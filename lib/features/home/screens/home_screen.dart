@@ -339,7 +339,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Text(
                 'Étudiant fauché',
                 style: GoogleFonts.fraunces(
-                  fontSize: 19,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: titleColor,
                 ),
@@ -364,7 +364,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Text(
                 'Salades',
                 style: GoogleFonts.fraunces(
-                  fontSize: 19,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: titleColor,
                 ),
@@ -818,7 +818,7 @@ class _LargeCollectionCard extends StatelessWidget {
         Text(
           data.title,
           style: GoogleFonts.inter(
-            fontSize: 15.5,
+            fontSize: 15,
             fontWeight: FontWeight.w600,
             color: isDark ? Colors.white : AppTokens.ink,
             height: 1.15,

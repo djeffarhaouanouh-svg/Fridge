@@ -8,6 +8,7 @@ import '../../../core/services/elevenlabs_tts_service.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/recipe_ids.dart';
 import '../../../core/utils/ingredient_category.dart';
+import '../../../core/services/fridge_sync.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../navigation/widgets/bottom_nav.dart';
@@ -527,15 +528,15 @@ class _IngredientEmojiTile extends StatelessWidget {
 
 // ─── Mode cuisine : étape par étape ─────────────────────────────────────────
 
-class _CookingScreen extends StatefulWidget {
+class _CookingScreen extends ConsumerStatefulWidget {
   final Meal meal;
   const _CookingScreen({required this.meal});
 
   @override
-  State<_CookingScreen> createState() => _CookingScreenState();
+  ConsumerState<_CookingScreen> createState() => _CookingScreenState();
 }
 
-class _CookingScreenState extends State<_CookingScreen> {
+class _CookingScreenState extends ConsumerState<_CookingScreen> {
   int _current = 0;
   bool _showIntro = true;
   final _tts = ElevenLabsTtsService();
@@ -560,8 +561,35 @@ class _CookingScreenState extends State<_CookingScreen> {
       setState(() => _current++);
       _speakCurrentStep();
     } else {
-      Navigator.pop(context);
+      _finishAndPop();
     }
+  }
+
+  Future<void> _finishAndPop() async {
+    final meal = widget.meal;
+
+    // Retire les ingrédients utilisés du frigo
+    final usedNames = meal.ingredients
+        .map((i) => i.name.toLowerCase().trim())
+        .toSet();
+    final fridge = List<String>.from(ref.read(detectedIngredientsProvider));
+    final updatedFridge = fridge
+        .where((item) => !usedNames.contains(item.toLowerCase().trim()))
+        .toList();
+    ref.read(detectedIngredientsProvider.notifier).state = updatedFridge;
+    await persistFridgeToNeon(updatedFridge);
+
+    // Retire la recette si elle n'est pas en favoris
+    final liveMeal = ref
+        .read(mealsProvider)
+        .where((m) => normalizeRecipeId(m.id) == normalizeRecipeId(meal.id))
+        .firstOrNull;
+    final isFavorite = liveMeal?.isFavorite ?? meal.isFavorite;
+    if (!isFavorite) {
+      await ref.read(mealsProvider.notifier).removeMeal(meal.id);
+    }
+
+    if (mounted) Navigator.pop(context);
   }
 
   void _prev() {

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/recipe_ids.dart';
@@ -104,6 +105,23 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
 
   List<Meal> getFavorites() {
     return state.where((meal) => meal.isFavorite).toList();
+  }
+
+  Future<void> removeMeal(String mealId) async {
+    final nid = normalizeRecipeId(mealId);
+    final updated = state.where((m) => m.id != nid).toList();
+    state = updated;
+    try {
+      final encoded = jsonEncode(
+        updated.where((m) => !m.isFavorite).map((m) => m.toJson()).toList(),
+      );
+      await _db.execute(
+        'UPDATE users SET scan_meals_json = \$1 WHERE id = \$2',
+        [encoded, NeonService.kUserId],
+      );
+    } catch (e, st) {
+      debugPrint('removeMeal: $e\n$st');
+    }
   }
 }
 

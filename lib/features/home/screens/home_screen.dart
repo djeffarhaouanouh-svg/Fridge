@@ -336,9 +336,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 30, 18, 14),
               child: Text(
-                'Collections du moment',
+                'Pour le dîner',
                 style: GoogleFonts.fraunces(
-                  fontSize: 19,
+                  fontSize: 17,
                   fontWeight: FontWeight.w600,
                   color: titleColor,
                 ),
@@ -348,19 +348,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _mockHomeCollections.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 18,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.72,
+              child: Row(
+                children: [
+                  Expanded(child: _LargeCollectionCard(data: _mockHomeCollections[0])),
+                  const SizedBox(width: 12),
+                  Expanded(child: _LargeCollectionCard(data: _mockHomeCollections[1])),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+              child: Text(
+                'Pour compléter le repas',
+                style: GoogleFonts.fraunces(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor,
                 ),
-                itemBuilder: (context, i) => _LargeCollectionCard(
-                  data: _mockHomeCollections[i],
-                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Row(
+                children: [
+                  Expanded(child: _LargeCollectionCard(data: _mockHomeCollections[2])),
+                  const SizedBox(width: 12),
+                  Expanded(child: _LargeCollectionCard(data: _mockHomeCollections[3])),
+                ],
               ),
             ),
           ),
@@ -460,7 +478,7 @@ final List<_HomeCollectionCardData> _mockHomeCollections = [
   _HomeCollectionCardData(
     title: 'Étudiant fauché',
     imageUrl:
-        'C:/Users/Thomas/.cursor/projects/c-Users-Thomas-Downloads-fridge-app/assets/c__Users_Thomas_AppData_Roaming_Cursor_User_workspaceStorage_a6d9a68e699442995fb252014bacbcb5_images_image-36a83d7e-6d72-46bf-aee2-3af595ea3950.png',
+        'C:/Users/Thomas/.cursor/projects/c-Users-Thomas-Downloads-fridge-app/assets/c__Users_Thomas_AppData_Roaming_Cursor_User_workspaceStorage_a6d9a68e699442995fb252014bacbcb5_images_image-88eede9f-a5f7-4ade-86a8-a06630a01024.png',
     rating: 4.7,
     reviews: 192,
   ),
@@ -769,7 +787,8 @@ class _LargeCollectionCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
+        AspectRatio(
+          aspectRatio: 1.0,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppTokens.radiusLg),
             child: Stack(
@@ -799,10 +818,10 @@ class _LargeCollectionCard extends StatelessWidget {
         Text(
           data.title,
           style: GoogleFonts.inter(
-            fontSize: 23,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
             color: isDark ? Colors.white : AppTokens.ink,
-            height: 1.04,
+            height: 1.12,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -818,7 +837,7 @@ class _LargeCollectionCard extends StatelessWidget {
             Text(
               '${data.rating.toStringAsFixed(1)}/5',
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w700,
                 color: isDark ? Colors.white : AppTokens.ink,
               ),
@@ -829,7 +848,7 @@ class _LargeCollectionCard extends StatelessWidget {
         Text(
           '(${data.reviews} avis)',
           style: GoogleFonts.inter(
-            fontSize: 13,
+            fontSize: 11.5,
             fontWeight: FontWeight.w500,
             color: isDark ? Colors.white70 : AppTokens.muted,
           ),

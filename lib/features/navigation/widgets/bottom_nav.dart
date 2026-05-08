@@ -33,8 +33,7 @@ class BottomNav extends ConsumerWidget {
       child: Row(
         children: [
           // ── Glass pill (3 tabs) ──────────────────────────────────
-          Expanded(
-            child: ClipRRect(
+          ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
@@ -56,10 +55,12 @@ class BottomNav extends ConsumerWidget {
                     ],
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: List.generate(3, (i) {
                       final tabIdx = _tabIndices[i];
                       final isActive = selected == tabIdx;
-                      return Expanded(
+                      return SizedBox(
+                        width: 60,
                         child: GestureDetector(
                           onTap: () => _navigate(context, ref, tabIdx),
                           behavior: HitTestBehavior.opaque,
@@ -68,7 +69,7 @@ class BottomNav extends ConsumerWidget {
                               duration: const Duration(milliseconds: 220),
                               curve: Curves.easeInOutCubic,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 18, vertical: 9),
+                                  horizontal: 14, vertical: 9),
                               decoration: BoxDecoration(
                                 color: isActive
                                     ? Colors.white.withValues(alpha: 0.18)
@@ -91,7 +92,6 @@ class BottomNav extends ConsumerWidget {
                 ),
               ),
             ),
-          ),
 
           const SizedBox(width: 12),
 

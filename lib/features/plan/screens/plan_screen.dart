@@ -904,7 +904,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                                                 size: 36),
                                               const SizedBox(height: 10),
                                               Text(
-                                                'Clic pour ajouter une photo de ton plat',
+                                                'Clic pour prendre une photo de ton plat',
                                                 textAlign: TextAlign.center,
                                                 style: GoogleFonts.inter(
                                                   fontSize: 13.5,

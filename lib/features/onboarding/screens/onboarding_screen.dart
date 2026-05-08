@@ -102,17 +102,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  if (_page > 0)
-                    TextButton(
-                      onPressed: () => widget.onComplete(_nameCtrl.text.trim().isEmpty ? 'Utilisateur' : _nameCtrl.text.trim()),
-                      child: Text(
-                        'Passer',
-                        style: GoogleFonts.inter(color: primary, fontWeight: FontWeight.w700),
-                      ),
-                    )
-                  else
-                    const SizedBox(width: 60),
+                  const SizedBox(width: 60),
                 ],
               ),
             ),

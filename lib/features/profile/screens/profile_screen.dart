@@ -853,11 +853,6 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 16),
           children: [
-            _SettingRow(
-              label: 'Mes photos',
-              icon: Icons.photo_library_outlined,
-              onTap: () => _showUserPhotosSheet(context, ref),
-            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
               child: Column(
@@ -909,6 +904,11 @@ class SettingsScreen extends ConsumerWidget {
               value: _themeLabel(themePreference),
               icon: Icons.dark_mode_outlined,
               onTap: () => _showThemeSheet(context, ref),
+            ),
+            _SettingRow(
+              label: 'Mes photos',
+              icon: Icons.photo_library_outlined,
+              onTap: () => _showUserPhotosSheet(context, ref),
             ),
             _SettingRow(label: 'Aide & support', icon: Icons.help_outline),
             _SettingRow(

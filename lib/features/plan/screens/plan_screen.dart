@@ -805,18 +805,8 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                             : AppTokens.ink,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        _InfoChip(icon: Icons.schedule_outlined, label: meal.time),
-                        const SizedBox(width: 10),
-                        _InfoChip(icon: Icons.local_fire_department_outlined, label: '${meal.kcal} kcal'),
-                        const SizedBox(width: 10),
-                        _InfoChip(icon: Icons.bar_chart_outlined, label: meal.difficulty),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    _InfoChip(icon: Icons.fitness_center_outlined, label: 'Protéines ${meal.protein}'),
+                    const SizedBox(height: 12),
+                    _MealInfoCard(meal: meal),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
@@ -828,7 +818,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                         fullWidth: true,
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => RecipeScreen(meal: meal)),
+                          MaterialPageRoute(builder: (_) => RecipeScreen(meal: meal, fromPlan: true)),
                         ),
                       ),
                     ),
@@ -896,6 +886,38 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MealInfoCard extends StatelessWidget {
+  final Meal meal;
+  const _MealInfoCard({required this.meal});
+
+  static String _cap(String s) =>
+      s.isNotEmpty ? s[0].toUpperCase() + s.substring(1) : s;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? const Color(0xFF1E1E1E) : AppTokens.surface;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _MacroTile(label: 'Calories', value: '${meal.kcal}', unit: 'kcal', highlight: true),
+          _MacroTile(label: 'Durée', value: meal.time, unit: ''),
+          _MacroTile(label: 'Difficulté', value: _cap(meal.difficulty), unit: ''),
+          _MacroTile(label: 'Protéines', value: _cap(meal.protein), unit: ''),
+        ],
       ),
     );
   }

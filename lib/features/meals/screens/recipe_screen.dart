@@ -18,7 +18,8 @@ import '../models/meal.dart';
 
 class RecipeScreen extends ConsumerWidget {
   final Meal meal;
-  const RecipeScreen({super.key, required this.meal});
+  final bool fromPlan;
+  const RecipeScreen({super.key, required this.meal, this.fromPlan = false});
 
   static String _difficultyLabel(String d) {
     final x = d.toLowerCase();
@@ -407,7 +408,7 @@ class RecipeScreen extends ConsumerWidget {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => _CookingScreen(meal: meal),
+                              builder: (_) => _CookingScreen(meal: meal, fromPlan: fromPlan),
                             ),
                           ),
                         ),
@@ -530,7 +531,8 @@ class _IngredientEmojiTile extends StatelessWidget {
 
 class _CookingScreen extends ConsumerStatefulWidget {
   final Meal meal;
-  const _CookingScreen({required this.meal});
+  final bool fromPlan;
+  const _CookingScreen({required this.meal, this.fromPlan = false});
 
   @override
   ConsumerState<_CookingScreen> createState() => _CookingScreenState();
@@ -579,14 +581,16 @@ class _CookingScreenState extends ConsumerState<_CookingScreen> {
     ref.read(detectedIngredientsProvider.notifier).state = updatedFridge;
     await persistFridgeToNeon(updatedFridge);
 
-    // Retire la recette si elle n'est pas en favoris
-    final liveMeal = ref
-        .read(mealsProvider)
-        .where((m) => normalizeRecipeId(m.id) == normalizeRecipeId(meal.id))
-        .firstOrNull;
-    final isFavorite = liveMeal?.isFavorite ?? meal.isFavorite;
-    if (!isFavorite) {
-      await ref.read(mealsProvider.notifier).removeMeal(meal.id);
+    // Retire la recette si elle n'est pas en favoris (pas depuis le planning)
+    if (!widget.fromPlan) {
+      final liveMeal = ref
+          .read(mealsProvider)
+          .where((m) => normalizeRecipeId(m.id) == normalizeRecipeId(meal.id))
+          .firstOrNull;
+      final isFavorite = liveMeal?.isFavorite ?? meal.isFavorite;
+      if (!isFavorite) {
+        await ref.read(mealsProvider.notifier).removeMeal(meal.id);
+      }
     }
 
     if (mounted) Navigator.pop(context);

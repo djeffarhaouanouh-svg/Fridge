@@ -13,6 +13,8 @@ import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../models/meal.dart';
+import '../../../core/services/neon_service.dart';
+import '../../../main.dart' show cookedCountProvider;
 
 // ─── Fiche recette ─────────────────────────────────────────────────────────
 
@@ -592,6 +594,14 @@ class _CookingScreenState extends ConsumerState<_CookingScreen> {
       if (!isFavorite) {
         await ref.read(mealsProvider.notifier).removeMeal(meal.id);
       }
+    }
+
+    // Incrémente le compteur "Plats cuisinés"
+    try {
+      await NeonService().markCooked(meal);
+      ref.read(cookedCountProvider.notifier).state++;
+    } catch (e) {
+      debugPrint('markCooked: $e');
     }
 
     if (mounted) Navigator.pop(context);

@@ -252,10 +252,9 @@ class ProfileScreen extends ConsumerWidget {
     final favoriteMeals = ref.watch(favoriteMealsProvider);
     final allMeals = ref.watch(mealsProvider);
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
-    final selections = ref.watch(planMealSelectionsProvider);
     final recentlyViewed = ref.watch(recentlyViewedProvider);
     final loginStreak = ref.watch(loginStreakProvider);
-    final cookedCount = selections.length;
+    final cookedCount = ref.watch(cookedCountProvider);
     final streak = loginStreak;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isFridgeExpanded = ref.watch(fridgeSectionExpandedProvider);

@@ -30,6 +30,9 @@ final authStateProvider = StateProvider<bool>((ref) => false);
 /// Série de jours consécutifs avec ouverture de l’app (persistée en base).
 final loginStreakProvider = StateProvider<int>((ref) => 0);
 
+/// Nombre de recettes terminées (bouton "Terminer" en fin de recette).
+final cookedCountProvider = StateProvider<int>((ref) => 0);
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -139,6 +142,7 @@ class AuthGate extends ConsumerStatefulWidget {
 
 class _AuthGateState extends ConsumerState<AuthGate> {
   bool _checked = false;
+  bool _showOnboarding = false;
 
   @override
   void initState() {
@@ -148,10 +152,24 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
   Future<void> _checkSession() async {
     final session = await AuthService.getSession();
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingDone = prefs.getBool('profile_onboarding_done_v1') ?? false;
     if (session != null) {
       ref.read(authStateProvider.notifier).state = true;
     }
-    if (mounted) setState(() => _checked = true);
+    if (mounted) {
+      setState(() {
+        _showOnboarding = !onboardingDone;
+        _checked = true;
+      });
+    }
+  }
+
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('profile_onboarding_done_v1', true);
+    if (!mounted) return;
+    setState(() => _showOnboarding = false);
   }
 
   @override
@@ -160,6 +178,9 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       return const AppSplashScreen(
         subtitle: 'Vérification de la session...',
       );
+    }
+    if (_showOnboarding) {
+      return OnboardingScreen(onComplete: _completeOnboarding);
     }
     final isLoggedIn = ref.watch(authStateProvider);
     return isLoggedIn ? const MainScreen() : const AuthScreen();
@@ -175,8 +196,6 @@ class MainScreen extends ConsumerStatefulWidget {
 
 class _MainScreenState extends ConsumerState<MainScreen> {
   bool _remoteReady = false;
-  bool _onboardingChecked = false;
-  bool _showOnboarding = false;
 
   @override
   void initState() {
@@ -220,6 +239,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           ref.read(loginStreakProvider.notifier).state = streak;
         })(),
         (() async {
+          final count = await db.getCookedCount();
+          ref.read(cookedCountProvider.notifier).state = count;
+        })(),
+        (() async {
           final fridge = await db.loadFridgeIngredients();
           ref.read(detectedIngredientsProvider.notifier).state = fridge;
         })(),
@@ -236,33 +259,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     } finally {
       if (mounted) {
         setState(() => _remoteReady = true);
-        _loadOnboardingState();
       }
     }
-  }
-
-  Future<void> _loadOnboardingState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final done = prefs.getBool('profile_onboarding_done_v1') ?? false;
-    if (!mounted) return;
-    setState(() {
-      _onboardingChecked = true;
-      _showOnboarding = !done;
-    });
-  }
-
-  Future<void> _completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('profile_onboarding_done_v1', true);
-    if (!mounted) return;
-    setState(() => _showOnboarding = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedTab = ref.watch(selectedTabProvider);
 
-    if (!_remoteReady || !_onboardingChecked) {
+    if (!_remoteReady) {
       return const AppSplashScreen(
         subtitle: 'Chargement de tes recettes et préférences...',
       );
@@ -281,10 +286,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     ref.listen<AiTone>(aiToneProvider, (prev, next) {
       NeonService().saveAiTonePreference(next.name).catchError((_) {});
     });
-
-    if (_showOnboarding) {
-      return OnboardingScreen(onComplete: _completeOnboarding);
-    }
 
     return Scaffold(
       extendBody: true,

@@ -1371,24 +1371,25 @@ class _MealPickCard extends ConsumerWidget {
                       fallbackKey: meal.title,
                     ),
                   ),
-                  Positioned(
-                    top: 6, right: 6,
-                    child: GestureDetector(
-                      onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
-                      child: Container(
-                        width: 28, height: 28,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                          size: 15,
-                          color: isFav ? AppTokens.coral : Colors.white,
+                  if (!isSelected)
+                    Positioned(
+                      top: 6, right: 6,
+                      child: GestureDetector(
+                        onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
+                        child: Container(
+                          width: 28, height: 28,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            size: 15,
+                            color: isFav ? AppTokens.coral : Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

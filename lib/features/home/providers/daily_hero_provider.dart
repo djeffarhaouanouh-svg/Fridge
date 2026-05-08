@@ -7,6 +7,11 @@ final dailyHeroRecipesProvider =
   DailyHeroRecipesNotifier.new,
 );
 
+final marmitonBudgetRecipesProvider = FutureProvider<List<Meal>>((ref) async {
+  final db = NeonService();
+  return db.loadMarmitonRecipes(limit: 3);
+});
+
 class DailyHeroRecipesNotifier extends AsyncNotifier<List<Meal>> {
   final _db = NeonService();
 
@@ -16,8 +21,6 @@ class DailyHeroRecipesNotifier extends AsyncNotifier<List<Meal>> {
   Future<List<Meal>> _loadOrRefresh() async => _generate();
 
   Future<List<Meal>> _generate() async {
-    // Remplace explicitement les recettes Home par la collection
-    // "Étudiant fauché" demandée par le produit.
     final meals = _homeBudgetMeals;
     await _db.saveHeroRecipes(meals);
     return meals;

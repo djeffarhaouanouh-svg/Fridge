@@ -9,6 +9,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/recipe_ids.dart';
 import '../../../core/utils/ingredient_category.dart';
 import '../../../core/services/fridge_sync.dart';
+import '../../../core/services/claude_service.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../navigation/widgets/bottom_nav.dart';
@@ -247,6 +248,13 @@ class RecipeScreen extends ConsumerWidget {
 
                   SliverToBoxAdapter(
                     child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+                      child: _AdaptRecipeButton(meal: meal),
+                    ),
+                  ),
+
+                  SliverToBoxAdapter(
+                    child: Padding(
                       padding: const EdgeInsets.fromLTRB(18, 28, 18, 12),
                       child: Text(
                         'Préparation',
@@ -470,6 +478,106 @@ class _CommencerRecetteButton extends StatelessWidget {
     );
   }
 }
+
+// ─── Bouton "Adapter avec mon frigo" ────────────────────────────────────────
+
+class _AdaptRecipeButton extends ConsumerStatefulWidget {
+  final Meal meal;
+  const _AdaptRecipeButton({required this.meal});
+
+  @override
+  ConsumerState<_AdaptRecipeButton> createState() => _AdaptRecipeButtonState();
+}
+
+class _AdaptRecipeButtonState extends ConsumerState<_AdaptRecipeButton> {
+  bool _loading = false;
+
+  Future<void> _adapt() async {
+    final fridge = ref.read(detectedIngredientsProvider);
+    if (fridge.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ton frigo est vide, scanne d\'abord tes ingrédients !',
+              style: GoogleFonts.inter(color: Colors.white)),
+          backgroundColor: AppTokens.inkSoft,
+        ),
+      );
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      final adapted = await ClaudeService().adaptRecipe(
+        recipe: widget.meal,
+        fridgeIngredients: fridge,
+      );
+      if (!mounted) return;
+      if (adapted == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tes ingrédients ne permettent pas d\'adapter cette recette.',
+                style: GoogleFonts.inter(color: Colors.white)),
+            backgroundColor: AppTokens.inkSoft,
+          ),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => RecipeScreen(meal: adapted)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur : $e', style: GoogleFonts.inter(color: Colors.white)),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _loading ? null : _adapt,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTokens.coralSoft,
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          border: Border.all(color: AppTokens.coral.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (_loading)
+              const SizedBox(
+                width: 16, height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppTokens.coral),
+              )
+            else
+              const Icon(Icons.auto_fix_high_rounded, size: 18, color: AppTokens.coral),
+            const SizedBox(width: 8),
+            Text(
+              _loading ? 'Adaptation en cours…' : 'Adapter avec mon frigo',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTokens.coral,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Tuile ingrédient ────────────────────────────────────────────────────────
 
 class _IngredientEmojiTile extends StatelessWidget {
   final Ingredient ingredient;

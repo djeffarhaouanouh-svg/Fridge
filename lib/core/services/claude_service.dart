@@ -10,7 +10,7 @@ import '../../features/profile/providers/profile_provider.dart';
 class ClaudeService {
   static const _apiKey = String.fromEnvironment('ANTHROPIC_API_KEY');
   static const _openAiApiKey = String.fromEnvironment('OPENAI_API_KEY');
-  static const _baseUrl = 'https://api.anthropic.com/v1/messages';
+  static const _baseUrl = 'https://api.anthropic.com/v1/messages'; 
   static const _openAiBaseUrl = 'https://api.openai.com/v1/chat/completions';
   static const _model = 'claude-haiku-4-5-20251001';
 
@@ -446,5 +446,94 @@ Rules:
     return plans
         .map((p) => DayPlan.fromJson(p as Map<String, dynamic>))
         .toList();
+  }
+
+  /// Adapte une recette en fonction des ingrédients du frigo.
+  /// Retourne un Meal adapté, ou null si incompatible.
+  Future<Meal?> adaptRecipe({
+    required Meal recipe,
+    required List<String> fridgeIngredients,
+  }) async {
+    if (_apiKey.isEmpty) throw Exception('ANTHROPIC_API_KEY is missing.');
+    if (fridgeIngredients.isEmpty) return null;
+
+    final recipeIngredients = recipe.ingredients.map((i) => '${i.name} (${i.qty})').join(', ');
+    final steps = recipe.steps.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join(' ');
+
+    final prompt = '''
+Tu es un chef cuisinier. Adapte cette recette avec ce que la personne a dans son frigo.
+
+RECETTE ORIGINALE : "${recipe.title}"
+Ingrédients originaux : $recipeIngredients
+Étapes : $steps
+
+FRIGO DE LA PERSONNE : ${fridgeIngredients.join(', ')}
+
+Si une adaptation cohérente est possible (remplacer thon par poulet, etc.) :
+Réponds avec un JSON valide suivant ce schéma exact :
+{
+  "title": "titre adapté",
+  "ingredients": [{"name": "...", "qty": "..."}],
+  "steps": ["étape 1", "étape 2", "..."],
+  "kcal": 000,
+  "time": "XX min",
+  "difficulty": "facile|moyen|difficile"
+}
+
+Si complètement incompatible (aucun ingrédient pertinent commun) : réponds uniquement le mot NULL.
+Réponds uniquement avec le JSON ou NULL, rien d'autre.
+''';
+
+    final response = await http.post(
+      Uri.parse(_baseUrl),
+      headers: _headers,
+      body: jsonEncode({
+        'model': _model,
+        'max_tokens': 800,
+        'messages': [
+          {'role': 'user', 'content': prompt},
+        ],
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Claude adapt ${response.statusCode}: ${response.body}');
+    }
+
+    final data = jsonDecode(response.body);
+    final text = (data['content'][0]['text'] as String)
+        .replaceAll(RegExp(r'```json|```'), '')
+        .trim();
+
+    if (text.toUpperCase() == 'NULL' || text.isEmpty) return null;
+
+    final map = jsonDecode(text) as Map<String, dynamic>;
+    final rawIngredients = (map['ingredients'] as List? ?? []);
+    final adapted = Meal(
+      id: 'adapted_${recipe.id}_${DateTime.now().millisecondsSinceEpoch}',
+      type: recipe.type,
+      typeLabel: recipe.typeLabel,
+      emoji: recipe.emoji,
+      title: map['title']?.toString() ?? recipe.title,
+      kcal: map['kcal'] is int ? map['kcal'] as int : (int.tryParse(map['kcal']?.toString() ?? '') ?? recipe.kcal),
+      protein: recipe.protein,
+      difficulty: map['difficulty']?.toString() ?? recipe.difficulty,
+      time: map['time']?.toString() ?? recipe.time,
+      locked: false,
+      photo: recipe.photo,
+      color: recipe.color,
+      ingredients: rawIngredients.map((e) {
+        final m = e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{};
+        return Ingredient(
+          name: m['name']?.toString() ?? '',
+          qty: m['qty']?.toString() ?? '',
+          photo: '',
+        );
+      }).toList(),
+      steps: (map['steps'] as List? ?? []).map((e) => e.toString()).toList(),
+      prepTimeMin: recipe.prepTimeMin,
+      cookTimeMin: recipe.cookTimeMin,
+    );
+    return adapted;
   }
 }

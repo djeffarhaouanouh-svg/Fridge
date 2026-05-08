@@ -29,11 +29,12 @@ class BottomNav extends ConsumerWidget {
     final bottom = MediaQuery.of(context).viewPadding.bottom;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 8),
+      padding: EdgeInsets.fromLTRB(24, 0, 24, bottom + 8),
       child: Row(
         children: [
           // ── Glass pill (3 tabs) ──────────────────────────────────
-          ClipRRect(
+          Expanded(
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
@@ -55,12 +56,10 @@ class BottomNav extends ConsumerWidget {
                     ],
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: List.generate(3, (i) {
                       final tabIdx = _tabIndices[i];
                       final isActive = selected == tabIdx;
-                      return SizedBox(
-                        width: 60,
+                      return Expanded(
                         child: GestureDetector(
                           onTap: () => _navigate(context, ref, tabIdx),
                           behavior: HitTestBehavior.opaque,
@@ -69,7 +68,7 @@ class BottomNav extends ConsumerWidget {
                               duration: const Duration(milliseconds: 220),
                               curve: Curves.easeInOutCubic,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 9),
+                                  horizontal: 18, vertical: 9),
                               decoration: BoxDecoration(
                                 color: isActive
                                     ? Colors.white.withValues(alpha: 0.18)
@@ -92,8 +91,9 @@ class BottomNav extends ConsumerWidget {
                 ),
               ),
             ),
+          ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
 
           // ── Camera button ────────────────────────────────────────
           GestureDetector(
@@ -113,9 +113,9 @@ class BottomNav extends ConsumerWidget {
                 ],
               ),
               child: const Icon(
-                Icons.filter_center_focus,
+                Icons.camera_alt_rounded,
                 color: Colors.white,
-                size: 24,
+                size: 22,
               ),
             ),
           ),

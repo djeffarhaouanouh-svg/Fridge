@@ -1156,7 +1156,7 @@ void _showAllergiesSheet(
   WidgetRef ref,
   UserProfileNotifier notifier,
 ) {
-  const options = ['Gluten', 'Lactose', 'Noix', 'Œufs', 'Fruits de mer', 'Soja'];
+  const options = ['Gluten', 'Lactose', 'Noix', 'Œufs', 'Fruits de mer', 'Soja', 'Aucune'];
   showModalBottomSheet(
     context: context,
     backgroundColor: _sheetBg(context),

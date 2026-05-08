@@ -909,14 +909,13 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                                                   style: GoogleFonts.inter(
                                                     fontSize: 13.5,
                                                     fontWeight: FontWeight.w600,
-                                                    color: Theme.of(context).brightness == Brightness.dark
-                                                        ? Colors.white70 : AppTokens.ink,
+                                                    color: Colors.white,
                                                   ),
                                                   children: [
-                                                    const TextSpan(text: 'Ajoute une '),
-                                                    TextSpan(text: 'photo', style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppTokens.coral)),
-                                                    const TextSpan(text: ' ou choisis un '),
-                                                    TextSpan(text: 'plat', style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppTokens.coral)),
+                                                    TextSpan(text: 'Ajoute', style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppTokens.coral)),
+                                                    const TextSpan(text: ' une photo ou '),
+                                                    TextSpan(text: 'choisis', style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppTokens.coral)),
+                                                    const TextSpan(text: ' un plat'),
                                                   ],
                                                 ),
                                               ),

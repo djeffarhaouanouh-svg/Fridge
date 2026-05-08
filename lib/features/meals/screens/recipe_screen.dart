@@ -563,7 +563,7 @@ class _AdaptRecipeButtonState extends ConsumerState<_AdaptRecipeButton> {
               const Icon(Icons.auto_fix_high_rounded, size: 18, color: AppTokens.coral),
             const SizedBox(width: 8),
             Text(
-              _loading ? 'Adaptation en cours…' : 'Adapter avec mon frigo',
+              _loading ? 'Adaptation en cours…' : 'Adapter avec mes ingrédients',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

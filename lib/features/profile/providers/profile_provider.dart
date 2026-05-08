@@ -4,7 +4,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/services/neon_service.dart';
 import '../../../core/services/user_service.dart';
 
-enum CookingObjective { weightLoss, muscleGain, healthy, learn }
+enum CookingObjective { weightLoss, muscleGain, healthy, learn, maintain }
 enum CookingLevel { beginner, intermediate, advanced, expert }
 enum AiTone { coach, chef, ami }
 enum ThemePreference { light, dark }
@@ -270,6 +270,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
 
         CookingObjective.healthy => 'manger_sainement',
         CookingObjective.learn => 'apprendre_cuisiner',
+        CookingObjective.maintain => 'garder_ligne',
         null => null,
       };
 
@@ -279,6 +280,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
 
         'manger_sainement' => CookingObjective.healthy,
         'apprendre_cuisiner' => CookingObjective.learn,
+        'garder_ligne' => CookingObjective.maintain,
         _ => null,
       };
 

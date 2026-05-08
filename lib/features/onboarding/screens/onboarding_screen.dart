@@ -60,6 +60,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _ObjectiveTileData(label: 'Prise de masse', icon: Icons.fitness_center_outlined, value: CookingObjective.muscleGain),
     _ObjectiveTileData(label: 'Manger sainement', icon: Icons.eco_outlined, value: CookingObjective.healthy),
     _ObjectiveTileData(label: 'Apprendre à cuisiner', icon: Icons.school_outlined, value: CookingObjective.learn),
+    _ObjectiveTileData(label: 'Garder la ligne', icon: Icons.straighten_outlined, value: CookingObjective.maintain),
   ];
 
   static const _levelTiles = <_LevelTileData>[

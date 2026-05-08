@@ -152,6 +152,7 @@ class ClaudeService {
 
       CookingObjective.healthy => 'Manger sainement',
       CookingObjective.learn => 'Apprendre à cuisiner',
+      CookingObjective.maintain => 'Garder la ligne',
     };
   }
 

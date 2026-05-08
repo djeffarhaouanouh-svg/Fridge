@@ -1044,6 +1044,7 @@ String _objectiveLabel(CookingObjective? objective) => switch (objective) {
 
       CookingObjective.healthy => 'Manger sainement',
       CookingObjective.learn => 'Apprendre à cuisiner',
+      CookingObjective.maintain => 'Garder la ligne',
       null => 'Non défini',
     };
 
@@ -1087,6 +1088,10 @@ void _showObjectiveSheet(
           ListTile(
             title: Text('Apprendre à cuisiner', style: TextStyle(color: _sheetText(context))),
             onTap: () { notifier.setObjective(CookingObjective.learn); Navigator.pop(context); },
+          ),
+          ListTile(
+            title: Text('Garder la ligne', style: TextStyle(color: _sheetText(context))),
+            onTap: () { notifier.setObjective(CookingObjective.maintain); Navigator.pop(context); },
           ),
         ],
       ),

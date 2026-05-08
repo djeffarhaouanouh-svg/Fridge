@@ -1043,6 +1043,10 @@ String _objectiveLabel(CookingObjective? objective) => switch (objective) {
       CookingObjective.muscleGain => 'Prise de masse',
       CookingObjective.family => 'Famille',
       CookingObjective.passion => 'Passion cuisine',
+      CookingObjective.healthy => 'Manger sainement',
+      CookingObjective.learn => 'Apprendre à cuisiner',
+      CookingObjective.budget => 'Petit budget',
+      CookingObjective.quick => 'Repas rapides',
       null => 'Non défini',
     };
 
@@ -1073,31 +1077,35 @@ void _showObjectiveSheet(
         children: [
           ListTile(
             title: Text('Perte de poids', style: TextStyle(color: _sheetText(context))),
-            onTap: () {
-              notifier.setObjective(CookingObjective.weightLoss);
-              Navigator.pop(context);
-            },
+            onTap: () { notifier.setObjective(CookingObjective.weightLoss); Navigator.pop(context); },
           ),
           ListTile(
             title: Text('Prise de masse', style: TextStyle(color: _sheetText(context))),
-            onTap: () {
-              notifier.setObjective(CookingObjective.muscleGain);
-              Navigator.pop(context);
-            },
+            onTap: () { notifier.setObjective(CookingObjective.muscleGain); Navigator.pop(context); },
+          ),
+          ListTile(
+            title: Text('Manger sainement', style: TextStyle(color: _sheetText(context))),
+            onTap: () { notifier.setObjective(CookingObjective.healthy); Navigator.pop(context); },
           ),
           ListTile(
             title: Text('Famille', style: TextStyle(color: _sheetText(context))),
-            onTap: () {
-              notifier.setObjective(CookingObjective.family);
-              Navigator.pop(context);
-            },
+            onTap: () { notifier.setObjective(CookingObjective.family); Navigator.pop(context); },
+          ),
+          ListTile(
+            title: Text('Apprendre à cuisiner', style: TextStyle(color: _sheetText(context))),
+            onTap: () { notifier.setObjective(CookingObjective.learn); Navigator.pop(context); },
           ),
           ListTile(
             title: Text('Passion cuisine', style: TextStyle(color: _sheetText(context))),
-            onTap: () {
-              notifier.setObjective(CookingObjective.passion);
-              Navigator.pop(context);
-            },
+            onTap: () { notifier.setObjective(CookingObjective.passion); Navigator.pop(context); },
+          ),
+          ListTile(
+            title: Text('Petit budget', style: TextStyle(color: _sheetText(context))),
+            onTap: () { notifier.setObjective(CookingObjective.budget); Navigator.pop(context); },
+          ),
+          ListTile(
+            title: Text('Repas rapides', style: TextStyle(color: _sheetText(context))),
+            onTap: () { notifier.setObjective(CookingObjective.quick); Navigator.pop(context); },
           ),
         ],
       ),

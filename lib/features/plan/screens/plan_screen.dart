@@ -50,6 +50,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
   }
   final _breakfastScrollController = ScrollController();
   final _lunchScrollController = ScrollController();
+  final _snackScrollController = ScrollController();
   final _dinnerScrollController = ScrollController();
 
   static const _weekdayToFr = {
@@ -116,6 +117,9 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     if (_lunchScrollController.hasClients) {
       _lunchScrollController.animateTo(cardOffset, duration: dur, curve: curve);
     }
+    if (_snackScrollController.hasClients) {
+      _snackScrollController.animateTo(cardOffset, duration: dur, curve: curve);
+    }
     if (_dinnerScrollController.hasClients) {
       _dinnerScrollController.animateTo(cardOffset, duration: dur, curve: curve);
     }
@@ -159,6 +163,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     _dayScrollController.dispose();
     _breakfastScrollController.dispose();
     _lunchScrollController.dispose();
+    _snackScrollController.dispose();
     _dinnerScrollController.dispose();
     super.dispose();
   }
@@ -225,6 +230,60 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                         dayLabel: '${frDays[i]} ${days[i].day}',
                         mealType: 'Déjeuner',
                         mealName: planMap[_isoDate(days[i])]?.lunch.name ?? '',
+                      ),
+                    )),
+                  ),
+                  const SizedBox(height: 20),
+
+                  _MealRow(
+                    label: 'PETIT DÉJEUNER',
+                    mealType: 'Petit déjeuner',
+                    days: days,
+                    frDays: frDays,
+                    slotPhotos: slotPhotos,
+                    slotAnalyses: slotAnalyses,
+                    meals: List.generate(days.length, (i) {
+                      final key = '${_isoDate(days[i])}_Petit déjeuner';
+                      return selections[key]?.title ?? '';
+                    }),
+                    selectedMeals: List.generate(days.length, (i) {
+                      return selections['${_isoDate(days[i])}_Petit déjeuner'];
+                    }),
+                    scrollController: _breakfastScrollController,
+                    selectedDayIndex: _selectedDayIndex,
+                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => PlanMealDetailScreen(
+                        day: days[i],
+                        dayLabel: '${frDays[i]} ${days[i].day}',
+                        mealType: 'Petit déjeuner',
+                        mealName: '',
+                      ),
+                    )),
+                  ),
+                  const SizedBox(height: 20),
+
+                  _MealRow(
+                    label: 'EN CAS',
+                    mealType: 'En cas',
+                    days: days,
+                    frDays: frDays,
+                    slotPhotos: slotPhotos,
+                    slotAnalyses: slotAnalyses,
+                    meals: List.generate(days.length, (i) {
+                      final key = '${_isoDate(days[i])}_En cas';
+                      return selections[key]?.title ?? '';
+                    }),
+                    selectedMeals: List.generate(days.length, (i) {
+                      return selections['${_isoDate(days[i])}_En cas'];
+                    }),
+                    scrollController: _snackScrollController,
+                    selectedDayIndex: _selectedDayIndex,
+                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => PlanMealDetailScreen(
+                        day: days[i],
+                        dayLabel: '${frDays[i]} ${days[i].day}',
+                        mealType: 'En cas',
+                        mealName: '',
                       ),
                     )),
                   ),

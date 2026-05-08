@@ -332,6 +332,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
           ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 30, 18, 14),
+              child: Text(
+                'Collections du moment',
+                style: GoogleFonts.fraunces(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor,
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _mockHomeCollections.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 18,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.64,
+                ),
+                itemBuilder: (context, i) => _LargeCollectionCard(
+                  data: _mockHomeCollections[i],
+                ),
+              ),
+            ),
+          ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 110)),
         ],
@@ -423,6 +455,51 @@ final List<Meal> _mockPopularMeals = [
     color: '#EB5757',
   ),
 ];
+
+final List<_HomeCollectionCardData> _mockHomeCollections = [
+  _HomeCollectionCardData(
+    title: 'Étudiant fauché',
+    imageUrl:
+        'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=900',
+    rating: 4.7,
+    reviews: 192,
+  ),
+  _HomeCollectionCardData(
+    title: 'Plats express',
+    imageUrl:
+        'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900',
+    rating: 4.6,
+    reviews: 158,
+  ),
+  _HomeCollectionCardData(
+    title: 'Salades',
+    imageUrl:
+        'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=900',
+    rating: 4.8,
+    reviews: 141,
+  ),
+  _HomeCollectionCardData(
+    title: 'Desserts maison',
+    imageUrl:
+        'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=900',
+    rating: 4.5,
+    reviews: 117,
+  ),
+];
+
+class _HomeCollectionCardData {
+  final String title;
+  final String imageUrl;
+  final double rating;
+  final int reviews;
+
+  const _HomeCollectionCardData({
+    required this.title,
+    required this.imageUrl,
+    required this.rating,
+    required this.reviews,
+  });
+}
 
 class _HeroCard extends ConsumerWidget {
   final Meal meal;
@@ -678,6 +755,86 @@ class _IngredientPill extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LargeCollectionCard extends StatelessWidget {
+  final _HomeCollectionCardData data;
+  const _LargeCollectionCard({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                MealImage(
+                  photo: data.imageUrl,
+                  fallbackKey: data.title,
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.28),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          data.title,
+          style: GoogleFonts.inter(
+            fontSize: 23,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : AppTokens.ink,
+            height: 1.04,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 5),
+        Row(
+          children: [
+            ...List.generate(
+              5,
+              (_) => Icon(Icons.star_rounded, size: 15, color: AppTokens.coral),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '${data.rating.toStringAsFixed(1)}/5',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppTokens.ink,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '(${data.reviews} avis)',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white70 : AppTokens.muted,
+          ),
+        ),
+      ],
     );
   }
 }

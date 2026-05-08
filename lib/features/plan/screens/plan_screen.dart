@@ -210,10 +210,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
                   Center(
                     child: Text(
-                      'Ici, planifie ta semaine et compte tes calories',
+                      'Clic sur les vignettes, planifie tes repas et suis tes calories',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.fraunces(
-                        fontSize: 16,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                         color: isDark ? Colors.white70 : AppTokens.inkSoft,
                       ),

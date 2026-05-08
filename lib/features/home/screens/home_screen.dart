@@ -336,7 +336,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 30, 18, 14),
               child: Text(
-                'Pour le dîner',
+                'Étudiant fauché',
                 style: GoogleFonts.fraunces(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
@@ -361,7 +361,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
               child: Text(
-                'Pour compléter le repas',
+                'Salades',
                 style: GoogleFonts.fraunces(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
@@ -477,8 +477,7 @@ final List<Meal> _mockPopularMeals = [
 final List<_HomeCollectionCardData> _mockHomeCollections = [
   _HomeCollectionCardData(
     title: 'Étudiant fauché',
-    imageUrl:
-        'C:/Users/Thomas/.cursor/projects/c-Users-Thomas-Downloads-fridge-app/assets/c__Users_Thomas_AppData_Roaming_Cursor_User_workspaceStorage_a6d9a68e699442995fb252014bacbcb5_images_image-88eede9f-a5f7-4ade-86a8-a06630a01024.png',
+    imageUrl: 'assets/images/user-home-card.png',
     rating: 4.7,
     reviews: 192,
   ),
@@ -818,10 +817,10 @@ class _LargeCollectionCard extends StatelessWidget {
         Text(
           data.title,
           style: GoogleFonts.inter(
-            fontSize: 18,
+            fontSize: 15.5,
             fontWeight: FontWeight.w600,
             color: isDark ? Colors.white : AppTokens.ink,
-            height: 1.12,
+            height: 1.15,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

@@ -39,7 +39,7 @@ class BottomNav extends ConsumerWidget {
         children: [
           // ── Glass pill (3 tabs) ──────────────────────────────────
           SizedBox(
-            width: 190,
+            width: 230,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: BackdropFilter(

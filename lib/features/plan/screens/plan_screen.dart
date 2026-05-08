@@ -163,6 +163,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final weekPlan = ref.watch(weekPlanProvider);
     final selections = ref.watch(planMealSelectionsProvider);
     final slotPhotos = ref.watch(planSlotPhotosProvider);
+    final slotAnalyses = ref.watch(planSlotAnalysisProvider);
     final isLoading = status == PlanStatus.loading;
     final days = _days;
     final weekNum = _weekNumber(days.first);
@@ -263,6 +264,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     days: days,
                     frDays: frDays,
                     slotPhotos: slotPhotos,
+                    slotAnalyses: slotAnalyses,
                     meals: List.generate(days.length, (i) {
                       final key = '${_isoDate(days[i])}_Déjeuner';
                       return selections[key]?.title ?? planMap[_isoDate(days[i])]?.lunch.name ?? '';
@@ -289,6 +291,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     days: days,
                     frDays: frDays,
                     slotPhotos: slotPhotos,
+                    slotAnalyses: slotAnalyses,
                     meals: List.generate(days.length, (i) {
                       final key = '${_isoDate(days[i])}_Dîner';
                       return selections[key]?.title ?? planMap[_isoDate(days[i])]?.dinner.name ?? '';
@@ -347,6 +350,7 @@ class _MealRow extends StatelessWidget {
   final int selectedDayIndex;
   final void Function(int)? onCardTap;
   final Map<String, Uint8List> slotPhotos;
+  final Map<String, Map<String, dynamic>> slotAnalyses;
 
   const _MealRow({
     required this.label,
@@ -358,6 +362,7 @@ class _MealRow extends StatelessWidget {
     required this.scrollController,
     required this.selectedDayIndex,
     required this.slotPhotos,
+    required this.slotAnalyses,
     this.onCardTap,
   });
 
@@ -465,13 +470,20 @@ class _MealRow extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(mealName.isNotEmpty ? mealName : '—',
-                            style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w600,
-                              color: titleColor,
-                            ),
-                            maxLines: 2, overflow: TextOverflow.ellipsis,
-                          ),
+                          Builder(builder: (_) {
+                            final analysis = slotAnalyses[_slotKey(days[i], mealType)];
+                            final kcal = analysis != null ? analysis['kcal'] : null;
+                            final displayText = kcal != null
+                                ? '$kcal kcal'
+                                : (mealName.isNotEmpty ? mealName : '—');
+                            return Text(displayText,
+                              style: GoogleFonts.inter(
+                                fontSize: 12, fontWeight: FontWeight.w600,
+                                color: kcal != null ? AppTokens.coral : titleColor,
+                              ),
+                              maxLines: 2, overflow: TextOverflow.ellipsis,
+                            );
+                          }),
                         ],
                       ),
                     ),

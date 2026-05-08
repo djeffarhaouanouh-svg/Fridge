@@ -1190,7 +1190,7 @@ void _showDietsSheet(
   WidgetRef ref,
   UserProfileNotifier notifier,
 ) {
-  const options = ['Végétarien', 'Végétalien', 'Halal', 'Keto', 'Sans gluten', 'Sans lactose'];
+  const options = ['Aucun', 'Végétarien', 'Végétalien', 'Halal', 'Sans gluten', 'Sans lactose'];
   showModalBottomSheet(
     context: context,
     backgroundColor: _sheetBg(context),

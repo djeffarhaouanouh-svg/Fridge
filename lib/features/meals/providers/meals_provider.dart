@@ -139,3 +139,7 @@ final planMealSelectionsProvider = StateProvider<Map<String, Meal>>((ref) => {})
 
 // Photos custom ajoutées sur un créneau du planning (clé identique)
 final planSlotPhotosProvider = StateProvider<Map<String, Uint8List>>((ref) => {});
+
+// Résultats d'analyse IA par créneau
+final planSlotAnalysisProvider =
+    StateProvider<Map<String, Map<String, dynamic>>>((ref) => {});

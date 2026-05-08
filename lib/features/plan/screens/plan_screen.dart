@@ -481,11 +481,27 @@ class PlanMealDetailScreen extends ConsumerStatefulWidget {
 
 class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
   Meal? _selected;
-  bool _initialized = false;
   Uint8List? _pickedPhoto;
   Map<String, dynamic>? _analysis;
   bool _analyzing = false;
   final _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final key = _slotKey;
+      final savedMeal = ref.read(planMealSelectionsProvider)[key];
+      final savedPhoto = ref.read(planSlotPhotosProvider)[key];
+      final savedAnalysis = ref.read(planSlotAnalysisProvider)[key];
+      setState(() {
+        if (savedMeal != null) _selected = savedMeal;
+        if (savedPhoto != null) _pickedPhoto = savedPhoto;
+        if (savedAnalysis != null) _analysis = savedAnalysis;
+      });
+    });
+  }
 
   String get _slotKey {
     final d = widget.day;
@@ -515,6 +531,9 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
     final photos = Map<String, Uint8List>.from(ref.read(planSlotPhotosProvider));
     photos.remove(_slotKey);
     ref.read(planSlotPhotosProvider.notifier).state = photos;
+    final analyses = Map<String, Map<String, dynamic>>.from(ref.read(planSlotAnalysisProvider));
+    analyses.remove(_slotKey);
+    ref.read(planSlotAnalysisProvider.notifier).state = analyses;
   }
 
   Future<void> _pickPhoto() async {
@@ -560,7 +579,11 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
     try {
       final result = await ClaudeService().analyzePhoto(bytes);
-      if (mounted) setState(() { _analysis = result; _analyzing = false; });
+      if (!mounted) return;
+      setState(() { _analysis = result; _analyzing = false; });
+      final analyses = Map<String, Map<String, dynamic>>.from(ref.read(planSlotAnalysisProvider));
+      analyses[_slotKey] = result;
+      ref.read(planSlotAnalysisProvider.notifier).state = analyses;
     } catch (_) {
       if (mounted) setState(() => _analyzing = false);
     }
@@ -573,14 +596,6 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_initialized) {
-      _initialized = true;
-      final saved = ref.read(planMealSelectionsProvider)[_slotKey];
-      if (saved != null) _selected = saved;
-      final savedPhoto = ref.read(planSlotPhotosProvider)[_slotKey];
-      if (savedPhoto != null) _pickedPhoto = savedPhoto;
-    }
-
     final allMeals = ref.watch(mealsProvider);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
     final selections = ref.watch(planMealSelectionsProvider);

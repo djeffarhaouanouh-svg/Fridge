@@ -903,20 +903,13 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                                                 color: AppTokens.coral,
                                                 size: 36),
                                               const SizedBox(height: 10),
-                                              RichText(
+                                              Text(
+                                                'Clic pour ajouter une photo de ton plat',
                                                 textAlign: TextAlign.center,
-                                                text: TextSpan(
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 13.5,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.white,
-                                                  ),
-                                                  children: [
-                                                    TextSpan(text: 'Ajoute', style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppTokens.coral)),
-                                                    const TextSpan(text: ' une photo ou '),
-                                                    TextSpan(text: 'choisis', style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppTokens.coral)),
-                                                    const TextSpan(text: ' un plat'),
-                                                  ],
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13.5,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppTokens.coral,
                                                 ),
                                               ),
                                             ],

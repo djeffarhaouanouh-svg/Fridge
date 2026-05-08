@@ -1328,15 +1328,19 @@ final _saladMeals = [
   ),
 ];
 
-class _MealPickCard extends StatelessWidget {
+class _MealPickCard extends ConsumerWidget {
   final Meal meal;
   final bool isSelected;
   final VoidCallback onTap;
   const _MealPickCard({required this.meal, required this.onTap, this.isSelected = false});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final allMeals = ref.watch(mealsProvider);
+    final liveMeal = allMeals.firstWhere((m) => m.id == meal.id, orElse: () => meal);
+    final isFav = liveMeal.isFavorite;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1358,12 +1362,34 @@ class _MealPickCard extends StatelessWidget {
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(AppTokens.radiusMd),
               ),
-              child: SizedBox(
-                height: 100, width: 130,
-                child: MealImage(
-                  photo: meal.photo,
-                  fallbackKey: meal.title,
-                ),
+              child: Stack(
+                children: [
+                  SizedBox(
+                    height: 100, width: 130,
+                    child: MealImage(
+                      photo: meal.photo,
+                      fallbackKey: meal.title,
+                    ),
+                  ),
+                  Positioned(
+                    top: 6, right: 6,
+                    child: GestureDetector(
+                      onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
+                      child: Container(
+                        width: 28, height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          size: 15,
+                          color: isFav ? AppTokens.coral : Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(

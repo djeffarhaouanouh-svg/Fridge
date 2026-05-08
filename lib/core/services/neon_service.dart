@@ -827,6 +827,9 @@ class NeonService {
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS scan_meals_json TEXT',
       );
       await execute(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS adapted_meals_json TEXT',
+      );
+      await execute(
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS cooking_level TEXT',
       );
       await execute(
@@ -1134,6 +1137,31 @@ CREATE TABLE IF NOT EXISTS meal_plans (
         jsonEncode(map.values.map((m) => m.toJson()).toList(growable: false));
     await execute(
       'UPDATE users SET scan_meals_json = \$1 WHERE id = \$2',
+      [encoded, kUserId],
+    );
+  }
+
+  Future<List<Meal>> loadAdaptedMeals() async {
+    final rows = await query(
+      'SELECT adapted_meals_json FROM users WHERE id = \$1',
+      [kUserId],
+    );
+    if (rows.isEmpty) return [];
+    final raw = rows.first['adapted_meals_json'];
+    if (raw == null) return [];
+    final str = raw.toString();
+    if (str.isEmpty) return [];
+    final decoded = jsonDecode(str);
+    if (decoded is! List) return [];
+    return decoded
+        .map((e) => Meal.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<void> saveAdaptedMeals(List<Meal> meals) async {
+    final encoded = jsonEncode(meals.map((m) => m.toJson()).toList());
+    await execute(
+      'UPDATE users SET adapted_meals_json = \$1 WHERE id = \$2',
       [encoded, kUserId],
     );
   }

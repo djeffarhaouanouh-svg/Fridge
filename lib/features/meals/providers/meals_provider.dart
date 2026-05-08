@@ -30,30 +30,46 @@ final adaptedMealsProvider =
 );
 
 class AdaptedMealsNotifier extends StateNotifier<List<Meal>> {
-  static const _key = 'adapted_meals_json';
+  static const _prefKey = 'adapted_meals_json';
+  final _db = NeonService();
 
   AdaptedMealsNotifier() : super([]) {
     _load();
   }
 
   Future<void> _load() async {
+    // Cache local d'abord pour affichage immédiat
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_key);
-      if (raw == null) return;
-      final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
-      state = list.map(Meal.fromJson).toList();
+      final raw = prefs.getString(_prefKey);
+      if (raw != null) {
+        final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+        state = list.map(Meal.fromJson).toList();
+      }
+    } catch (_) {}
+    // Puis synchronise depuis Neon
+    try {
+      final remote = await _db.loadAdaptedMeals();
+      if (remote.isNotEmpty) {
+        state = remote;
+        _saveToPrefs();
+      }
     } catch (_) {}
   }
 
   Future<void> addAdapted(Meal meal) async {
-    // Évite les doublons par id
     if (state.any((m) => m.id == meal.id)) return;
     state = [meal, ...state];
+    _saveToPrefs();
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_key, jsonEncode(state.map((m) => m.toJson()).toList()));
+      await _db.saveAdaptedMeals(state);
     } catch (_) {}
+  }
+
+  void _saveToPrefs() {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString(_prefKey, jsonEncode(state.map((m) => m.toJson()).toList()));
+    });
   }
 }
 

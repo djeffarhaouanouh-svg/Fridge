@@ -7,6 +7,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/glass_button.dart';
 import '../../../core/services/claude_service.dart';
+import '../../../core/services/neon_service.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
@@ -23,6 +24,29 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
   int _selectedDayIndex = 0;
 
   final _dayScrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSlotExtras());
+  }
+
+  Future<void> _loadSlotExtras() async {
+    try {
+      final extras = await NeonService().loadPlanSlotExtras();
+      if (!mounted) return;
+      final photos = <String, Uint8List>{};
+      final analyses = <String, Map<String, dynamic>>{};
+      for (final entry in extras.entries) {
+        if (entry.value.photo != null) photos[entry.key] = entry.value.photo!;
+        if (entry.value.analysis != null) analyses[entry.key] = entry.value.analysis!;
+      }
+      ref.read(planSlotPhotosProvider.notifier).state = photos;
+      ref.read(planSlotAnalysisProvider.notifier).state = analyses;
+    } catch (e) {
+      debugPrint('_loadSlotExtras: $e');
+    }
+  }
   final _breakfastScrollController = ScrollController();
   final _lunchScrollController = ScrollController();
   final _dinnerScrollController = ScrollController();
@@ -534,6 +558,10 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
     final analyses = Map<String, Map<String, dynamic>>.from(ref.read(planSlotAnalysisProvider));
     analyses.remove(_slotKey);
     ref.read(planSlotAnalysisProvider.notifier).state = analyses;
+    NeonService().removePlanSlotPhoto(_slotKey).catchError((e) {
+      debugPrint('removePlanSlotPhoto: $e');
+      return null;
+    });
   }
 
   Future<void> _pickPhoto() async {
@@ -584,6 +612,10 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
       final analyses = Map<String, Map<String, dynamic>>.from(ref.read(planSlotAnalysisProvider));
       analyses[_slotKey] = result;
       ref.read(planSlotAnalysisProvider.notifier).state = analyses;
+      NeonService().savePlanSlotPhoto(_slotKey, bytes, result).catchError((e) {
+        debugPrint('savePlanSlotPhoto: $e');
+        return null;
+      });
     } catch (_) {
       if (mounted) setState(() => _analyzing = false);
     }

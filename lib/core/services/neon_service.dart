@@ -655,6 +655,12 @@ class NeonService {
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS cooking_level TEXT',
       );
       await execute(
+        'ALTER TABLE meal_plans ADD COLUMN IF NOT EXISTS slot_photo_base64 TEXT',
+      );
+      await execute(
+        'ALTER TABLE meal_plans ADD COLUMN IF NOT EXISTS slot_analysis_json JSONB',
+      );
+      await execute(
         'ALTER TABLE recipes ADD COLUMN IF NOT EXISTS prep_time_min INTEGER DEFAULT 0',
       );
       await execute(
@@ -1082,6 +1088,70 @@ CREATE TABLE IF NOT EXISTS meal_plans (
     return decoded.map(
       (k, v) => MapEntry(k, Meal.fromJson(v as Map<String, dynamic>)),
     );
+  }
+
+  // ── PLAN SLOT PHOTOS & ANALYSES ────────────────────────────────────────────
+
+  Future<void> savePlanSlotPhoto(
+      String slotKey, Uint8List bytes, Map<String, dynamic>? analysis) async {
+    await _ensureUserRowExists();
+    final sep = slotKey.indexOf('_');
+    final date = slotKey.substring(0, sep);
+    final mealType = slotKey.substring(sep + 1);
+    final photoB64 = base64Encode(bytes);
+    final analysisJson = analysis != null ? jsonEncode(analysis) : null;
+    await execute('''
+      INSERT INTO meal_plans (user_id, date, meal_type, slot_photo_base64, slot_analysis_json)
+      VALUES (\$1::uuid, \$2::date, \$3, \$4, \$5::jsonb)
+      ON CONFLICT (user_id, date, meal_type) DO UPDATE SET
+        slot_photo_base64  = EXCLUDED.slot_photo_base64,
+        slot_analysis_json = EXCLUDED.slot_analysis_json
+    ''', [kUserId, date, mealType, photoB64, analysisJson]);
+  }
+
+  Future<void> removePlanSlotPhoto(String slotKey) async {
+    final sep = slotKey.indexOf('_');
+    final date = slotKey.substring(0, sep);
+    final mealType = slotKey.substring(sep + 1);
+    await execute('''
+      UPDATE meal_plans
+      SET slot_photo_base64 = NULL, slot_analysis_json = NULL
+      WHERE user_id = \$1::uuid AND date = \$2::date AND meal_type = \$3
+    ''', [kUserId, date, mealType]);
+    await execute('''
+      DELETE FROM meal_plans
+      WHERE user_id = \$1::uuid AND date = \$2::date AND meal_type = \$3
+        AND recipe_id IS NULL
+    ''', [kUserId, date, mealType]);
+  }
+
+  Future<Map<String, ({Uint8List? photo, Map<String, dynamic>? analysis})>>
+      loadPlanSlotExtras() async {
+    final rows = await query('''
+      SELECT date::text AS date, meal_type,
+             slot_photo_base64,
+             slot_analysis_json::text AS slot_analysis_json
+      FROM meal_plans
+      WHERE user_id = \$1::uuid
+        AND (slot_photo_base64 IS NOT NULL OR slot_analysis_json IS NOT NULL)
+    ''', [kUserId]);
+
+    final result =
+        <String, ({Uint8List? photo, Map<String, dynamic>? analysis})>{};
+    for (final row in rows) {
+      final date = row['date'] as String?;
+      final mealType = row['meal_type'] as String?;
+      if (date == null || mealType == null) continue;
+      final key = '${date}_$mealType';
+      final photoB64 = row['slot_photo_base64'] as String?;
+      final analysisRaw = row['slot_analysis_json'] as String?;
+      final photo = photoB64 != null ? base64Decode(photoB64) : null;
+      final analysis = analysisRaw != null
+          ? jsonDecode(analysisRaw) as Map<String, dynamic>?
+          : null;
+      result[key] = (photo: photo, analysis: analysis);
+    }
+    return result;
   }
 
   static String _isoLocal(DateTime d) =>

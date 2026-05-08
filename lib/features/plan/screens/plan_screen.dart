@@ -773,7 +773,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
                   const SizedBox(height: 28),
 
-                  if (meal == null && availableFavorites.isNotEmpty) ...[
+                  if (meal == null && _pickedPhoto == null && availableFavorites.isNotEmpty) ...[
                     _SectionTitle(title: 'Mes favoris'),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -791,7 +791,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  if (meal == null && availableAllMeals.isNotEmpty) ...[
+                  if (meal == null && _pickedPhoto == null && availableAllMeals.isNotEmpty) ...[
                     _SectionTitle(title: 'Plats de mon frigo'),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -810,6 +810,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                   ],
 
                   if (meal == null &&
+                      _pickedPhoto == null &&
                       availableFavorites.isEmpty &&
                       availableAllMeals.isEmpty)
                     Padding(

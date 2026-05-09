@@ -739,10 +739,14 @@ class NeonService {
         }).toList();
       } catch (_) {}
 
+      final title = ps(['title', 'name'], fallback: 'Recette');
+      final rawPhoto = ps(['image_url', 'image', 'photo', 'thumbnail']);
+      final photo = rawPhoto.isNotEmpty ? rawPhoto : _sportImageFallback(title);
+
       out.add(Meal(
         id: rid,
-        title: ps(['title', 'name'], fallback: 'Recette'),
-        photo: ps(['image_url', 'image', 'photo', 'thumbnail']),
+        title: title,
+        photo: photo,
         kcal: pi(['calories', 'kcal', 'energy']),
         protein: 'moyen',
         difficulty: _difficultyToFr(ps(['difficulty', 'niveau'], fallback: 'facile')),
@@ -838,6 +842,50 @@ class NeonService {
       restTimeMin: restTimeMin,
       cookTimeMin: cookTimeMin,
     );
+  }
+
+  String _sportImageFallback(String title) {
+    final t = title.toLowerCase();
+    if (t.contains('shaker') || t.contains('whey') || t.contains('protéine') || t.contains('proteine')) {
+      return 'https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?w=600';
+    }
+    if (t.contains('poulet') || t.contains('chicken')) {
+      return 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?w=600';
+    }
+    if (t.contains('yaourt') || t.contains('yogurt') || t.contains('skyr')) {
+      return 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600';
+    }
+    if (t.contains('oeuf') || t.contains('omelette') || t.contains('œuf')) {
+      return 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=600';
+    }
+    if (t.contains('avoca')) {
+      return 'https://images.unsplash.com/photo-1601039641847-7857b994d704?w=600';
+    }
+    if (t.contains('quinoa') || t.contains('bowl')) {
+      return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600';
+    }
+    if (t.contains('fromage') || t.contains('cottage')) {
+      return 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a318?w=600';
+    }
+    if (t.contains('flocon') || t.contains('porridge') || t.contains('avoine')) {
+      return 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=600';
+    }
+    if (t.contains('thon') || t.contains('saumon') || t.contains('poisson')) {
+      return 'https://images.unsplash.com/photo-1499028344343-cd173ffc68a9?w=600';
+    }
+    if (t.contains('steak') || t.contains('boeuf') || t.contains('bœuf') || t.contains('viande')) {
+      return 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600';
+    }
+    if (t.contains('sandwich') || t.contains('pain')) {
+      return 'https://images.unsplash.com/photo-1553909489-cd47e0ef937b?w=600';
+    }
+    if (t.contains('riz') || t.contains('rice')) {
+      return 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=600';
+    }
+    if (t.contains('houmous') || t.contains('hummus') || t.contains('légume')) {
+      return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600';
+    }
+    return 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600';
   }
 
   String _trimDecimal(double x) {

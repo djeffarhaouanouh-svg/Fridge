@@ -12,6 +12,13 @@ import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
 import '../../meals/screens/recipe_screen.dart';
+import '../models/day_plan.dart';
+
+/// Clé stockage créneau plan : `YYYY-MM-DD_Type`.
+String planSlotStorageKey(DateTime day, String mealType) =>
+    '${day.year.toString().padLeft(4, '0')}-'
+    '${day.month.toString().padLeft(2, '0')}-'
+    '${day.day.toString().padLeft(2, '0')}_$mealType';
 
 class PlanScreen extends ConsumerStatefulWidget {
   const PlanScreen({super.key});
@@ -21,10 +28,7 @@ class PlanScreen extends ConsumerStatefulWidget {
 }
 
 class _PlanScreenState extends ConsumerState<PlanScreen> {
-  int _selectedDayIndex = 0;
   int _weekOffset = 0;
-
-  final _dayScrollController = ScrollController();
 
   @override
   void initState() {
@@ -48,14 +52,22 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       debugPrint('_loadSlotExtras: $e');
     }
   }
-  final _breakfastScrollController = ScrollController();
-  final _lunchScrollController = ScrollController();
-  final _snackScrollController = ScrollController();
-  final _dinnerScrollController = ScrollController();
-
-  static const _weekdayToFr = {
-    1: 'Lun', 2: 'Mar', 3: 'Mer', 4: 'Jeu', 5: 'Ven', 6: 'Sam', 7: 'Dim',
+  static const _weekdayLongFr = {
+    1: 'Lundi',
+    2: 'Mardi',
+    3: 'Mercredi',
+    4: 'Jeudi',
+    5: 'Vendredi',
+    6: 'Samedi',
+    7: 'Dimanche',
   };
+
+  static const _slotDefs = [
+    ('Petit déjeuner', 'Petit-déjeuner'),
+    ('Déjeuner', 'Déjeuner'),
+    ('En cas', 'En cas'),
+    ('Dîner', 'Dîner'),
+  ];
 
   static const _frMonths = [
     'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
@@ -70,59 +82,86 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     return List.generate(7, (i) => weekStart.add(Duration(days: i)));
   }
 
-  int _weekNumber(DateTime date) {
-    final startOfYear = DateTime(date.year, 1, 1);
-    final dayOfYear = date.difference(startOfYear).inDays + 1;
-    return ((dayOfYear - date.weekday + 10) / 7).floor();
-  }
-
   static String _isoDate(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-'
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  void _selectDay(int i) {
-    setState(() => _selectedDayIndex = i);
-    _scrollToDay(i);
+  void _prevWeek() => setState(() => _weekOffset--);
+  void _nextWeek() => setState(() => _weekOffset++);
+
+  String _defaultPlanMealName(String iso, String mealType, Map<String, DayPlan> planByDate) {
+    final dp = planByDate[iso];
+    if (dp == null) return '';
+    if (mealType == 'Déjeuner') return dp.lunch.name;
+    if (mealType == 'Dîner') return dp.dinner.name;
+    return '';
   }
 
-  void _prevWeek() => setState(() { _weekOffset--; _selectedDayIndex = 0; });
-  void _nextWeek() => setState(() { _weekOffset++; _selectedDayIndex = 0; });
+  String _slotLineTitle(
+    DateTime day,
+    String mealType,
+    Map<String, Meal> selections,
+    Map<String, DayPlan> planByDate,
+    Map<String, Map<String, dynamic>> slotAnalyses,
+  ) {
+    final key = planSlotStorageKey(day, mealType);
+    final sel = selections[key];
+    if (sel != null && sel.title.isNotEmpty) return sel.title;
+    final iso = _isoDate(day);
+    final fromPlan = _defaultPlanMealName(iso, mealType, planByDate);
+    if (fromPlan.isNotEmpty) return fromPlan;
+    final dish = slotAnalyses[key]?['dish_name'] as String?;
+    if (dish != null && dish.isNotEmpty) return dish;
+    return '';
+  }
 
-  void _scrollToDay(int i) {
-    final screenW = MediaQuery.of(context).size.width;
-    final contentW = screenW - 36;
+  void _openSlotEditor(DateTime day, String mealType, Map<String, DayPlan> planByDate) {
+    final iso = _isoDate(day);
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => PlanMealDetailScreen(
+        day: day,
+        dayLabel: '${day.day} ${_frMonths[day.month - 1]}',
+        mealType: mealType,
+        mealName: _defaultPlanMealName(iso, mealType, planByDate),
+      ),
+    ));
+  }
 
-    // Day pill: ~58px wide + 8px gap
-    const pillW = 58.0;
-    const pillGap = 8.0;
-    final pillOffset = ((i * (pillW + pillGap)) - (contentW - pillW) / 2)
-        .clamp(0.0, double.maxFinite);
-
-    // Meal card: 110px wide + 10px gap
-    const cardW = 110.0;
-    const cardGap = 10.0;
-    final cardOffset = ((i * (cardW + cardGap)) - (contentW - cardW) / 2)
-        .clamp(0.0, double.maxFinite);
-
-    const dur = Duration(milliseconds: 300);
-    const curve = Curves.easeInOut;
-
-    if (_dayScrollController.hasClients) {
-      _dayScrollController.animateTo(pillOffset, duration: dur, curve: curve);
-    }
-    if (_breakfastScrollController.hasClients) {
-      _breakfastScrollController.animateTo(cardOffset, duration: dur, curve: curve);
-    }
-    if (_lunchScrollController.hasClients) {
-      _lunchScrollController.animateTo(cardOffset, duration: dur, curve: curve);
-    }
-    if (_snackScrollController.hasClients) {
-      _snackScrollController.animateTo(cardOffset, duration: dur, curve: curve);
-    }
-    if (_dinnerScrollController.hasClients) {
-      _dinnerScrollController.animateTo(cardOffset, duration: dur, curve: curve);
-    }
+  void _openAddSlotMenu(DateTime day, Map<String, DayPlan> planByDate) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  child: Text(
+                    'Ajouter un repas',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                for (final pair in _slotDefs)
+                  ListTile(
+                    title: Text(pair.$2, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _openSlotEditor(day, pair.$1, planByDate);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _generatePlan() async {
@@ -159,16 +198,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
   }
 
   @override
-  void dispose() {
-    _dayScrollController.dispose();
-    _breakfastScrollController.dispose();
-    _lunchScrollController.dispose();
-    _snackScrollController.dispose();
-    _dinnerScrollController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final status = ref.watch(planStatusProvider);
     final weekPlan = ref.watch(weekPlanProvider);
@@ -177,164 +206,132 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final slotAnalyses = ref.watch(planSlotAnalysisProvider);
     final isLoading = status == PlanStatus.loading;
     final days = _days;
-    final planMap = {for (final d in weekPlan) d.date: d};
-    final frDays = days.map((d) => _weekdayToFr[d.weekday]!).toList();
+    final planByDate = {for (final d in weekPlan) d.date: d};
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleColor = isDark ? Colors.white : AppTokens.ink;
-    final mutedColor = isDark ? Colors.white70 : AppTokens.muted;
+
+    final pageBg = isDark ? const Color(0xFF121212) : const Color(0xFFF9F9F9);
+    final cardBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final ink = isDark ? Colors.white : const Color(0xFF000000);
+    final muted = isDark ? Colors.white54 : const Color(0xFF757575);
+    const mondayAccent = Color(0xFFD32F2F);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          const SliverToBoxAdapter(child: AppHeader(brand: true)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _WeekSelectorCard(
+      backgroundColor: pageBg,
+      body: Stack(
+        children: [
+          Positioned.fill(child: CustomPaint(painter: _PlanDotPatternPainter(isDark: isDark))),
+          CustomScrollView(
+            slivers: [
+              const SliverToBoxAdapter(child: AppHeader(brand: true)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+                  child: _PlanWeekNavBar(
                     days: days,
-                    frDays: frDays,
-                    selectedIndex: _selectedDayIndex,
                     frMonths: _frMonths,
-                    onDayTap: _selectDay,
                     onPrev: _prevWeek,
                     onNext: _nextWeek,
                     isDark: isDark,
-                    titleColor: titleColor,
-                    mutedColor: mutedColor,
+                    titleColor: ink,
                   ),
-                  const SizedBox(height: 22),
-
-                  Center(
-                    child: Text(
-                      'Clic sur les vignettes, planifie tes repas et suis tes calories',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.fraunces(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : AppTokens.inkSoft,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  _MealRow(
-                    label: 'PETIT DÉJEUNER',
-                    mealType: 'Petit déjeuner',
-                    days: days,
-                    frDays: frDays,
-                    slotPhotos: slotPhotos,
-                    slotAnalyses: slotAnalyses,
-                    meals: List.generate(days.length, (i) {
-                      final key = '${_isoDate(days[i])}_Petit déjeuner';
-                      return selections[key]?.title ?? '';
-                    }),
-                    selectedMeals: List.generate(days.length, (i) {
-                      return selections['${_isoDate(days[i])}_Petit déjeuner'];
-                    }),
-                    scrollController: _breakfastScrollController,
-                    selectedDayIndex: _selectedDayIndex,
-                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => PlanMealDetailScreen(
-                        day: days[i],
-                        dayLabel: '${frDays[i]} ${days[i].day}',
-                        mealType: 'Petit déjeuner',
-                        mealName: '',
-                      ),
-                    )),
-                  ),
-                  const SizedBox(height: 16),
-
-                  _MealRow(
-                    label: 'DÉJEUNER',
-                    mealType: 'Déjeuner',
-                    days: days,
-                    frDays: frDays,
-                    slotPhotos: slotPhotos,
-                    slotAnalyses: slotAnalyses,
-                    meals: List.generate(days.length, (i) {
-                      final key = '${_isoDate(days[i])}_Déjeuner';
-                      return selections[key]?.title ?? planMap[_isoDate(days[i])]?.lunch.name ?? '';
-                    }),
-                    selectedMeals: List.generate(days.length, (i) {
-                      return selections['${_isoDate(days[i])}_Déjeuner'];
-                    }),
-                    scrollController: _lunchScrollController,
-                    selectedDayIndex: _selectedDayIndex,
-                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => PlanMealDetailScreen(
-                        day: days[i],
-                        dayLabel: '${frDays[i]} ${days[i].day}',
-                        mealType: 'Déjeuner',
-                        mealName: planMap[_isoDate(days[i])]?.lunch.name ?? '',
-                      ),
-                    )),
-                  ),
-                  const SizedBox(height: 20),
-
-                  _MealRow(
-                    label: 'EN CAS',
-                    mealType: 'En cas',
-                    days: days,
-                    frDays: frDays,
-                    slotPhotos: slotPhotos,
-                    slotAnalyses: slotAnalyses,
-                    meals: List.generate(days.length, (i) {
-                      final key = '${_isoDate(days[i])}_En cas';
-                      return selections[key]?.title ?? '';
-                    }),
-                    selectedMeals: List.generate(days.length, (i) {
-                      return selections['${_isoDate(days[i])}_En cas'];
-                    }),
-                    scrollController: _snackScrollController,
-                    selectedDayIndex: _selectedDayIndex,
-                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => PlanMealDetailScreen(
-                        day: days[i],
-                        dayLabel: '${frDays[i]} ${days[i].day}',
-                        mealType: 'En cas',
-                        mealName: '',
-                      ),
-                    )),
-                  ),
-                  const SizedBox(height: 20),
-
-                  _MealRow(
-                    label: 'DÎNER',
-                    mealType: 'Dîner',
-                    days: days,
-                    frDays: frDays,
-                    slotPhotos: slotPhotos,
-                    slotAnalyses: slotAnalyses,
-                    meals: List.generate(days.length, (i) {
-                      final key = '${_isoDate(days[i])}_Dîner';
-                      return selections[key]?.title ?? planMap[_isoDate(days[i])]?.dinner.name ?? '';
-                    }),
-                    selectedMeals: List.generate(days.length, (i) {
-                      return selections['${_isoDate(days[i])}_Dîner'];
-                    }),
-                    scrollController: _dinnerScrollController,
-                    selectedDayIndex: _selectedDayIndex,
-                    onCardTap: (i) => Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => PlanMealDetailScreen(
-                        day: days[i],
-                        dayLabel: '${frDays[i]} ${days[i].day}',
-                        mealType: 'Dîner',
-                        mealName: planMap[_isoDate(days[i])]?.dinner.name ?? '',
-                      ),
-                    )),
-                  ),
-                  if (isLoading)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 16),
-                      child: Center(child: CircularProgressIndicator(color: AppTokens.coral)),
-                    ),
-                ],
+                ),
               ),
-            ),
+              if (weekPlan.isEmpty && !isLoading)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
+                    child: Material(
+                      color: cardBg,
+                      elevation: 0,
+                      shadowColor: Colors.black26,
+                      borderRadius: BorderRadius.circular(16),
+                      child: InkWell(
+                        onTap: _generatePlan,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Plan de la semaine',
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: ink,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Génère des idées déjeuner et dîner à partir des photos de ton frigo.',
+                                style: GoogleFonts.inter(fontSize: 13, color: muted, height: 1.35),
+                              ),
+                              const SizedBox(height: 14),
+                              FilledButton(
+                                onPressed: _generatePlan,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2E7D32),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: Text('Générer le plan', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              if (isLoading)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: Center(child: CircularProgressIndicator(color: AppTokens.coral)),
+                  ),
+                ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(18, 4, 18, 110),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final day = days[index];
+                      final headerTitle =
+                          '${_weekdayLongFr[day.weekday]}, ${day.day} ${_frMonths[day.month - 1]}';
+                      final headerAccent = day.weekday == DateTime.monday ? mondayAccent : ink;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 18),
+                        child: _DayPlanCard(
+                          day: day,
+                          isDark: isDark,
+                          headerTitle: headerTitle,
+                          headerAccentColor: headerAccent,
+                          cardBg: cardBg,
+                          ink: ink,
+                          muted: muted,
+                          selections: selections,
+                          slotPhotos: slotPhotos,
+                          slotAnalyses: slotAnalyses,
+                          slotDefs: _slotDefs,
+                          onAddTap: () => _openAddSlotMenu(day, planByDate),
+                          onSlotTap: (mealType) => _openSlotEditor(day, mealType, planByDate),
+                          slotTitle: (mealType) => _slotLineTitle(
+                            day,
+                            mealType,
+                            selections,
+                            planByDate,
+                            slotAnalyses,
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: days.length,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -342,313 +339,313 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
   }
 }
 
-// ─── Carte sélecteur de semaine ─────────────────────────────────────────────
+/// Motif de fond très léger (points).
+class _PlanDotPatternPainter extends CustomPainter {
+  final bool isDark;
 
-class _WeekSelectorCard extends StatelessWidget {
+  _PlanDotPatternPainter({required this.isDark});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final dot = Paint()
+      ..color = isDark ? const Color(0x14FFFFFF) : const Color(0x08000000);
+    for (double x = 0; x < size.width + 24; x += 28) {
+      for (double y = 0; y < size.height + 24; y += 28) {
+        canvas.drawCircle(Offset(x, y), 1.1, dot);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PlanDotPatternPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
+}
+
+class _PlanWeekNavBar extends StatelessWidget {
   final List<DateTime> days;
-  final List<String> frDays;
-  final int selectedIndex;
   final List<String> frMonths;
-  final void Function(int) onDayTap;
   final VoidCallback onPrev;
   final VoidCallback onNext;
   final bool isDark;
   final Color titleColor;
-  final Color mutedColor;
 
-  const _WeekSelectorCard({
+  const _PlanWeekNavBar({
     required this.days,
-    required this.frDays,
-    required this.selectedIndex,
     required this.frMonths,
-    required this.onDayTap,
     required this.onPrev,
     required this.onNext,
     required this.isDark,
     required this.titleColor,
-    required this.mutedColor,
   });
 
-  String _rangeTitle() {
+  String _compactRange() {
     final s = days.first;
     final e = days.last;
     if (s.month == e.month) {
-      return 'du ${s.day} au ${e.day} ${frMonths[s.month - 1]}';
+      return '${s.day}–${e.day} ${frMonths[e.month - 1]}';
     }
-    return 'du ${s.day} ${frMonths[s.month - 1]} au ${e.day} ${frMonths[e.month - 1]}';
+    return '${s.day} ${frMonths[s.month - 1]} – ${e.day} ${frMonths[e.month - 1]}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+    final navBg = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE8E8E8);
+    final navIcon = isDark ? Colors.white : Colors.black;
+
+    return Row(
+      children: [
+        _SquareNavButton(icon: Icons.chevron_left, background: navBg, iconColor: navIcon, onTap: onPrev),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            _compactRange(),
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: titleColor,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        _SquareNavButton(icon: Icons.chevron_right, background: navBg, iconColor: navIcon, onTap: onNext),
+      ],
+    );
+  }
+}
+
+class _SquareNavButton extends StatelessWidget {
+  final IconData icon;
+  final Color background;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  const _SquareNavButton({
+    required this.icon,
+    required this.background,
+    required this.iconColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: background,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, color: iconColor, size: 22),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayPlanCard extends StatelessWidget {
+  final DateTime day;
+  final bool isDark;
+  final String headerTitle;
+  final Color headerAccentColor;
+  final Color cardBg;
+  final Color ink;
+  final Color muted;
+  final Map<String, Meal> selections;
+  final Map<String, Uint8List> slotPhotos;
+  final Map<String, Map<String, dynamic>> slotAnalyses;
+  final List<(String, String)> slotDefs;
+  final VoidCallback onAddTap;
+  final void Function(String mealType) onSlotTap;
+  final String Function(String mealType) slotTitle;
+
+  const _DayPlanCard({
+    required this.day,
+    required this.isDark,
+    required this.headerTitle,
+    required this.headerAccentColor,
+    required this.cardBg,
+    required this.ink,
+    required this.muted,
+    required this.selections,
+    required this.slotPhotos,
+    required this.slotAnalyses,
+    required this.slotDefs,
+    required this.onAddTap,
+    required this.onSlotTap,
+    required this.slotTitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final addBg = isDark ? const Color(0xFF1B3D24) : const Color(0xFFE8F5E9);
+    final addIcon = isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32);
 
     return Container(
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-        border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline),
-      ),
-      child: Column(
-        children: [
-          // ── Navigation header ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
-            child: Row(
-              children: [
-                _NavArrow(icon: Icons.chevron_left, onTap: onPrev),
-                Expanded(
-                  child: Text(
-                    _rangeTitle(),
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: titleColor,
-                    ),
-                  ),
-                ),
-                _NavArrow(icon: Icons.chevron_right, onTap: onNext),
-              ],
-            ),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
-
-          // ── Days grid ──
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-            child: Row(
-              children: List.generate(7, (i) {
-                final isActive = i == selectedIndex;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => onDayTap(i),
-                    child: Column(
-                      children: [
-                        Text(
-                          frDays[i],
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: isActive ? AppTokens.coral : mutedColor,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: isActive ? AppTokens.coral : Colors.transparent,
-                            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${days[i].day}',
-                              style: GoogleFonts.fraunces(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: isActive ? Colors.white : titleColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-
-          const SizedBox(height: 8),
         ],
       ),
-    );
-  }
-}
-
-class _NavArrow extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _NavArrow({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 30,
-        height: 30,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: const BoxDecoration(
-          color: AppTokens.coral,
-          shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    headerTitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: headerAccentColor,
+                    ),
+                  ),
+                ),
+                Material(
+                  color: addBg,
+                  borderRadius: BorderRadius.circular(10),
+                  child: InkWell(
+                    onTap: onAddTap,
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: Icon(Icons.add, color: addIcon, size: 22),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            for (final pair in slotDefs) ...[
+              _DayMealSlotTile(
+                day: day,
+                mealType: pair.$1,
+                typeLabel: pair.$2,
+                titleText: slotTitle(pair.$1),
+                ink: ink,
+                muted: muted,
+                selectedMeal: selections[planSlotStorageKey(day, pair.$1)],
+                customPhoto: slotPhotos[planSlotStorageKey(day, pair.$1)],
+                onTap: () => onSlotTap(pair.$1),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ],
         ),
-        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
 }
 
-// ─── Rangée repas ────────────────────────────────────────────────────────────
-
-class _MealRow extends StatelessWidget {
-  final String label;
+class _DayMealSlotTile extends StatelessWidget {
+  final DateTime day;
   final String mealType;
-  final List<DateTime> days;
-  final List<String> frDays;
-  final List<String> meals;
-  final List<Meal?> selectedMeals;
-  final ScrollController scrollController;
-  final int selectedDayIndex;
-  final void Function(int)? onCardTap;
-  final Map<String, Uint8List> slotPhotos;
-  final Map<String, Map<String, dynamic>> slotAnalyses;
+  final String typeLabel;
+  final String titleText;
+  final Color ink;
+  final Color muted;
+  final Meal? selectedMeal;
+  final Uint8List? customPhoto;
+  final VoidCallback onTap;
 
-  const _MealRow({
-    required this.label,
+  const _DayMealSlotTile({
+    required this.day,
     required this.mealType,
-    required this.days,
-    required this.frDays,
-    required this.meals,
-    required this.selectedMeals,
-    required this.scrollController,
-    required this.selectedDayIndex,
-    required this.slotPhotos,
-    required this.slotAnalyses,
-    this.onCardTap,
+    required this.typeLabel,
+    required this.titleText,
+    required this.ink,
+    required this.muted,
+    required this.selectedMeal,
+    required this.customPhoto,
+    required this.onTap,
   });
-
-  static String _slotKey(DateTime day, String mealType) =>
-      '${day.year.toString().padLeft(4, '0')}-'
-      '${day.month.toString().padLeft(2, '0')}-'
-      '${day.day.toString().padLeft(2, '0')}_$mealType';
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleColor = isDark ? Colors.white : AppTokens.ink;
-    final mutedColor = isDark ? Colors.white70 : AppTokens.muted;
+    final displayTitle = titleText.isNotEmpty ? titleText : 'Ajouter un plat';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-          style: GoogleFonts.inter(
-            fontSize: 11, fontWeight: FontWeight.w700,
-            color: mutedColor, letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 138,
-          child: ListView.builder(
-            controller: scrollController,
-            scrollDirection: Axis.horizontal,
-            itemCount: days.length + 1,
-            itemBuilder: (_, i) {
-              if (i == days.length) {
-                return Container(
-                  width: 100,
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E1E1E) : null,
-                    border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline, width: 1.5),
-                    borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: _slotThumbnail(
+                    selectedMeal: selectedMeal,
+                    customPhoto: customPhoto,
                   ),
-                  child: Center(
-                    child: Text('+ Ajouter',
-                      style: GoogleFonts.inter(
-                        fontSize: 12, color: mutedColor, fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              final isSelected = i == selectedDayIndex;
-              final mealName = meals[i];
-              final dayLabel = '${frDays[i].toUpperCase()} ${days[i].day}';
-              final selectedMeal = selectedMeals[i];
-
-              return GestureDetector(
-                onTap: () => onCardTap?.call(i),
-                child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 110,
-                margin: const EdgeInsets.only(right: 10),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? (isDark ? const Color(0xFF3A2A26) : AppTokens.coralSoft)
-                      : (isDark ? const Color(0xFF1E1E1E) : AppTokens.surface),
-                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                  border: isSelected
-                      ? Border.all(color: AppTokens.coral.withValues(alpha: 0.3), width: 1)
-                      : null,
                 ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(AppTokens.radiusMd),
+                    Text(
+                      displayTitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: titleText.isNotEmpty ? ink : muted,
                       ),
-                      child: Builder(builder: (_) {
-                        final customPhoto = slotPhotos[_slotKey(days[i], mealType)];
-                        if (selectedMeal != null) {
-                          return SizedBox(height: 80, width: 110, child: MealImage(photo: selectedMeal.photo, fallbackKey: selectedMeal.title));
-                        }
-                        if (customPhoto != null) {
-                          return SizedBox(height: 80, width: 110, child: Image.memory(customPhoto, fit: BoxFit.cover));
-                        }
-                        return Container(
-                          height: 80,
-                          color: AppTokens.placeholder,
-                          child: Center(
-                            child: Icon(Icons.image_not_supported_outlined,
-                              color: AppTokens.placeholderDeep, size: 22),
-                          ),
-                        );
-                      }),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(dayLabel,
-                            style: GoogleFonts.inter(
-                              fontSize: 9.5, fontWeight: FontWeight.w700,
-                              color: AppTokens.coral,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Builder(builder: (_) {
-                            final analysis = slotAnalyses[_slotKey(days[i], mealType)];
-                            final analysisKcal = analysis?['kcal'];
-                            final mealKcal = selectedMeals[i]?.kcal;
-                            final kcal = analysisKcal ?? (mealKcal != null && mealKcal > 0 ? mealKcal : null);
-                            final displayText = kcal != null
-                                ? '$kcal kcal'
-                                : (mealName.isNotEmpty ? mealName : '—');
-                            return Text(displayText,
-                              style: GoogleFonts.inter(
-                                fontSize: 12, fontWeight: FontWeight.w600,
-                                color: kcal != null ? AppTokens.coral : titleColor,
-                              ),
-                              maxLines: 2, overflow: TextOverflow.ellipsis,
-                            );
-                          }),
-                        ],
+                    const SizedBox(height: 2),
+                    Text(
+                      typeLabel,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: muted,
                       ),
                     ),
                   ],
                 ),
               ),
-            );
-            },
+              Icon(Icons.chevron_right, color: muted.withValues(alpha: 0.5), size: 20),
+            ],
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _slotThumbnail({required Meal? selectedMeal, required Uint8List? customPhoto}) {
+    if (selectedMeal != null) {
+      return MealImage(photo: selectedMeal.photo, fallbackKey: selectedMeal.title);
+    }
+    if (customPhoto != null) {
+      return Image.memory(customPhoto, fit: BoxFit.cover);
+    }
+    return Container(
+      color: AppTokens.placeholder,
+      child: const Center(
+        child: Icon(Icons.restaurant_outlined, color: AppTokens.placeholderDeep, size: 24),
+      ),
     );
   }
 }
@@ -697,10 +694,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
     });
   }
 
-  String get _slotKey {
-    final d = widget.day;
-    return '${d.year}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}_${widget.mealType}';
-  }
+  String get _slotKey => planSlotStorageKey(widget.day, widget.mealType);
 
   void _selectMeal(Meal meal) {
     setState(() { _selected = meal; _pickedPhoto = null; _analysis = null; });

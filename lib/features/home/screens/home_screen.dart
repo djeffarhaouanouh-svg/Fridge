@@ -345,10 +345,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               padding: const EdgeInsets.fromLTRB(18, 36, 18, 0),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: AppTokens.coralSoft,
+                  color: AppTokens.coral,
                   borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                   border: Border.all(
-                    color: AppTokens.coral.withValues(alpha: 0.22),
+                    color: AppTokens.coralDeep.withValues(alpha: 0.45),
                     width: 1,
                   ),
                 ),
@@ -362,7 +362,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         style: GoogleFonts.fraunces(
                           fontSize: 19,
                           fontWeight: FontWeight.w600,
-                          color: AppTokens.ink,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 14),

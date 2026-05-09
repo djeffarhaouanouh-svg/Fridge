@@ -15,6 +15,13 @@ final marmitonBudgetRecipesProvider = FutureProvider<List<Meal>>((ref) async {
   return db.loadMarmitonRecipes(limit: 20);
 });
 
+final sportRecipesProvider = FutureProvider<List<Meal>>((ref) async {
+  final db = NeonService();
+  final results = await db.loadRecipesV2(category: 'Sport', limit: 10);
+  if (results.isNotEmpty) return results;
+  return db.loadRecipesV2(limit: 10);
+});
+
 class DailyHeroRecipesNotifier extends AsyncNotifier<List<Meal>> {
   static const _refreshIntervalHours = 48;
   final _db = NeonService();

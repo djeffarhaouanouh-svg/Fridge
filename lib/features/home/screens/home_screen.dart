@@ -35,6 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
     final heroAsync = ref.watch(dailyHeroRecipesProvider);
     final marmitonBudgetAsync = ref.watch(marmitonBudgetRecipesProvider);
+    final sportAsync = ref.watch(sportRecipesProvider);
     final heroMeals = heroAsync.maybeWhen(
       data: (list) => list.isNotEmpty ? list : _mockPopularMeals.take(3).toList(),
       orElse: () => _mockPopularMeals.take(3).toList(),
@@ -56,6 +57,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             .toList();
       },
       orElse: () => _mockHomeSections[0].cards,
+    );
+    final sportCards = sportAsync.maybeWhen(
+      data: (list) {
+        if (list.isEmpty) return _mockHomeSections[1].cards;
+        return list
+            .asMap()
+            .entries
+            .map(
+              (entry) => _HomeCollectionCardData(
+                title: entry.value.title,
+                imageUrl: entry.value.photo,
+                rating: 4.5 + ((entry.key % 3) * 0.1),
+                meal: entry.value,
+              ),
+            )
+            .toList();
+      },
+      orElse: () => _mockHomeSections[1].cards,
     );
     final firstName = ref.watch(userProfileProvider).name.split(' ').first;
     final themePreference = ref.watch(themePreferenceProvider);
@@ -386,7 +405,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 28, 18, 12),
               child: Text(
-                _mockHomeSections[1].title,
+                'Sport',
                 style: GoogleFonts.fraunces(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -405,9 +424,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   physics: const BouncingScrollPhysics(
                     parent: AlwaysScrollableScrollPhysics(),
                   ),
-                  itemCount: _mockHomeSections[1].cards.length,
+                  itemCount: sportCards.length,
                   itemBuilder: (context, i) => _LargeCollectionCard(
-                    data: _mockHomeSections[1].cards[i],
+                    data: sportCards[i],
                   ),
                 ),
               ),

@@ -649,6 +649,112 @@ class NeonService {
     return out;
   }
 
+  Future<List<Meal>> loadRecipesV2({String? category, int limit = 10}) async {
+    final rows = await query(
+      category != null
+          ? '''
+            SELECT row_to_json(t) AS row FROM (
+              SELECT * FROM recipes_v2
+              WHERE category ILIKE \$2
+              ORDER BY title
+              LIMIT \$1
+            ) t
+            '''
+          : '''
+            SELECT row_to_json(t) AS row FROM (
+              SELECT * FROM recipes_v2
+              ORDER BY title
+              LIMIT \$1
+            ) t
+            ''',
+      category != null ? [limit, category] : [limit],
+    );
+
+    final out = <Meal>[];
+    for (final row in rows) {
+      final raw = row['row'];
+      if (raw is! Map) continue;
+      final map = Map<String, dynamic>.from(raw as Map);
+
+      String ps(List<String> keys, {String fallback = ''}) {
+        for (final k in keys) {
+          final v = map[k];
+          if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+        }
+        return fallback;
+      }
+
+      int pi(List<String> keys, {int fallback = 0}) {
+        for (final k in keys) {
+          final v = map[k];
+          if (v is int) return v;
+          if (v is num) return v.toInt();
+          if (v is String) {
+            final p = int.tryParse(v.replaceAll(RegExp(r'[^0-9]'), ''));
+            if (p != null) return p;
+          }
+        }
+        return fallback;
+      }
+
+      final ridRaw = ps(['id', 'recipe_id', 'uuid'], fallback: map['title']?.toString() ?? 'v2');
+      final rid = ridRaw.contains('-') ? ridRaw : normalizeRecipeId(ridRaw);
+      final duration = pi(['duration', 'duration_min', 'time_min'], fallback: 20);
+
+      final stepRows = await query(
+        'SELECT instruction FROM recipe_steps_v2 WHERE recipe_id = \$1::uuid ORDER BY step_order',
+        [rid],
+      );
+      final steps = stepRows
+          .map((x) => x['instruction'] as String? ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      final ingRows = await query(
+        '''
+        SELECT i.name, ri.quantity, ri.unit
+        FROM recipe_ingredients_v2 ri
+        JOIN ingredients i ON i.id = ri.ingredient_id
+        WHERE ri.recipe_id = \$1::uuid
+        ''',
+        [rid],
+      );
+      final ingredients = ingRows.map((r) {
+        final name = r['name'] as String? ?? '';
+        final q = r['quantity'];
+        final u = r['unit'] as String? ?? '';
+        String qtyStr;
+        if (q == null) {
+          qtyStr = u;
+        } else {
+          final qs = q is num ? _trimDecimal(q.toDouble()) : q.toString();
+          qtyStr = u.isEmpty ? qs : '$qs $u';
+        }
+        return Ingredient(name: name, qty: qtyStr.trim(), photo: '');
+      }).toList();
+
+      out.add(Meal(
+        id: rid,
+        title: ps(['title', 'name'], fallback: 'Recette'),
+        photo: ps(['image_url', 'image', 'photo', 'thumbnail']),
+        kcal: pi(['calories', 'kcal', 'energy']),
+        protein: 'moyen',
+        difficulty: _difficultyToFr(ps(['difficulty', 'niveau'], fallback: 'facile')),
+        time: '$duration min',
+        locked: (map['locked'] as bool?) ?? false,
+        type: ps(['type'], fallback: 'balanced'),
+        typeLabel: ps(['type_label'], fallback: 'Équilibré'),
+        emoji: ps(['emoji'], fallback: '🏋️'),
+        color: ps(['color'], fallback: '#82D28C'),
+        ingredients: ingredients,
+        steps: steps.isEmpty ? const ['Aucune étape détaillée.'] : steps,
+        prepTimeMin: pi(['prep_time_min'], fallback: duration),
+        cookTimeMin: pi(['cook_time_min'], fallback: duration),
+      ));
+    }
+    return out;
+  }
+
   Future<Meal?> _loadRecipeMeal(String id, bool isFavorite) async {
     final rRows = await query(
       r'''

@@ -752,20 +752,28 @@ class NeonService {
         return const [];
       }
 
+      List<String> splitSentences(String str) {
+        if (str.contains('||')) return str.split('||').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+        if (str.contains('|')) return str.split('|').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+        if (str.contains('\n')) return str.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+        final parts = str.split(RegExp(r'\.\s+(?=[A-ZÀ-Üa-zà-ü0-9])'));
+        if (parts.length > 1) {
+          return parts.map((s) {
+            s = s.trim();
+            if (s.isNotEmpty && !s.endsWith('.') && !s.endsWith('!') && !s.endsWith('?')) s = '$s.';
+            return s;
+          }).where((s) => s.isNotEmpty).toList();
+        }
+        return str.isNotEmpty ? [str] : [];
+      }
+
       List<String> pickSteps() {
         final dynamic rawSteps =
             map['steps_json'] ?? map['steps'] ?? map['instructions'];
         if (rawSteps is List) {
           final result = <String>[];
           for (final e in rawSteps) {
-            final str = e.toString().trim();
-            if (str.contains('||')) {
-              result.addAll(str.split('||').map((s) => s.trim()).where((s) => s.isNotEmpty));
-            } else if (str.contains('|')) {
-              result.addAll(str.split('|').map((s) => s.trim()).where((s) => s.isNotEmpty));
-            } else if (str.isNotEmpty) {
-              result.add(str);
-            }
+            result.addAll(splitSentences(e.toString().trim()));
           }
           return result;
         }
@@ -773,17 +781,14 @@ class NeonService {
           try {
             final decoded = jsonDecode(rawSteps);
             if (decoded is List) {
-              return decoded
-                  .map((e) => e.toString())
-                  .where((e) => e.isNotEmpty)
-                  .toList();
+              final result = <String>[];
+              for (final e in decoded) {
+                result.addAll(splitSentences(e.toString().trim()));
+              }
+              return result;
             }
           } catch (_) {}
-          return rawSteps
-              .split(RegExp(r'[\n\r|]+'))
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty)
-              .toList();
+          return splitSentences(rawSteps.trim());
         }
         return const [];
       }

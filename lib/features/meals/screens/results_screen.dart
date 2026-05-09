@@ -14,6 +14,12 @@ class ResultsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ink = isDark ? Colors.white : AppTokens.ink;
+    final muted = isDark ? Colors.white70 : AppTokens.muted;
+    final surface = isDark ? const Color(0xFF1E1E1E) : AppTokens.surface;
+    final hair = isDark ? Colors.white24 : AppTokens.hairline;
+    final hairSoft = isDark ? Colors.white12 : AppTokens.hairlineSoft;
     final scanMeals = ref.watch(latestScanMealsProvider);
     final allMeals = ref.watch(mealsProvider);
     final meals = scanMeals.isNotEmpty ? scanMeals : allMeals;
@@ -23,7 +29,7 @@ class ResultsScreen extends ConsumerWidget {
         scanIngredients.isNotEmpty ? scanIngredients : fridgeIngredients;
 
     return Scaffold(
-      backgroundColor: AppTokens.paper,
+      backgroundColor: isDark ? const Color(0xFF121212) : AppTokens.paper,
       body: SafeArea(
         child: Column(
           children: [
@@ -34,14 +40,14 @@ class ResultsScreen extends ConsumerWidget {
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.maybePop(context),
-                    child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppTokens.ink),
+                    child: Icon(Icons.arrow_back_ios_new, size: 18, color: ink),
                   ),
                   Expanded(
                     child: Center(
                       child: Text(
                         'Voici ce que j\'ai détecté',
                         style: GoogleFonts.fraunces(
-                          fontSize: 16, fontWeight: FontWeight.w600, color: AppTokens.ink,
+                          fontSize: 16, fontWeight: FontWeight.w600, color: ink,
                         ),
                       ),
                     ),
@@ -79,7 +85,7 @@ class ResultsScreen extends ConsumerWidget {
                           child: Text('+ Ajouter ou modifier',
                             style: GoogleFonts.inter(
                               fontSize: 13, fontWeight: FontWeight.w500,
-                              color: AppTokens.muted,
+                              color: muted,
                             ),
                           ),
                         ),
@@ -96,7 +102,7 @@ class ResultsScreen extends ConsumerWidget {
                       style: GoogleFonts.fraunces(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppTokens.ink,
+                        color: ink,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -110,10 +116,10 @@ class ResultsScreen extends ConsumerWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTokens.surface,
+                            color: surface,
                             borderRadius:
                                 BorderRadius.circular(AppTokens.radiusPill),
-                            border: Border.all(color: AppTokens.hairline),
+                            border: Border.all(color: hair),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -131,7 +137,7 @@ class ResultsScreen extends ConsumerWidget {
                                 style: GoogleFonts.inter(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w500,
-                                  color: AppTokens.ink,
+                                  color: ink,
                                 ),
                               ),
                             ],
@@ -140,7 +146,7 @@ class ResultsScreen extends ConsumerWidget {
                       }).toList(),
                     ),
                     const SizedBox(height: 20),
-                    Container(height: 1, color: AppTokens.hairlineSoft),
+                    Container(height: 1, color: hairSoft),
                     const SizedBox(height: 20),
                   ],
 
@@ -152,7 +158,7 @@ class ResultsScreen extends ConsumerWidget {
                           text: '${meals.length} recettes pour ',
                           style: GoogleFonts.fraunces(
                             fontSize: 22, fontWeight: FontWeight.w700,
-                            color: AppTokens.ink, height: 1.2,
+                            color: ink, height: 1.2,
                           ),
                         ),
                         TextSpan(
@@ -170,7 +176,7 @@ class ResultsScreen extends ConsumerWidget {
                   Text(
                     'Avec ce que tu as déjà',
                     style: GoogleFonts.inter(
-                      fontSize: 13, fontWeight: FontWeight.w500, color: AppTokens.muted,
+                      fontSize: 13, fontWeight: FontWeight.w500, color: muted,
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -439,10 +445,14 @@ class _IngredientTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? const Color(0xFF1E1E1E) : AppTokens.surface;
+    final ink = isDark ? Colors.white : AppTokens.ink;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTokens.surface,
+        color: surface,
         borderRadius: BorderRadius.circular(AppTokens.radiusPill),
       ),
       child: Row(
@@ -450,14 +460,14 @@ class _IngredientTag extends StatelessWidget {
         children: [
           Container(
             width: 5, height: 5,
-            decoration: const BoxDecoration(
-              color: AppTokens.ink, shape: BoxShape.circle,
+            decoration: BoxDecoration(
+              color: ink, shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 6),
           Text(label,
             style: GoogleFonts.inter(
-              fontSize: 13, fontWeight: FontWeight.w500, color: AppTokens.ink,
+              fontSize: 13, fontWeight: FontWeight.w500, color: ink,
             ),
           ),
         ],
@@ -475,13 +485,16 @@ class _RecipeRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ink = isDark ? Colors.white : AppTokens.ink;
+    final muted = isDark ? Colors.white70 : AppTokens.muted;
     final num = (index + 1).toString().padLeft(2, '0');
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
         Navigator.push(context, MaterialPageRoute(
-          builder: (_) => RecipeScreen(meal: meal),
+          builder: (_) => RecipeScreen(meal: meal, isGeneratedRecipe: true),
         ));
       },
       child: Column(
@@ -519,40 +532,40 @@ class _RecipeRow extends ConsumerWidget {
                       Text(meal.title,
                         style: GoogleFonts.fraunces(
                           fontSize: 15.5, fontWeight: FontWeight.w600,
-                          color: AppTokens.ink, height: 1.25,
+                          color: ink, height: 1.25,
                         ),
                         maxLines: 2, overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.schedule_outlined, size: 13, color: AppTokens.muted),
+                          Icon(Icons.schedule_outlined, size: 13, color: muted),
                           const SizedBox(width: 4),
                           Text(meal.time,
                             style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w500, color: AppTokens.muted,
+                              fontSize: 12, fontWeight: FontWeight.w500, color: muted,
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 6),
                             child: Text('·',
-                              style: GoogleFonts.inter(fontSize: 12, color: AppTokens.muted),
+                              style: GoogleFonts.inter(fontSize: 12, color: muted),
                             ),
                           ),
                           Text('${meal.kcal} kcal',
                             style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w600, color: AppTokens.muted,
+                              fontSize: 12, fontWeight: FontWeight.w600, color: muted,
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 6),
                             child: Text('·',
-                              style: GoogleFonts.inter(fontSize: 12, color: AppTokens.muted),
+                              style: GoogleFonts.inter(fontSize: 12, color: muted),
                             ),
                           ),
                           Text(meal.difficulty,
                             style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w500, color: AppTokens.muted,
+                              fontSize: 12, fontWeight: FontWeight.w500, color: muted,
                             ),
                           ),
                         ],

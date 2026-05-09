@@ -262,7 +262,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => RecipeScreen(meal: meal),
+                                  builder: (_) => RecipeScreen(
+                                    meal: meal,
+                                    isGeneratedRecipe: true,
+                                  ),
                                 ),
                               );
                             },

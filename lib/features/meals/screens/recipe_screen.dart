@@ -22,7 +22,13 @@ import '../../../main.dart' show cookedCountProvider;
 class RecipeScreen extends ConsumerStatefulWidget {
   final Meal meal;
   final bool fromPlan;
-  const RecipeScreen({super.key, required this.meal, this.fromPlan = false});
+  final bool isGeneratedRecipe;
+  const RecipeScreen({
+    super.key,
+    required this.meal,
+    this.fromPlan = false,
+    this.isGeneratedRecipe = false,
+  });
 
   @override
   ConsumerState<RecipeScreen> createState() => _RecipeScreenState();
@@ -262,12 +268,13 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
                     ),
                   ),
 
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
-                      child: _AdaptRecipeButton(meal: meal),
+                  if (!widget.isGeneratedRecipe)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+                        child: _AdaptRecipeButton(meal: meal),
+                      ),
                     ),
-                  ),
 
                   SliverToBoxAdapter(
                     child: Padding(
@@ -674,9 +681,39 @@ class _CookingScreenState extends ConsumerState<_CookingScreen> {
   final _player = AudioPlayer();
   bool _isSpeaking = false;
 
+  String _norm(String s) => s
+      .toLowerCase()
+      .replaceAll('œ', 'oe')
+      .replaceAll('é', 'e')
+      .replaceAll('è', 'e')
+      .replaceAll('ê', 'e')
+      .replaceAll('ë', 'e')
+      .replaceAll('à', 'a')
+      .replaceAll('â', 'a')
+      .replaceAll('ä', 'a')
+      .replaceAll('î', 'i')
+      .replaceAll('ï', 'i')
+      .replaceAll('ô', 'o')
+      .replaceAll('ö', 'o')
+      .replaceAll('ù', 'u')
+      .replaceAll('û', 'u')
+      .replaceAll('ü', 'u')
+      .replaceAll('ç', 'c');
+
   Ingredient? _ingredientForStep(int stepIndex) {
     final list = widget.meal.ingredients;
     if (list.isEmpty) return null;
+    final steps = widget.meal.steps;
+    if (stepIndex >= 0 && stepIndex < steps.length) {
+      final step = _norm(steps[stepIndex]);
+      final sorted = [...list]
+        ..sort((a, b) => b.name.length.compareTo(a.name.length));
+      for (final ing in sorted) {
+        final name = _norm(ing.name).trim();
+        if (name.isEmpty) continue;
+        if (step.contains(name)) return ing;
+      }
+    }
     final i = stepIndex.clamp(0, list.length - 1);
     return list[i];
   }
@@ -730,7 +767,9 @@ class _CookingScreenState extends ConsumerState<_CookingScreen> {
       debugPrint('markCooked: $e');
     }
 
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+    ref.read(selectedTabProvider.notifier).state = 0;
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   void _prev() {

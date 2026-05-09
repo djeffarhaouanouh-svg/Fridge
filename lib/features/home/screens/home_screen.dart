@@ -811,7 +811,6 @@ class _SectionTitleRow extends StatelessWidget {
           child: SizedBox(
             width: double.infinity,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Flexible(
@@ -826,9 +825,10 @@ class _SectionTitleRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 4),
                 Icon(
                   Icons.chevron_right,
-                  size: 28,
+                  size: 26,
                   color: titleColor,
                 ),
               ],

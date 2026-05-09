@@ -1070,32 +1070,68 @@ void _showObjectiveSheet(
   showModalBottomSheet(
     context: context,
     backgroundColor: _sheetBg(context),
+    isScrollControlled: true,
     builder: (_) => SafeArea(
       top: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            title: Text('Perte de poids', style: TextStyle(color: _sheetText(context))),
-            onTap: () { notifier.setObjective(CookingObjective.weightLoss); Navigator.pop(context); },
-          ),
-          ListTile(
-            title: Text('Prise de masse', style: TextStyle(color: _sheetText(context))),
-            onTap: () { notifier.setObjective(CookingObjective.muscleGain); Navigator.pop(context); },
-          ),
-          ListTile(
-            title: Text('Manger sainement', style: TextStyle(color: _sheetText(context))),
-            onTap: () { notifier.setObjective(CookingObjective.healthy); Navigator.pop(context); },
-          ),
-          ListTile(
-            title: Text('Apprendre à cuisiner', style: TextStyle(color: _sheetText(context))),
-            onTap: () { notifier.setObjective(CookingObjective.learn); Navigator.pop(context); },
-          ),
-          ListTile(
-            title: Text('Garder la ligne', style: TextStyle(color: _sheetText(context))),
-            onTap: () { notifier.setObjective(CookingObjective.maintain); Navigator.pop(context); },
-          ),
-        ],
+      child: Consumer(
+        builder: (context, ref, _) {
+          final objective = ref.watch(userProfileProvider).objective;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CheckboxListTile(
+                value: objective == CookingObjective.weightLoss,
+                onChanged: (_) async {
+                  await notifier.setObjective(CookingObjective.weightLoss);
+                },
+                title: Text('Perte de poids', style: TextStyle(color: _sheetText(context))),
+                activeColor: AppTokens.coral,
+                checkColor: Colors.white,
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+              CheckboxListTile(
+                value: objective == CookingObjective.muscleGain,
+                onChanged: (_) async {
+                  await notifier.setObjective(CookingObjective.muscleGain);
+                },
+                title: Text('Prise de masse', style: TextStyle(color: _sheetText(context))),
+                activeColor: AppTokens.coral,
+                checkColor: Colors.white,
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+              CheckboxListTile(
+                value: objective == CookingObjective.healthy,
+                onChanged: (_) async {
+                  await notifier.setObjective(CookingObjective.healthy);
+                },
+                title: Text('Manger sainement', style: TextStyle(color: _sheetText(context))),
+                activeColor: AppTokens.coral,
+                checkColor: Colors.white,
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+              CheckboxListTile(
+                value: objective == CookingObjective.learn,
+                onChanged: (_) async {
+                  await notifier.setObjective(CookingObjective.learn);
+                },
+                title: Text('Apprendre à cuisiner', style: TextStyle(color: _sheetText(context))),
+                activeColor: AppTokens.coral,
+                checkColor: Colors.white,
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+              CheckboxListTile(
+                value: objective == CookingObjective.maintain,
+                onChanged: (_) async {
+                  await notifier.setObjective(CookingObjective.maintain);
+                },
+                title: Text('Garder la ligne', style: TextStyle(color: _sheetText(context))),
+                activeColor: AppTokens.coral,
+                checkColor: Colors.white,
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+            ],
+          );
+        },
       ),
     ),
   );
@@ -1108,40 +1144,58 @@ void _showCookingLevelSheet(
   showModalBottomSheet(
     context: context,
     backgroundColor: _sheetBg(context),
+    isScrollControlled: true,
     builder: (_) => SafeArea(
       top: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            title: Text('Débutant', style: TextStyle(color: _sheetText(context))),
-            onTap: () {
-              notifier.setCookingLevel(CookingLevel.beginner);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('Intermédiaire', style: TextStyle(color: _sheetText(context))),
-            onTap: () {
-              notifier.setCookingLevel(CookingLevel.intermediate);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('Avancé', style: TextStyle(color: _sheetText(context))),
-            onTap: () {
-              notifier.setCookingLevel(CookingLevel.advanced);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('Expert', style: TextStyle(color: _sheetText(context))),
-            onTap: () {
-              notifier.setCookingLevel(CookingLevel.expert);
-              Navigator.pop(context);
-            },
-          ),
-        ],
+      child: Consumer(
+        builder: (context, ref, _) {
+          final level = ref.watch(userProfileProvider).cookingLevel;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CheckboxListTile(
+                value: level == CookingLevel.beginner,
+                onChanged: (checked) async {
+                  if (checked == true) await notifier.setCookingLevel(CookingLevel.beginner);
+                },
+                title: Text('Débutant', style: TextStyle(color: _sheetText(context))),
+                activeColor: AppTokens.coral,
+                checkColor: Colors.white,
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+              CheckboxListTile(
+                value: level == CookingLevel.intermediate,
+                onChanged: (checked) async {
+                  if (checked == true) await notifier.setCookingLevel(CookingLevel.intermediate);
+                },
+                title: Text('Intermédiaire', style: TextStyle(color: _sheetText(context))),
+                activeColor: AppTokens.coral,
+                checkColor: Colors.white,
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+              CheckboxListTile(
+                value: level == CookingLevel.advanced,
+                onChanged: (checked) async {
+                  if (checked == true) await notifier.setCookingLevel(CookingLevel.advanced);
+                },
+                title: Text('Avancé', style: TextStyle(color: _sheetText(context))),
+                activeColor: AppTokens.coral,
+                checkColor: Colors.white,
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+              CheckboxListTile(
+                value: level == CookingLevel.expert,
+                onChanged: (checked) async {
+                  if (checked == true) await notifier.setCookingLevel(CookingLevel.expert);
+                },
+                title: Text('Expert', style: TextStyle(color: _sheetText(context))),
+                activeColor: AppTokens.coral,
+                checkColor: Colors.white,
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+            ],
+          );
+        },
       ),
     ),
   );

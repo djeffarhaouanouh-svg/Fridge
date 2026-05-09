@@ -19,11 +19,16 @@ import '../../../main.dart' show cookedCountProvider;
 
 // ─── Fiche recette ─────────────────────────────────────────────────────────
 
-class RecipeScreen extends ConsumerWidget {
+class RecipeScreen extends ConsumerStatefulWidget {
   final Meal meal;
   final bool fromPlan;
   const RecipeScreen({super.key, required this.meal, this.fromPlan = false});
 
+  @override
+  ConsumerState<RecipeScreen> createState() => _RecipeScreenState();
+}
+
+class _RecipeScreenState extends ConsumerState<RecipeScreen> {
   static String _difficultyLabel(String d) {
     final x = d.toLowerCase();
     if (x.contains('facile')) return 'Très facile';
@@ -34,7 +39,18 @@ class RecipeScreen extends ConsumerWidget {
   static String _minLabel(int min) => min > 0 ? '$min min' : '—';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      registerRecentlyViewed(ref, widget.meal);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final meal = widget.meal;
+    final fromPlan = widget.fromPlan;
     final meals = ref.watch(mealsProvider);
     final currentId = normalizeRecipeId(meal.id);
     final liveMeal =

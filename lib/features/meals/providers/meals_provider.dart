@@ -185,6 +185,25 @@ final selectedMealProvider = StateProvider<Meal?>((ref) => null);
 
 final recentlyViewedProvider = StateProvider<List<Meal>>((ref) => []);
 
+/// À l’ouverture d’une fiche recette : met à jour « Dernières recettes » du profil.
+void registerRecentlyViewed(WidgetRef ref, Meal meal) {
+  final id = normalizeRecipeId(meal.id);
+  final catalog = ref.read(mealsProvider);
+  Meal resolved = meal;
+  for (final m in catalog) {
+    if (normalizeRecipeId(m.id) == id) {
+      resolved = m;
+      break;
+    }
+  }
+  final prev = ref.read(recentlyViewedProvider);
+  final rest = prev.where((m) => normalizeRecipeId(m.id) != id).toList();
+  final next = [resolved, ...rest];
+  const maxItems = 20;
+  ref.read(recentlyViewedProvider.notifier).state =
+      next.length > maxItems ? next.sublist(0, maxItems) : next;
+}
+
 // Clé : "${isoDate}_${mealType}", ex: "2026-05-03_Petit-déj"
 final planMealSelectionsProvider = StateProvider<Map<String, Meal>>((ref) => {});
 

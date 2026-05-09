@@ -247,19 +247,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                         titleColor: titleColor,
                         mutedColor: mutedColor,
                       ),
-                      const SizedBox(height: 18),
-                      Center(
-                        child: Text(
-                          'Clic sur les vignettes, planifie tes repas et suis tes calories',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.fraunces(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : AppTokens.inkSoft,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       for (var index = 0; index < days.length; index++)
                         KeyedSubtree(
                           key: _dayCardKeys[index],

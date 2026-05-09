@@ -740,8 +740,7 @@ class NeonService {
       } catch (_) {}
 
       final title = ps(['title', 'name'], fallback: 'Recette');
-      final rawPhoto = ps(['image_url', 'image', 'photo', 'thumbnail']);
-      final photo = rawPhoto.isNotEmpty ? rawPhoto : _sportImageFallback(title);
+      final photo = _sportImageFallback(title);
 
       out.add(Meal(
         id: rid,

@@ -11,6 +11,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../providers/daily_hero_provider.dart';
 import '../../meals/models/meal.dart';
 import '../../meals/screens/recipe_screen.dart';
+import 'section_grid_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -358,16 +359,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
 
           SliverToBoxAdapter(
-            child: Padding(
+            child: _SectionTitleRow(
+              title: 'Depuis ton dernier scan',
+              titleSize: 19,
               padding: const EdgeInsets.fromLTRB(18, 36, 18, 14),
-              child: Text(
-                'Depuis ton dernier scan',
-                style: GoogleFonts.fraunces(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w600,
-                  color: titleColor,
-                ),
-              ),
+              titleColor: titleColor,
+              onTap: () {
+                final list = meals.isEmpty ? _mockPopularMeals : meals;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RecipesGridScreen(
+                      title: 'Depuis ton dernier scan',
+                      meals: list,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           SliverToBoxAdapter(
@@ -391,16 +399,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
 
           SliverToBoxAdapter(
-            child: Padding(
+            child: _SectionTitleRow(
+              title: 'Tes ingrédients',
+              titleSize: 19,
               padding: const EdgeInsets.fromLTRB(18, 36, 18, 14),
-              child: Text(
-                'Tes ingrédients',
-                style: GoogleFonts.fraunces(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w600,
-                  color: titleColor,
-                ),
-              ),
+              titleColor: titleColor,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const IngredientsGridScreen(),
+                  ),
+                );
+              },
             ),
           ),
           SliverToBoxAdapter(
@@ -426,16 +437,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           for (var i = 0; i < orderedSections.length; i++) ...[
             SliverToBoxAdapter(
-              child: Padding(
+              child: _SectionTitleRow(
+                title: orderedSections[i].title,
+                titleSize: 20,
                 padding: EdgeInsets.fromLTRB(18, i == 0 ? 50 : 28, 18, 12),
-                child: Text(
-                  orderedSections[i].title,
-                  style: GoogleFonts.fraunces(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: titleColor,
-                  ),
-                ),
+                titleColor: titleColor,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RecipesGridScreen(
+                        title: orderedSections[i].title,
+                        meals: orderedSections[i]
+                            .cards
+                            .map((c) => c.meal)
+                            .toList(),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
             SliverToBoxAdapter(
@@ -780,6 +800,51 @@ class _CollectionSectionData {
     required this.title,
     required this.cards,
   });
+}
+
+class _SectionTitleRow extends StatelessWidget {
+  final String title;
+  final double titleSize;
+  final EdgeInsets padding;
+  final Color titleColor;
+  final VoidCallback onTap;
+
+  const _SectionTitleRow({
+    required this.title,
+    required this.titleSize,
+    required this.padding,
+    required this.titleColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: padding,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.fraunces(
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 24,
+              color: titleColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _HeroCard extends ConsumerWidget {

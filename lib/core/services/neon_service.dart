@@ -704,30 +704,49 @@ class NeonService {
       List<String> steps = [];
       try {
         final stepRows = await query(
-          'SELECT instruction FROM recipe_steps_v2 WHERE recipe_id = \$1::uuid ORDER BY step_order',
+          '''
+          SELECT row_to_json(t) AS row FROM (
+            SELECT * FROM recipe_steps_v2
+            WHERE recipe_id = \$1::uuid
+          ) t
+          ''',
           [rid],
         );
-        steps = stepRows
-            .map((x) => x['instruction'] as String? ?? '')
-            .where((s) => s.isNotEmpty)
-            .toList();
+        steps = stepRows.map((x) {
+          final raw = x['row'];
+          if (raw is! Map) return '';
+          final m = Map<String, dynamic>.from(raw as Map);
+          for (final k in ['instruction', 'step', 'description', 'text', 'content']) {
+            final v = m[k];
+            if (v != null && v.toString().trim().isNotEmpty) return v.toString().trim();
+          }
+          return '';
+        }).where((s) => s.isNotEmpty).toList();
       } catch (_) {}
 
       List<Ingredient> ingredients = [];
       try {
         final ingRows = await query(
           '''
-          SELECT i.name, ri.quantity, ri.unit
-          FROM recipe_ingredients_v2 ri
-          JOIN ingredients i ON i.id = ri.ingredient_id
-          WHERE ri.recipe_id = \$1::uuid
+          SELECT row_to_json(t) AS row FROM (
+            SELECT * FROM recipe_ingredients_v2
+            WHERE recipe_id = \$1::uuid
+          ) t
           ''',
           [rid],
         );
-        ingredients = ingRows.map((r) {
-          final name = r['name'] as String? ?? '';
-          final q = r['quantity'];
-          final u = r['unit'] as String? ?? '';
+        ingredients = ingRows.map((x) {
+          final raw = x['row'];
+          if (raw is! Map) return null;
+          final m = Map<String, dynamic>.from(raw as Map);
+          String name = '';
+          for (final k in ['name', 'ingredient_name', 'ingredient', 'label']) {
+            final v = m[k];
+            if (v != null && v.toString().trim().isNotEmpty) { name = v.toString().trim(); break; }
+          }
+          if (name.isEmpty) return null;
+          final q = m['quantity'] ?? m['qty'] ?? m['amount'];
+          final u = (m['unit'] ?? m['unite'] ?? '').toString();
           String qtyStr;
           if (q == null) {
             qtyStr = u;
@@ -736,7 +755,7 @@ class NeonService {
             qtyStr = u.isEmpty ? qs : '$qs $u';
           }
           return Ingredient(name: name, qty: qtyStr.trim(), photo: '');
-        }).toList();
+        }).whereType<Ingredient>().toList();
       } catch (_) {}
 
       final title = ps(['title', 'name'], fallback: 'Recette');

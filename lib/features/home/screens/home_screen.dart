@@ -406,7 +406,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 28, 18, 12),
               child: Text(
-                'Sport',
+                'Prise de masse',
                 style: GoogleFonts.fraunces(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,

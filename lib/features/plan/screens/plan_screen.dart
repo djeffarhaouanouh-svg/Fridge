@@ -1347,6 +1347,8 @@ class _MealPickCard extends ConsumerWidget {
   final Meal meal;
   final bool isSelected;
   final VoidCallback onTap;
+  static const double _cardWidth = 130;
+  static const double _favoriteTapZone = 40;
   const _MealPickCard({required this.meal, required this.onTap, this.isSelected = false});
 
   @override
@@ -1357,9 +1359,15 @@ class _MealPickCard extends ConsumerWidget {
     final isFav = liveMeal.isFavorite;
 
     return GestureDetector(
-      onTap: onTap,
+      onTapUp: (details) {
+        final p = details.localPosition;
+        final onFavoriteZone =
+            p.dx >= (_cardWidth - _favoriteTapZone) && p.dy <= _favoriteTapZone;
+        if (onFavoriteZone) return;
+        onTap();
+      },
       child: Container(
-        width: 130,
+        width: _cardWidth,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           color: isSelected
@@ -1380,7 +1388,7 @@ class _MealPickCard extends ConsumerWidget {
               child: Stack(
                 children: [
                   SizedBox(
-                    height: 100, width: 130,
+                    height: 100, width: _cardWidth,
                     child: MealImage(
                       photo: meal.photo,
                       fallbackKey: meal.title,

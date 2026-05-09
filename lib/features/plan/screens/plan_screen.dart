@@ -239,43 +239,43 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
               if (weekPlan.isEmpty && !isLoading)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
                     child: Material(
                       color: cardBg,
                       elevation: 0,
                       shadowColor: Colors.black26,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(14),
                       child: InkWell(
                         onTap: _generatePlan,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                         child: Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Row(
                             children: [
-                              Text(
-                                'Plan de la semaine',
-                                style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: ink,
+                              Expanded(
+                                child: Text(
+                                  'Plan de la semaine',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: ink,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Génère des idées déjeuner et dîner à partir des photos de ton frigo.',
-                                style: GoogleFonts.inter(fontSize: 13, color: muted, height: 1.35),
-                              ),
-                              const SizedBox(height: 14),
                               FilledButton(
                                 onPressed: _generatePlan,
                                 style: FilledButton.styleFrom(
                                   backgroundColor: const Color(0xFF2E7D32),
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                                 ),
-                                child: Text('Générer le plan', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                child: Text(
+                                  'Générer le plan',
+                                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+                                ),
                               ),
                             ],
                           ),
@@ -302,7 +302,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       final headerAccent = day.weekday == DateTime.monday ? mondayAccent : ink;
 
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 18),
+                        padding: const EdgeInsets.only(bottom: 12),
                         child: _DayPlanCard(
                           day: day,
                           isDark: isDark,
@@ -487,17 +487,17 @@ class _DayPlanCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -508,7 +508,7 @@ class _DayPlanCard extends StatelessWidget {
                   child: Text(
                     headerTitle,
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                       color: headerAccentColor,
                     ),
@@ -516,33 +516,33 @@ class _DayPlanCard extends StatelessWidget {
                 ),
                 Material(
                   color: addBg,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(9),
                   child: InkWell(
                     onTap: onAddTap,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(9),
                     child: SizedBox(
-                      width: 36,
-                      height: 36,
-                      child: Icon(Icons.add, color: addIcon, size: 22),
+                      width: 30,
+                      height: 30,
+                      child: Icon(Icons.add, color: addIcon, size: 18),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            for (final pair in slotDefs) ...[
+            const SizedBox(height: 6),
+            for (var i = 0; i < slotDefs.length; i++) ...[
               _DayMealSlotTile(
                 day: day,
-                mealType: pair.$1,
-                typeLabel: pair.$2,
-                titleText: slotTitle(pair.$1),
+                mealType: slotDefs[i].$1,
+                typeLabel: slotDefs[i].$2,
+                titleText: slotTitle(slotDefs[i].$1),
                 ink: ink,
                 muted: muted,
-                selectedMeal: selections[planSlotStorageKey(day, pair.$1)],
-                customPhoto: slotPhotos[planSlotStorageKey(day, pair.$1)],
-                onTap: () => onSlotTap(pair.$1),
+                selectedMeal: selections[planSlotStorageKey(day, slotDefs[i].$1)],
+                customPhoto: slotPhotos[planSlotStorageKey(day, slotDefs[i].$1)],
+                onTap: () => onSlotTap(slotDefs[i].$1),
               ),
-              const SizedBox(height: 10),
+              if (i < slotDefs.length - 1) const SizedBox(height: 4),
             ],
           ],
         ),
@@ -582,24 +582,24 @@ class _DayMealSlotTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
-                  width: 56,
-                  height: 56,
+                  width: 48,
+                  height: 48,
                   child: _slotThumbnail(
                     selectedMeal: selectedMeal,
                     customPhoto: customPhoto,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -607,26 +607,28 @@ class _DayMealSlotTile extends StatelessWidget {
                     Text(
                       displayTitle,
                       style: GoogleFonts.inter(
-                        fontSize: 15,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w700,
+                        height: 1.2,
                         color: titleText.isNotEmpty ? ink : muted,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
                       typeLabel,
                       style: GoogleFonts.inter(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
+                        height: 1.2,
                         color: muted,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: muted.withValues(alpha: 0.5), size: 20),
+              Icon(Icons.chevron_right, color: muted.withValues(alpha: 0.45), size: 18),
             ],
           ),
         ),
@@ -644,7 +646,7 @@ class _DayMealSlotTile extends StatelessWidget {
     return Container(
       color: AppTokens.placeholder,
       child: const Center(
-        child: Icon(Icons.restaurant_outlined, color: AppTokens.placeholderDeep, size: 24),
+        child: Icon(Icons.restaurant_outlined, color: AppTokens.placeholderDeep, size: 20),
       ),
     );
   }

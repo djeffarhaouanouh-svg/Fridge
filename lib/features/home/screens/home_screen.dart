@@ -808,27 +808,31 @@ class _SectionTitleRow extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: padding,
-          child: Row(
-            children: [
-              Flexible(
-                child: Text(
-                  title,
-                  style: GoogleFonts.fraunces(
-                    fontSize: titleSize,
-                    fontWeight: FontWeight.w600,
-                    color: titleColor,
+          child: SizedBox(
+            width: double.infinity,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.fraunces(
+                      fontSize: titleSize,
+                      fontWeight: FontWeight.w600,
+                      color: titleColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 26,
-                color: titleColor,
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right,
+                  size: 28,
+                  color: titleColor,
+                ),
+              ],
+            ),
           ),
         ),
       ),

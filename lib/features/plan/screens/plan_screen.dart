@@ -231,7 +231,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
               const SliverToBoxAdapter(child: AppHeader(brand: true)),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 88),
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 80),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -879,7 +879,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
 
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 4, 18, 88),
+                padding: const EdgeInsets.fromLTRB(18, 4, 18, 80),
                 children: [
                   // Emplacement photo
                   ClipRRect(

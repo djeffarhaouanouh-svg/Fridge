@@ -58,7 +58,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
       orElse: () => _mockHomeSections[0].cards,
     );
-    final sportCards = sportAsync.maybeWhen(
+    final sportCards = sportAsync.when(
       data: (list) {
         if (list.isEmpty) return _mockHomeSections[1].cards;
         return list
@@ -74,7 +74,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             )
             .toList();
       },
-      orElse: () => _mockHomeSections[1].cards,
+      loading: () => _mockHomeSections[1].cards,
+      error: (_, __) => _mockHomeSections[1].cards,
     );
     final firstName = ref.watch(userProfileProvider).name.split(' ').first;
     final themePreference = ref.watch(themePreferenceProvider);

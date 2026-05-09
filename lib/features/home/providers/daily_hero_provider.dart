@@ -17,9 +17,13 @@ final marmitonBudgetRecipesProvider = FutureProvider<List<Meal>>((ref) async {
 
 final sportRecipesProvider = FutureProvider<List<Meal>>((ref) async {
   final db = NeonService();
-  final results = await db.loadRecipesV2(category: 'Sport', limit: 10);
-  if (results.isNotEmpty) return results;
-  return db.loadRecipesV2(limit: 10);
+  try {
+    final results = await db.loadRecipesV2(category: 'Sport', limit: 10);
+    if (results.isNotEmpty) return results;
+    return await db.loadRecipesV2(limit: 10);
+  } catch (_) {
+    return [];
+  }
 });
 
 class DailyHeroRecipesNotifier extends AsyncNotifier<List<Meal>> {

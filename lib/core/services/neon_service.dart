@@ -701,37 +701,43 @@ class NeonService {
       final rid = ridRaw.contains('-') ? ridRaw : normalizeRecipeId(ridRaw);
       final duration = pi(['duration', 'duration_min', 'time_min'], fallback: 20);
 
-      final stepRows = await query(
-        'SELECT instruction FROM recipe_steps_v2 WHERE recipe_id = \$1::uuid ORDER BY step_order',
-        [rid],
-      );
-      final steps = stepRows
-          .map((x) => x['instruction'] as String? ?? '')
-          .where((s) => s.isNotEmpty)
-          .toList();
+      List<String> steps = [];
+      try {
+        final stepRows = await query(
+          'SELECT instruction FROM recipe_steps_v2 WHERE recipe_id = \$1::uuid ORDER BY step_order',
+          [rid],
+        );
+        steps = stepRows
+            .map((x) => x['instruction'] as String? ?? '')
+            .where((s) => s.isNotEmpty)
+            .toList();
+      } catch (_) {}
 
-      final ingRows = await query(
-        '''
-        SELECT i.name, ri.quantity, ri.unit
-        FROM recipe_ingredients_v2 ri
-        JOIN ingredients i ON i.id = ri.ingredient_id
-        WHERE ri.recipe_id = \$1::uuid
-        ''',
-        [rid],
-      );
-      final ingredients = ingRows.map((r) {
-        final name = r['name'] as String? ?? '';
-        final q = r['quantity'];
-        final u = r['unit'] as String? ?? '';
-        String qtyStr;
-        if (q == null) {
-          qtyStr = u;
-        } else {
-          final qs = q is num ? _trimDecimal(q.toDouble()) : q.toString();
-          qtyStr = u.isEmpty ? qs : '$qs $u';
-        }
-        return Ingredient(name: name, qty: qtyStr.trim(), photo: '');
-      }).toList();
+      List<Ingredient> ingredients = [];
+      try {
+        final ingRows = await query(
+          '''
+          SELECT i.name, ri.quantity, ri.unit
+          FROM recipe_ingredients_v2 ri
+          JOIN ingredients i ON i.id = ri.ingredient_id
+          WHERE ri.recipe_id = \$1::uuid
+          ''',
+          [rid],
+        );
+        ingredients = ingRows.map((r) {
+          final name = r['name'] as String? ?? '';
+          final q = r['quantity'];
+          final u = r['unit'] as String? ?? '';
+          String qtyStr;
+          if (q == null) {
+            qtyStr = u;
+          } else {
+            final qs = q is num ? _trimDecimal(q.toDouble()) : q.toString();
+            qtyStr = u.isEmpty ? qs : '$qs $u';
+          }
+          return Ingredient(name: name, qty: qtyStr.trim(), photo: '');
+        }).toList();
+      } catch (_) {}
 
       out.add(Meal(
         id: rid,

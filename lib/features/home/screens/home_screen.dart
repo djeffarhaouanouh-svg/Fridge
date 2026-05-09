@@ -357,7 +357,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: detectedIngredients.isEmpty
                 ? _IngredientsEmptyState()
                 : SizedBox(
-                    height: 88,
+                    height: 118,
                     child: ListView.builder(
                       primary: false,
                       scrollDirection: Axis.horizontal,
@@ -969,26 +969,39 @@ class _IngredientPill extends ConsumerWidget {
       ),
       child: Container(
         margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+        constraints: const BoxConstraints(minWidth: 76),
         decoration: BoxDecoration(
-          color: AppTokens.surface,
-          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-          border: Border.all(color: AppTokens.hairline, width: 1),
+          // Teinte primaire fixe (pas dépendante du thème clair/sombre)
+          color: AppTokens.coralSoft,
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+          border: Border.all(
+            color: AppTokens.coral.withValues(alpha: 0.28),
+            width: 1,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppTokens.surface2,
+                color: Colors.white.withValues(alpha: 0.92),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTokens.coral.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: buildIngredientIcon(name),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               name,
               style: GoogleFonts.inter(

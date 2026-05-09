@@ -252,7 +252,6 @@ class ProfileScreen extends ConsumerWidget {
     final notifier = ref.read(userProfileProvider.notifier);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
-    final recentlyViewed = ref.watch(recentlyViewedProvider);
     final loginStreak = ref.watch(loginStreakProvider);
     final cookedCount = ref.watch(cookedCountProvider);
     final streak = loginStreak;
@@ -625,45 +624,6 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               );
             }),
-
-            // ── 4c. Dernières recettes vues ──────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-              child: _SectionTitle(title: 'Dernières recettes'),
-            ),
-            if (recentlyViewed.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E1E1E) : AppTokens.surface,
-                    borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.history_outlined, color: AppTokens.muted, size: 28),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Aucune recette consultée',
-                        style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              SizedBox(
-                height: 160,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                  itemCount: recentlyViewed.length,
-                  itemBuilder: (_, i) => _MealCard(meal: recentlyViewed[i]),
-                ),
-              ),
-            _Divider(),
 
             // ── 7. Abonnement ────────────────────────────────────────
             Padding(

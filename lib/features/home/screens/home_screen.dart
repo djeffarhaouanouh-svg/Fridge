@@ -366,14 +366,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               titleColor: titleColor,
               onTap: () {
                 final list = meals.isEmpty ? _mockPopularMeals : meals;
-                Navigator.push(
+                showRecipesGridSheet(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => RecipesGridScreen(
-                      title: 'Depuis ton dernier scan',
-                      meals: list,
-                    ),
-                  ),
+                  title: 'Depuis ton dernier scan',
+                  meals: list,
                 );
               },
             ),
@@ -404,14 +400,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               titleSize: 19,
               padding: const EdgeInsets.fromLTRB(18, 36, 18, 14),
               titleColor: titleColor,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const IngredientsGridScreen(),
-                  ),
-                );
-              },
+              onTap: () => showIngredientsGridSheet(context),
             ),
           ),
           SliverToBoxAdapter(
@@ -442,20 +431,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 titleSize: 20,
                 padding: EdgeInsets.fromLTRB(18, i == 0 ? 50 : 28, 18, 12),
                 titleColor: titleColor,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => RecipesGridScreen(
-                        title: orderedSections[i].title,
-                        meals: orderedSections[i]
-                            .cards
-                            .map((c) => c.meal)
-                            .toList(),
-                      ),
-                    ),
-                  );
-                },
+                onTap: () => showRecipesGridSheet(
+                  context,
+                  title: orderedSections[i].title,
+                  meals: orderedSections[i]
+                      .cards
+                      .map((c) => c.meal)
+                      .toList(),
+                ),
               ),
             ),
             SliverToBoxAdapter(
@@ -819,28 +802,34 @@ class _SectionTitleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: padding,
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.fraunces(
-                  fontSize: titleSize,
-                  fontWeight: FontWeight.w600,
-                  color: titleColor,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: padding,
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  style: GoogleFonts.fraunces(
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.w600,
+                    color: titleColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 24,
-              color: titleColor,
-            ),
-          ],
+              const SizedBox(width: 6),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 26,
+                color: titleColor,
+              ),
+            ],
+          ),
         ),
       ),
     );

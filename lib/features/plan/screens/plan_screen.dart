@@ -12,6 +12,7 @@ import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
 import '../../meals/screens/recipe_screen.dart';
+import '../../home/providers/daily_hero_provider.dart';
 import '../models/day_plan.dart';
 
 /// Clé stockage créneau plan : `YYYY-MM-DD_Type`.
@@ -814,6 +815,8 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
     final allMeals = ref.watch(mealsProvider);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
     final selections = ref.watch(planMealSelectionsProvider);
+    final sportAsync = ref.watch(sportRecipesProvider);
+    final minceurAsync = ref.watch(minceurRecipesProvider);
     final fullDate = '${widget.day.day} ${_frMonths[widget.day.month - 1]} ${widget.day.year}';
     final meal = _selected;
     final takenIds = selections.entries
@@ -824,6 +827,14 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
         favoriteMeals.where((m) => !takenIds.contains(m.id)).toList();
     final availableAllMeals =
         allMeals.where((m) => !takenIds.contains(m.id)).toList();
+    final sportMeals = sportAsync.maybeWhen(
+      data: (list) => list.where((m) => !takenIds.contains(m.id)).toList(),
+      orElse: () => const <Meal>[],
+    );
+    final minceurMeals = minceurAsync.maybeWhen(
+      data: (list) => list.where((m) => !takenIds.contains(m.id)).toList(),
+      orElse: () => const <Meal>[],
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -1084,6 +1095,42 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    if (sportMeals.isNotEmpty) ...[
+                      _SectionTitle(title: 'Prise de masse'),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 160,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: sportMeals.length,
+                          itemBuilder: (_, i) => _MealPickCard(
+                            meal: sportMeals[i],
+                            isSelected: _selected?.id == sportMeals[i].id,
+                            onTap: () => _selectMeal(sportMeals[i]),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    if (minceurMeals.isNotEmpty) ...[
+                      _SectionTitle(title: 'Minceur'),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 160,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: minceurMeals.length,
+                          itemBuilder: (_, i) => _MealPickCard(
+                            meal: minceurMeals[i],
+                            isSelected: _selected?.id == minceurMeals[i].id,
+                            onTap: () => _selectMeal(minceurMeals[i]),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                   ],
                 ],
               ),

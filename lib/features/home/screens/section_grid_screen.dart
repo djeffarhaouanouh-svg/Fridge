@@ -322,7 +322,7 @@ class _IngredientsGrid extends ConsumerWidget {
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : AppTokens.ink,
+                  color: AppTokens.ink,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

@@ -33,7 +33,7 @@ class BottomNav extends ConsumerWidget {
     final bottom = MediaQuery.of(context).viewPadding.bottom;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(14, 0, 14, bottom + 16),
+      padding: EdgeInsets.fromLTRB(14, 0, 14, bottom + 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

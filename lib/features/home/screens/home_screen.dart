@@ -97,12 +97,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       loading: () => _mockHomeSections[1].cards,
       error: (_, __) => _mockHomeSections[1].cards,
     );
-    final firstName = ref.watch(userProfileProvider).name.split(' ').first;
+    final profile = ref.watch(userProfileProvider);
+    final firstName = profile.name.split(' ').first;
+    final objective = profile.objective;
     final themePreference = ref.watch(themePreferenceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : AppTokens.ink;
     final softTitleColor = isDark ? Colors.white70 : AppTokens.inkSoft;
     final mutedColor = isDark ? Colors.white60 : AppTokens.muted;
+
+    final budgetSection = _CollectionSectionData(
+      title: _mockHomeSections[0].title,
+      cards: budgetCards,
+    );
+    final masseSection = _CollectionSectionData(
+      title: 'Prise de masse',
+      cards: sportCards,
+    );
+    final minceurSection = _CollectionSectionData(
+      title: 'Minceur',
+      cards: minceurCards,
+    );
+
+    final List<_CollectionSectionData> orderedSections;
+    switch (objective) {
+      case CookingObjective.muscleGain:
+        orderedSections = [masseSection, budgetSection, minceurSection];
+        break;
+      case CookingObjective.weightLoss:
+        orderedSections = [minceurSection, budgetSection, masseSection];
+        break;
+      default:
+        orderedSections = [budgetSection, masseSection, minceurSection];
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -397,99 +424,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 50, 18, 12),
-              child: Text(
-                _mockHomeSections[0].title,
-                style: GoogleFonts.fraunces(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: titleColor,
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: SizedBox(
-                height: 248,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  itemCount: budgetCards.length,
-                  itemBuilder: (context, i) => _LargeCollectionCard(
-                    data: budgetCards[i],
+          for (var i = 0; i < orderedSections.length; i++) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(18, i == 0 ? 50 : 28, 18, 12),
+                child: Text(
+                  orderedSections[i].title,
+                  style: GoogleFonts.fraunces(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: titleColor,
                   ),
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 28, 18, 12),
-              child: Text(
-                'Prise de masse',
-                style: GoogleFonts.fraunces(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: titleColor,
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: SizedBox(
-                height: 248,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  itemCount: sportCards.length,
-                  itemBuilder: (context, i) => _LargeCollectionCard(
-                    data: sportCards[i],
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: SizedBox(
+                  height: 248,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    itemCount: orderedSections[i].cards.length,
+                    itemBuilder: (context, j) => _LargeCollectionCard(
+                      data: orderedSections[i].cards[j],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 28, 18, 12),
-              child: Text(
-                'Minceur',
-                style: GoogleFonts.fraunces(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: titleColor,
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: SizedBox(
-                height: 248,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  itemCount: minceurCards.length,
-                  itemBuilder: (context, i) => _LargeCollectionCard(
-                    data: minceurCards[i],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          ],
 
           const SliverToBoxAdapter(child: SizedBox(height: 62)),
         ],
@@ -802,6 +769,16 @@ class _HomeCollectionCardData {
     required this.imageUrl,
     required this.rating,
     required this.meal,
+  });
+}
+
+class _CollectionSectionData {
+  final String title;
+  final List<_HomeCollectionCardData> cards;
+
+  const _CollectionSectionData({
+    required this.title,
+    required this.cards,
   });
 }
 

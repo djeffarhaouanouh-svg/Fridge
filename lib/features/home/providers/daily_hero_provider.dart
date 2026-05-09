@@ -26,6 +26,17 @@ final sportRecipesProvider = FutureProvider<List<Meal>>((ref) async {
   }
 });
 
+final minceurRecipesProvider = FutureProvider<List<Meal>>((ref) async {
+  final db = NeonService();
+  try {
+    final results = await db.loadRecipesV3(category: 'Minceur', limit: 10);
+    if (results.isNotEmpty) return results;
+    return await db.loadRecipesV3(limit: 10);
+  } catch (_) {
+    return [];
+  }
+});
+
 class DailyHeroRecipesNotifier extends AsyncNotifier<List<Meal>> {
   static const _refreshIntervalHours = 48;
   final _db = NeonService();

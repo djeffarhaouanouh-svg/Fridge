@@ -36,6 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final heroAsync = ref.watch(dailyHeroRecipesProvider);
     final marmitonBudgetAsync = ref.watch(marmitonBudgetRecipesProvider);
     final sportAsync = ref.watch(sportRecipesProvider);
+    final minceurAsync = ref.watch(minceurRecipesProvider);
     final heroMeals = heroAsync.maybeWhen(
       data: (list) => list.isNotEmpty ? list : _mockPopularMeals.take(3).toList(),
       orElse: () => _mockPopularMeals.take(3).toList(),
@@ -59,6 +60,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       orElse: () => _mockHomeSections[0].cards,
     );
     final sportCards = sportAsync.when(
+      data: (list) {
+        if (list.isEmpty) return _mockHomeSections[1].cards;
+        return list
+            .asMap()
+            .entries
+            .map(
+              (entry) => _HomeCollectionCardData(
+                title: entry.value.title,
+                imageUrl: entry.value.photo,
+                rating: 4.5 + ((entry.key % 3) * 0.1),
+                meal: entry.value,
+              ),
+            )
+            .toList();
+      },
+      loading: () => _mockHomeSections[1].cards,
+      error: (_, __) => _mockHomeSections[1].cards,
+    );
+    final minceurCards = minceurAsync.when(
       data: (list) {
         if (list.isEmpty) return _mockHomeSections[1].cards;
         return list
@@ -431,6 +451,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   itemCount: sportCards.length,
                   itemBuilder: (context, i) => _LargeCollectionCard(
                     data: sportCards[i],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 28, 18, 12),
+              child: Text(
+                'Minceur',
+                style: GoogleFonts.fraunces(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor,
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: SizedBox(
+                height: 248,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  itemCount: minceurCards.length,
+                  itemBuilder: (context, i) => _LargeCollectionCard(
+                    data: minceurCards[i],
                   ),
                 ),
               ),

@@ -838,6 +838,234 @@ class NeonService {
     return out;
   }
 
+  Future<List<Meal>> loadRecipesV3({String? category, int limit = 10}) async {
+    final rows = await query(
+      category != null
+          ? '''
+            SELECT row_to_json(t) AS row
+            FROM (
+              SELECT * FROM recipes_v3
+              WHERE category ILIKE \$2
+              ORDER BY id
+              LIMIT \$1
+            ) t
+            '''
+          : '''
+            SELECT row_to_json(t) AS row
+            FROM (
+              SELECT * FROM recipes_v3
+              ORDER BY id
+              LIMIT \$1
+            ) t
+            ''',
+      category != null ? [limit, category] : [limit],
+    );
+
+    final out = <Meal>[];
+    for (var i = 0; i < rows.length; i++) {
+      final raw = rows[i]['row'];
+      if (raw is! Map) continue;
+      final map = Map<String, dynamic>.from(raw as Map);
+
+      String pickString(List<String> keys, {String fallback = ''}) {
+        for (final k in keys) {
+          final v = map[k];
+          if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+        }
+        return fallback;
+      }
+
+      int pickInt(List<String> keys, {int fallback = 0}) {
+        for (final k in keys) {
+          final v = map[k];
+          if (v is int) return v;
+          if (v is num) return v.toInt();
+          if (v is String) {
+            final parsed = int.tryParse(v.replaceAll(RegExp(r'[^0-9]'), ''));
+            if (parsed != null) return parsed;
+          }
+        }
+        return fallback;
+      }
+
+      List<Ingredient> pickIngredients() {
+        final dynamic rawIngredients =
+            map['ingredients_json'] ?? map['ingredients'];
+        if (rawIngredients is List) {
+          final result = <Ingredient>[];
+          for (final e in rawIngredients) {
+            if (e is Map) {
+              final m = Map<String, dynamic>.from(e as Map);
+              result.add(Ingredient(
+                name: (m['name'] ?? m['ingredient'] ?? '').toString(),
+                qty: (m['qty'] ?? m['quantity'] ?? '').toString(),
+                photo: (m['photo'] ?? m['image'] ?? '').toString(),
+              ));
+            } else {
+              final str = e.toString().trim();
+              if (str.contains('|')) {
+                result.addAll(
+                  str
+                      .split(RegExp(r'\|+'))
+                      .map((s) => s.trim())
+                      .where((s) => s.isNotEmpty)
+                      .map((s) => Ingredient(name: s, qty: '', photo: '')),
+                );
+              } else if (str.isNotEmpty) {
+                result.add(Ingredient(name: str, qty: '', photo: ''));
+              }
+            }
+          }
+          return result;
+        }
+        if (rawIngredients is String && rawIngredients.trim().isNotEmpty) {
+          try {
+            final decoded = jsonDecode(rawIngredients);
+            if (decoded is List) {
+              return decoded.map((e) {
+                if (e is Map) {
+                  final m = Map<String, dynamic>.from(e as Map);
+                  return Ingredient(
+                    name: (m['name'] ?? m['ingredient'] ?? '').toString(),
+                    qty: (m['qty'] ?? m['quantity'] ?? '').toString(),
+                    photo: (m['photo'] ?? m['image'] ?? '').toString(),
+                  );
+                }
+                return Ingredient(name: e.toString(), qty: '', photo: '');
+              }).toList();
+            }
+          } catch (_) {}
+          return rawIngredients
+              .split(RegExp(r'[,|]+'))
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .map((e) => Ingredient(name: e, qty: '', photo: ''))
+              .toList();
+        }
+        return const [];
+      }
+
+      List<String> splitSentences(String str) {
+        if (str.contains('||')) {
+          return str
+              .split('||')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+        }
+        if (str.contains('|')) {
+          return str
+              .split('|')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+        }
+        if (str.contains('\n')) {
+          return str
+              .split('\n')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+        }
+        final parts = str.split(RegExp(r'\.\s+(?=[A-ZÀ-Üa-zà-ü0-9])'));
+        if (parts.length > 1) {
+          return parts
+              .map((s) {
+                s = s.trim();
+                if (s.isNotEmpty &&
+                    !s.endsWith('.') &&
+                    !s.endsWith('!') &&
+                    !s.endsWith('?')) {
+                  s = '$s.';
+                }
+                return s;
+              })
+              .where((s) => s.isNotEmpty)
+              .toList();
+        }
+        return str.isNotEmpty ? [str] : [];
+      }
+
+      List<String> pickSteps() {
+        final dynamic rawSteps =
+            map['steps_json'] ?? map['steps'] ?? map['instructions'];
+        if (rawSteps is List) {
+          final result = <String>[];
+          for (final e in rawSteps) {
+            result.addAll(splitSentences(e.toString().trim()));
+          }
+          return result;
+        }
+        if (rawSteps is String && rawSteps.trim().isNotEmpty) {
+          try {
+            final decoded = jsonDecode(rawSteps);
+            if (decoded is List) {
+              final result = <String>[];
+              for (final e in decoded) {
+                result.addAll(splitSentences(e.toString().trim()));
+              }
+              return result;
+            }
+          } catch (_) {}
+          return splitSentences(rawSteps.trim());
+        }
+        return const [];
+      }
+
+      final title =
+          pickString(['title', 'name', 'recipe_name'], fallback: 'Recette');
+      final duration = pickInt(
+        ['duration', 'duration_min', 'time', 'time_min', 'ready_in_minutes'],
+        fallback: 20,
+      );
+      final kcal = pickInt(['calories', 'kcal', 'energy'], fallback: 0);
+      final difficulty =
+          pickString(['difficulty', 'niveau'], fallback: 'facile');
+      final type = pickString(['type'], fallback: i == 1 ? 'balanced' : 'simple');
+      final typeLabel = pickString(
+        ['type_label'],
+        fallback: type == 'balanced' ? 'Équilibré' : 'Simple',
+      );
+      final emoji = pickString(['emoji'], fallback: '🥗');
+      final color = pickString(['color'], fallback: '#82D28C');
+      final rawPhoto = pickString(
+        ['image_url', 'image', 'photo', 'thumbnail'],
+        fallback: '',
+      );
+      final photo = rawPhoto.isNotEmpty ? rawPhoto : _sportImageFallback(title);
+      final locked = (map['locked'] as bool?) ?? false;
+      final ridRaw =
+          pickString(['id', 'recipe_id', 'uuid'], fallback: '$title-$i');
+      final rid = normalizeRecipeId(ridRaw);
+      final ingredients = pickIngredients();
+      final steps = pickSteps();
+
+      out.add(
+        Meal(
+          id: rid,
+          type: type,
+          typeLabel: typeLabel,
+          emoji: emoji,
+          title: title,
+          kcal: kcal,
+          protein: 'moyen',
+          difficulty: _difficultyToFr(difficulty),
+          time: '$duration min',
+          locked: locked,
+          photo: photo,
+          ingredients: ingredients,
+          steps: steps.isEmpty
+              ? const ['Aucune étape détaillée en base pour cette recette.']
+              : steps,
+          color: color,
+          prepTimeMin: duration,
+          cookTimeMin: duration,
+        ),
+      );
+    }
+    return out;
+  }
+
   Future<Meal?> _loadRecipeMeal(String id, bool isFavorite) async {
     final rRows = await query(
       r'''

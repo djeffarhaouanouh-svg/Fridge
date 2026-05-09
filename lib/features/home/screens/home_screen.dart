@@ -342,54 +342,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 36, 18, 0),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppTokens.coral,
-                  borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                  border: Border.all(
-                    color: AppTokens.coralDeep.withValues(alpha: 0.45),
-                    width: 1,
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Tes ingrédients',
-                        style: GoogleFonts.fraunces(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      detectedIngredients.isEmpty
-                          ? const _IngredientsEmptyState()
-                          : SizedBox(
-                              height: 88,
-                              child: ListView.builder(
-                                primary: false,
-                                scrollDirection: Axis.horizontal,
-                                physics: const BouncingScrollPhysics(
-                                  parent: AlwaysScrollableScrollPhysics(),
-                                ),
-                                padding: EdgeInsets.zero,
-                                itemCount: detectedIngredients.length,
-                                itemBuilder: (context, i) =>
-                                    _IngredientPill(
-                                      name: detectedIngredients[i],
-                                      index: i,
-                                    ),
-                              ),
-                            ),
-                    ],
-                  ),
+              padding: const EdgeInsets.fromLTRB(18, 36, 18, 14),
+              child: Text(
+                'Tes ingrédients',
+                style: GoogleFonts.fraunces(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor,
                 ),
               ),
             ),
+          ),
+          SliverToBoxAdapter(
+            child: detectedIngredients.isEmpty
+                ? const _IngredientsEmptyState()
+                : SizedBox(
+                    height: 88,
+                    child: ListView.builder(
+                      primary: false,
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                      itemCount: detectedIngredients.length,
+                      itemBuilder: (context, i) =>
+                          _IngredientPill(
+                            name: detectedIngredients[i],
+                            index: i,
+                          ),
+                    ),
+                  ),
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -1305,9 +1288,9 @@ class _IngredientsEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 88,
-      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
-        color: AppTokens.paper,
+        color: AppTokens.surface,
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         border: Border.all(color: AppTokens.hairline, width: 1),
       ),

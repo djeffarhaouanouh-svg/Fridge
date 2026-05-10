@@ -238,7 +238,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     final vision = GoogleVisionService();
 
     try {
-      final ingredients = await vision.detectIngredients(_photos.last);
+      final ingredients = await vision.detectIngredients(List.from(_photos));
 
       if (ingredients.isEmpty) {
         _showError(

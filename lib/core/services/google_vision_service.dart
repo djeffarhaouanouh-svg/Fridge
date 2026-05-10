@@ -8,12 +8,24 @@ class GoogleVisionService {
 
   GoogleVisionService();
 
-  Future<List<String>> detectIngredients(Uint8List imageBytes) async {
+  Future<List<String>> detectIngredients(List<Uint8List> images) async {
     if (_openAiApiKey.isEmpty) {
       throw Exception('OPENAI_API_KEY is missing.');
     }
 
-    final dataUrl = 'data:image/jpeg;base64,${base64Encode(imageBytes)}';
+    final content = <Map<String, dynamic>>[
+      {
+        'type': 'text',
+        'text': 'Liste tous les aliments visibles dans ces images. '
+            'Retourne UNIQUEMENT un tableau JSON de chaînes en français, sans doublons. '
+            'Exemple: ["tomates","oeufs","fromage"].',
+      },
+      ...images.map((bytes) => {
+        'type': 'image_url',
+        'image_url': {'url': 'data:image/jpeg;base64,${base64Encode(bytes)}'},
+      }),
+    ];
+
     final response = await http.post(
       Uri.parse(_endpoint),
       headers: {
@@ -23,22 +35,7 @@ class GoogleVisionService {
       body: jsonEncode({
         'model': 'gpt-4o-mini',
         'messages': [
-          {
-            'role': 'user',
-            'content': [
-              {
-                'type': 'text',
-                'text':
-                    'Liste les aliments visibles dans cette image. '
-                        'Retourne UNIQUEMENT un tableau JSON de chaînes en français. '
-                        'Exemple: ["tomates","oeufs","fromage"].',
-              },
-              {
-                'type': 'image_url',
-                'image_url': {'url': dataUrl},
-              }
-            ],
-          },
+          {'role': 'user', 'content': content},
         ],
         'max_tokens': 300,
       }),
@@ -53,10 +50,10 @@ class GoogleVisionService {
     if (choices.isEmpty) return [];
     final first = choices.first as Map<String, dynamic>;
     final message = (first['message'] as Map<String, dynamic>?) ?? const {};
-    final content = (message['content'] ?? '').toString();
+    final text = (message['content'] ?? '').toString();
 
     try {
-      final cleaned = content.replaceAll(RegExp(r'```json|```'), '').trim();
+      final cleaned = text.replaceAll(RegExp(r'```json|```'), '').trim();
       return (jsonDecode(cleaned) as List)
           .map((e) => e.toString().trim())
           .where((e) => e.isNotEmpty)

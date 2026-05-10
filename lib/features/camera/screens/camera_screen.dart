@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'dart:ui' show lerpDouble;
+import 'dart:ui' show lerpDouble, instantiateImageCodec, ImageByteFormat;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -158,6 +158,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     );
   }
 
+  Future<Uint8List> _compressFrame(Uint8List bytes) async {
+    final codec = await instantiateImageCodec(bytes, targetWidth: 512);
+    final frame = await codec.getNextFrame();
+    final data = await frame.image.toByteData(format: ImageByteFormat.png);
+    frame.image.dispose();
+    return data!.buffer.asUint8List();
+  }
+
   Future<void> _captureAndAnalyze() async {
     if (!_cameraReady || _cameraController == null) return;
     if (_isProcessingFrame || _liveDetectionPaused) return;
@@ -170,7 +178,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         File(xFile.path).deleteSync();
       } catch (_) {}
 
-      final ingredients = await OpenAiVisionService().detectIngredients([bytes]);
+      final compressed = await _compressFrame(bytes);
+      final ingredients = await OpenAiVisionService().detectIngredients([compressed]);
       if (mounted) {
         _handleNewIngredients(ingredients);
         _pruneStaleIngredients();

@@ -22,7 +22,10 @@ class OpenAiVisionService {
       },
       ...images.map((bytes) => {
         'type': 'image_url',
-        'image_url': {'url': 'data:image/jpeg;base64,${base64Encode(bytes)}'},
+        'image_url': {
+          'url': 'data:image/jpeg;base64,${base64Encode(bytes)}',
+          'detail': 'low',
+        },
       }),
     ];
 

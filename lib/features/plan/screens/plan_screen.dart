@@ -29,15 +29,19 @@ class PlanScreen extends ConsumerStatefulWidget {
 }
 
 class _PlanScreenState extends ConsumerState<PlanScreen> {
-  int _selectedDayIndex = 0;
+  int? _rangeStart;
+  int? _rangeEnd;
   int _weekOffset = 0;
 
   final _scrollController = ScrollController();
-  final List<GlobalKey> _dayCardKeys = List.generate(7, (_) => GlobalKey());
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final idx = _days.indexWhere((d) => d == today);
+    if (idx >= 0) _rangeStart = idx;
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadSlotExtras());
   }
 
@@ -97,27 +101,33 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  void _selectDay(int i) {
-    setState(() => _selectedDayIndex = i);
-    _scrollToDayCard(i);
-  }
-
-  void _prevWeek() => setState(() { _weekOffset--; _selectedDayIndex = 0; });
-  void _nextWeek() => setState(() { _weekOffset++; _selectedDayIndex = 0; });
-
-  void _scrollToDayCard(int i) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final ctx = _dayCardKeys[i].currentContext;
-      if (ctx != null) {
-        Scrollable.ensureVisible(
-          ctx,
-          duration: const Duration(milliseconds: 320),
-          curve: Curves.easeInOut,
-          alignment: 0.12,
-        );
+  void _handleDayTap(int i) {
+    setState(() {
+      if (_rangeStart == null || _rangeEnd != null) {
+        _rangeStart = i;
+        _rangeEnd = null;
+      } else {
+        if (i == _rangeStart) {
+          _rangeEnd = i;
+        } else if (i < _rangeStart!) {
+          _rangeEnd = _rangeStart;
+          _rangeStart = i;
+        } else {
+          _rangeEnd = i;
+        }
       }
     });
+  }
+
+  void _prevWeek() => setState(() { _weekOffset--; _rangeStart = null; _rangeEnd = null; });
+  void _nextWeek() => setState(() { _weekOffset++; _rangeStart = null; _rangeEnd = null; });
+
+  List<DateTime> get _visibleDays {
+    final start = _rangeStart;
+    if (start == null) return [];
+    final end = _rangeEnd ?? start;
+    final allDays = _days;
+    return [for (int i = start; i <= end; i++) allDays[i]];
   }
 
   String _defaultPlanMealName(String iso, String mealType, Map<String, DayPlan> planByDate) {
@@ -239,9 +249,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                       _WeekSelectorCard(
                         days: days,
                         frDays: frDays,
-                        selectedIndex: _selectedDayIndex,
+                        rangeStart: _rangeStart,
+                        rangeEnd: _rangeEnd,
                         frMonths: _frMonths,
-                        onDayTap: _selectDay,
+                        onDayTap: _handleDayTap,
                         onPrev: _prevWeek,
                         onNext: _nextWeek,
                         isDark: isDark,
@@ -249,18 +260,31 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                         mutedColor: mutedColor,
                       ),
                       const SizedBox(height: 16),
-                      for (var index = 0; index < days.length; index++)
-                        KeyedSubtree(
-                          key: _dayCardKeys[index],
-                          child: Padding(
+                      if (_rangeStart == null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 32),
+                          child: Column(
+                            children: [
+                              Icon(Icons.touch_app_outlined, color: mutedColor, size: 36),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Sélectionne un ou plusieurs jours',
+                                style: GoogleFonts.inter(fontSize: 14, color: mutedColor, fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        for (final day in _visibleDays)
+                          Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: _DayPlanCard(
-                              day: days[index],
+                              day: day,
                               isDark: isDark,
-                              isSelected: index == _selectedDayIndex,
+                              isSelected: false,
                               headerTitle:
-                                  '${_weekdayLongFr[days[index].weekday]}, ${days[index].day} ${_frMonths[days[index].month - 1]}',
-                              headerAccentColor: days[index].weekday == DateTime.monday ? mondayAccent : ink,
+                                  '${_weekdayLongFr[day.weekday]}, ${day.day} ${_frMonths[day.month - 1]}',
+                              headerAccentColor: day.weekday == DateTime.monday ? mondayAccent : ink,
                               cardBg: cardBg,
                               ink: ink,
                               muted: muted,
@@ -268,10 +292,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                               slotPhotos: slotPhotos,
                               slotAnalyses: slotAnalyses,
                               slotDefs: _slotDefs,
-                              onAddTap: () => _openAddSlotMenu(days[index], planByDate),
-                              onSlotTap: (mealType) => _openSlotEditor(days[index], mealType, planByDate),
+                              onAddTap: () => _openAddSlotMenu(day, planByDate),
+                              onSlotTap: (mealType) => _openSlotEditor(day, mealType, planByDate),
                               slotTitle: (mealType) => _slotLineTitle(
-                                days[index],
+                                day,
                                 mealType,
                                 selections,
                                 planByDate,
@@ -279,7 +303,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                               ),
                             ),
                           ),
-                        ),
                       if (isLoading)
                         const Padding(
                           padding: EdgeInsets.only(top: 16),
@@ -324,7 +347,8 @@ class _PlanDotPatternPainter extends CustomPainter {
 class _WeekSelectorCard extends StatelessWidget {
   final List<DateTime> days;
   final List<String> frDays;
-  final int selectedIndex;
+  final int? rangeStart;
+  final int? rangeEnd;
   final List<String> frMonths;
   final void Function(int) onDayTap;
   final VoidCallback onPrev;
@@ -336,7 +360,8 @@ class _WeekSelectorCard extends StatelessWidget {
   const _WeekSelectorCard({
     required this.days,
     required this.frDays,
-    required this.selectedIndex,
+    required this.rangeStart,
+    required this.rangeEnd,
     required this.frMonths,
     required this.onDayTap,
     required this.onPrev,
@@ -355,9 +380,16 @@ class _WeekSelectorCard extends StatelessWidget {
     return 'du ${s.day} ${frMonths[s.month - 1]} au ${e.day} ${frMonths[e.month - 1]}';
   }
 
+  bool _isInRange(int i) {
+    if (rangeStart == null) return false;
+    final end = rangeEnd ?? rangeStart!;
+    return i >= rangeStart! && i <= end;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+    final bandColor = AppTokens.coral.withValues(alpha: 0.15);
 
     return Container(
       decoration: BoxDecoration(
@@ -388,10 +420,15 @@ class _WeekSelectorCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            padding: const EdgeInsets.fromLTRB(6, 0, 6, 10),
             child: Row(
               children: List.generate(7, (i) {
-                final isActive = i == selectedIndex;
+                final effectiveEnd = rangeEnd ?? rangeStart;
+                final isStart = i == rangeStart;
+                final isEnd = effectiveEnd != null && i == effectiveEnd;
+                final isInRange = _isInRange(i);
+                final isSelected = isStart || isEnd;
+
                 return Expanded(
                   child: GestureDetector(
                     onTap: () => onDayTap(i),
@@ -402,27 +439,58 @@ class _WeekSelectorCard extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: isActive ? AppTokens.coral : mutedColor,
+                            color: isInRange ? AppTokens.coral : mutedColor,
                           ),
                         ),
                         const SizedBox(height: 5),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: 34,
+                        SizedBox(
                           height: 34,
-                          decoration: BoxDecoration(
-                            color: isActive ? AppTokens.coral : Colors.transparent,
-                            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${days[i].day}',
-                              style: GoogleFonts.fraunces(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: isActive ? Colors.white : titleColor,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // Bande gauche
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: FractionallySizedBox(
+                                  widthFactor: 0.5,
+                                  child: Container(
+                                    color: (isInRange && !isStart) ? bandColor : Colors.transparent,
+                                  ),
+                                ),
                               ),
-                            ),
+                              // Bande droite
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: FractionallySizedBox(
+                                  widthFactor: 0.5,
+                                  child: Container(
+                                    color: (isInRange && !isEnd) ? bandColor : Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                              // Cercle du jour
+                              Center(
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? AppTokens.coral : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${days[i].day}',
+                                      style: GoogleFonts.fraunces(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: isSelected ? Colors.white : titleColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -432,7 +500,6 @@ class _WeekSelectorCard extends StatelessWidget {
               }),
             ),
           ),
-          const SizedBox(height: 8),
         ],
       ),
     );

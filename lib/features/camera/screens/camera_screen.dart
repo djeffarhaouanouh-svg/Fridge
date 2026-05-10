@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'dart:ui' show lerpDouble;
+import 'dart:ui' show lerpDouble, ImageFilter;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,6 +20,27 @@ import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/screens/results_screen.dart';
 
+// ─── Ingredient entry with per-tag animation ─────────────────────────────────
+
+class _DetectedIngredient {
+  final String name;
+  final AnimationController controller;
+  late final Animation<double> fade;
+  late final Animation<Offset> slide;
+
+  _DetectedIngredient({required this.name, required this.controller}) {
+    fade = CurvedAnimation(parent: controller, curve: Curves.easeOut);
+    slide = Tween<Offset>(
+      begin: const Offset(0, 0.7),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic));
+  }
+
+  void dispose() => controller.dispose();
+}
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
+
 class CameraScreen extends ConsumerStatefulWidget {
   const CameraScreen({super.key});
 
@@ -27,6 +50,7 @@ class CameraScreen extends ConsumerStatefulWidget {
 
 class _CameraScreenState extends ConsumerState<CameraScreen>
     with TickerProviderStateMixin {
+  // Existing photo capture state
   final _picker = ImagePicker();
   final List<Uint8List> _photos = [];
   final _viewfinderKey = GlobalKey();
@@ -39,10 +63,21 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   OverlayEntry? _flyEntry;
   bool _isAnimating = false;
-
-  // Live camera preview
   CameraController? _cameraController;
   bool _cameraReady = false;
+
+  // Futuristic overlay animations
+  late final AnimationController _scanLineController;
+  late final AnimationController _glowController;
+
+  // Live detection state
+  Timer? _liveDetectionTimer;
+  bool _isProcessingFrame = false;
+  bool _liveDetectionPaused = false;
+  final Set<String> _detectedSet = {};
+  final List<_DetectedIngredient> _detectedList = [];
+
+  static const _coral = Color(0xFFEE5C42);
 
   @override
   void initState() {
@@ -52,10 +87,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _flyAnim = CurvedAnimation(
-      parent: _flyController,
-      curve: Curves.easeInOut,
-    );
+    _flyAnim = CurvedAnimation(parent: _flyController, curve: Curves.easeInOut);
 
     _flashController = AnimationController(
       vsync: this,
@@ -65,6 +97,16 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     _flashAnim = Tween<double>(begin: 0.7, end: 0.0).animate(
       CurvedAnimation(parent: _flashController, curve: Curves.easeOut),
     );
+
+    _scanLineController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat();
+
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
 
     _initCamera();
   }
@@ -79,8 +121,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       );
       final ctrl = CameraController(
         back,
-        ResolutionPreset.high,
+        ResolutionPreset.medium,
         enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
       );
       await ctrl.initialize();
       if (!mounted) {
@@ -91,22 +134,86 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         _cameraController = ctrl;
         _cameraReady = true;
       });
+      _startLiveDetection();
+    } catch (_) {}
+  }
+
+  void _startLiveDetection() {
+    _liveDetectionTimer?.cancel();
+    _liveDetectionTimer = Timer.periodic(
+      const Duration(milliseconds: 950),
+      (_) => _captureAndAnalyze(),
+    );
+  }
+
+  Future<void> _captureAndAnalyze() async {
+    if (!_cameraReady || _cameraController == null) return;
+    if (_isProcessingFrame || _liveDetectionPaused) return;
+
+    _isProcessingFrame = true;
+    try {
+      final xFile = await _cameraController!.takePicture();
+      final bytes = await xFile.readAsBytes();
+      try {
+        File(xFile.path).deleteSync();
+      } catch (_) {}
+
+      final ingredients = await OpenAiVisionService().detectIngredients([bytes]);
+      if (mounted) _handleNewIngredients(ingredients);
     } catch (_) {
-      // Permission refusée ou caméra indisponible → fond noir conservé
+      // Camera busy or API error — silently skip
+    } finally {
+      _isProcessingFrame = false;
     }
+  }
+
+  void _handleNewIngredients(List<String> incoming) {
+    bool foundNew = false;
+    for (final raw in incoming) {
+      final trimmed = raw.trim();
+      if (trimmed.isEmpty) continue;
+      final key = trimmed.toLowerCase();
+      if (_detectedSet.contains(key)) continue;
+
+      _detectedSet.add(key);
+      foundNew = true;
+
+      final ctrl = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 480),
+      );
+      final ingredient = _DetectedIngredient(name: trimmed, controller: ctrl);
+
+      setState(() {
+        _detectedList.add(ingredient);
+        if (_detectedList.length > 6) {
+          _detectedList.removeAt(0).dispose();
+        }
+      });
+      ctrl.forward();
+    }
+
+    if (foundNew) HapticFeedback.lightImpact();
   }
 
   @override
   void dispose() {
     _flyController.dispose();
     _flashController.dispose();
+    _scanLineController.dispose();
+    _glowController.dispose();
     _flyEntry?.remove();
+    _liveDetectionTimer?.cancel();
+    for (final tag in _detectedList) {
+      tag.dispose();
+    }
     _cameraController?.dispose();
     super.dispose();
   }
 
   Future<void> _showSourcePicker() async {
     if (_isAnimating) return;
+    _liveDetectionPaused = true;
 
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -121,7 +228,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               decoration: BoxDecoration(
                 color: Colors.white24,
                 borderRadius: BorderRadius.circular(2),
@@ -131,21 +239,25 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             _SourceOption(
               icon: Icons.camera_alt_outlined,
               label: 'Prendre une photo',
-              onTap: () => Navigator.pop(_, ImageSource.camera),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             const SizedBox(height: 12),
             _SourceOption(
               icon: Icons.photo_library_outlined,
               label: 'Choisir dans la galerie',
-              onTap: () => Navigator.pop(_, ImageSource.gallery),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
         ),
       ),
     );
 
-    if (source == null || !mounted) return;
+    if (source == null || !mounted) {
+      _liveDetectionPaused = false;
+      return;
+    }
     await _pickAndProcess(source);
+    _liveDetectionPaused = false;
   }
 
   Future<void> _pickAndProcess(ImageSource source) async {
@@ -155,20 +267,19 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     );
     if (photo == null) return;
     final bytes = await photo.readAsBytes();
-
     if (!mounted) return;
 
-    // Lance l'animation d'abord, puis ajoute la photo dans la vignette.
     setState(() => _isAnimating = true);
     try {
       await NeonService().saveUserPhotoBytes(bytes);
-    } catch (e, st) {
-      debugPrint('saveUserPhotoBytes: $e\n$st');
+    } catch (e) {
+      debugPrint('saveUserPhotoBytes: $e');
     }
 
-    // Animation fly (cosmétique uniquement, en parallèle)
-    final vfBox = _viewfinderKey.currentContext?.findRenderObject() as RenderBox?;
-    final thumbBox = _thumbnailKey.currentContext?.findRenderObject() as RenderBox?;
+    final vfBox =
+        _viewfinderKey.currentContext?.findRenderObject() as RenderBox?;
+    final thumbBox =
+        _thumbnailKey.currentContext?.findRenderObject() as RenderBox?;
 
     if (vfBox != null && thumbBox != null && mounted) {
       final startRect = vfBox.localToGlobal(Offset.zero) & vfBox.size;
@@ -212,7 +323,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
       });
     } else {
-      // Fallback sans animation: on ajoute immédiatement.
       setState(() {
         _photos.add(bytes);
         _isAnimating = false;
@@ -220,7 +330,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       ref.read(capturedPhotosProvider.notifier).state = List.from(_photos);
     }
   }
-
 
   void _removeLastPhoto() {
     if (_photos.isEmpty) return;
@@ -230,6 +339,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   Future<void> _analyzePhotos() async {
     if (_photos.isEmpty) return;
+
+    _liveDetectionTimer?.cancel();
+    _liveDetectionPaused = true;
 
     ref.read(scanStatusProvider.notifier).state = ScanStatus.loading;
     ref.read(latestScanMealsProvider.notifier).state = const [];
@@ -241,9 +353,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       final ingredients = await vision.detectIngredients(List.from(_photos));
 
       if (ingredients.isEmpty) {
-        _showError(
-            'Aucun ingrédient détecté. Réessaie avec une meilleure photo.');
+        _showError('Aucun ingrédient détecté. Réessaie avec une meilleure photo.');
         ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
+        _liveDetectionPaused = false;
+        _startLiveDetection();
         return;
       }
 
@@ -253,23 +366,20 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       for (final item in ingredients) {
         final v = item.trim();
         if (v.isEmpty) continue;
-        final key = v.toLowerCase();
-        if (latestSeen.add(key)) latestDetected.add(v);
+        if (latestSeen.add(v.toLowerCase())) latestDetected.add(v);
       }
       final merged = <String>[];
       final seen = <String>{};
       for (final item in [...existing, ...latestDetected]) {
         final v = item.trim();
         if (v.isEmpty) continue;
-        final key = v.toLowerCase();
-        if (seen.add(key)) merged.add(v);
+        if (seen.add(v.toLowerCase())) merged.add(v);
       }
       ref.read(detectedIngredientsProvider.notifier).state = merged;
       ref.read(latestScanIngredientsProvider.notifier).state = latestDetected;
       await persistFridgeToNeon(merged);
 
       final profile = ref.read(userProfileProvider);
-      // Utilise tous les ingrédients connus (anciens + nouveaux) pour la génération.
       final meals = await claude.findRecipes(merged, profile: profile);
       if (meals.isNotEmpty) {
         ref.read(latestScanMealsProvider.notifier).state = meals;
@@ -289,6 +399,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     } catch (e) {
       _showError('Erreur : $e');
       ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
+      _liveDetectionPaused = false;
+      _startLiveDetection();
     }
   }
 
@@ -307,378 +419,689 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   Widget build(BuildContext context) {
     final isScanning = ref.watch(scanStatusProvider) == ScanStatus.loading;
     final hasPhotos = _photos.isNotEmpty;
+    final size = MediaQuery.of(context).size;
+    final vPad = MediaQuery.of(context).viewPadding.bottom;
+    final frameW = size.width - 64;
+    final frameH = size.height * 0.52;
 
     return Scaffold(
       backgroundColor: const Color(0xFF1C1816),
       body: Stack(
-          children: [
-            // Viewfinder plein écran — live preview ou fond noir si indispo
-            Positioned.fill(
-              child: _cameraReady && _cameraController != null
-                  ? CameraPreview(
-                      _cameraController!,
-                      child: Container(key: _viewfinderKey),
-                    )
-                  : Container(
-                      key: _viewfinderKey,
-                      color: const Color(0xFF1C1816),
-                    ),
-            ),
+        children: [
+          // ── Camera preview ──────────────────────────────────────────────
+          Positioned.fill(
+            child: _cameraReady && _cameraController != null
+                ? CameraPreview(
+                    _cameraController!,
+                    child: Container(key: _viewfinderKey),
+                  )
+                : Container(
+                    key: _viewfinderKey,
+                    color: const Color(0xFF1C1816),
+                  ),
+          ),
 
-            // Frame de scan centré
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Center(
-                  child: Transform.translate(
-                    offset: const Offset(0, -60),
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width - 64,
-                      height: MediaQuery.of(context).size.height * 0.52,
-                      child: const CustomPaint(painter: _ScanFramePainter()),
+          // ── Radial vignette for focus ────────────────────────────────────
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: 1.1,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.5),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Futuristic scan overlay (corners + scan line + AI badge) ────
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: Transform.translate(
+                  offset: const Offset(0, -60),
+                  child: SizedBox(
+                    width: frameW,
+                    height: frameH,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // Animated scan painter
+                        Positioned.fill(
+                          child: AnimatedBuilder(
+                            animation: Listenable.merge(
+                                [_scanLineController, _glowController]),
+                            builder: (_, __) => CustomPaint(
+                              painter: _FuturisticScanPainter(
+                                scanProgress: _scanLineController.value,
+                                glowIntensity: _glowController.value,
+                                isActive: _cameraReady && !isScanning,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // AI SCAN badge — top-right of frame
+                        if (_cameraReady && !isScanning)
+                          Positioned(
+                            top: -38,
+                            right: 0,
+                            child: _AiLiveBadge(pulseAnim: _glowController),
+                          ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
+          ),
 
-            // Analyse en cours
-            if (isScanning)
-              Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: AppTokens.coral, strokeWidth: 2),
-                    const SizedBox(height: 16),
-                    Text('Analyse en cours…',
-                      style: GoogleFonts.inter(color: Colors.white70, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-
-            // Flash shutter — Positioned.fill doit être enfant direct du Stack
-            Positioned.fill(
-              child: IgnorePointer(
-                child: AnimatedBuilder(
-                  animation: _flashAnim,
-                  builder: (_, __) => ColoredBox(
-                    color: Colors.white.withValues(alpha: _flashAnim.value),
-                  ),
-                ),
-              ),
-            ),
-
-            // Header : X + logo
+          // ── Live ingredient tags (below scan frame) ──────────────────────
+          if (_detectedList.isNotEmpty && !isScanning)
             Positioned(
-              top: MediaQuery.of(context).padding.top + 12, left: 16, right: 16,
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => ref.read(selectedTabProvider.notifier).state = 0,
-                    child: Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        shape: BoxShape.circle,
+              top: size.height * 0.76 - 48,
+              left: 20,
+              right: 20,
+              child: _LiveIngredientTags(ingredients: _detectedList),
+            ),
+
+          // ── Scan progress overlay ────────────────────────────────────────
+          if (isScanning)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 52,
+                        height: 52,
+                        child: CircularProgressIndicator(
+                          color: _coral,
+                          strokeWidth: 2.5,
+                        ),
                       ),
-                      child: const Icon(Icons.close, color: Colors.white, size: 20),
+                      const SizedBox(height: 18),
+                      Text(
+                        'Analyse IA en cours…',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Génération de vos recettes',
+                        style: GoogleFonts.inter(
+                          color: Colors.white54,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Shutter flash ────────────────────────────────────────────────
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _flashAnim,
+                builder: (_, __) => ColoredBox(
+                  color: Colors.white.withValues(alpha: _flashAnim.value),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Header ──────────────────────────────────────────────────────
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 16,
+            right: 16,
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () =>
+                      ref.read(selectedTabProvider.notifier).state = 0,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child:
+                        const Icon(Icons.close, color: Colors.white, size: 20),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.kitchen_outlined,
+                            color: _coral, size: 24),
+                        const SizedBox(width: 7),
+                        Text(
+                          'fridge·ai',
+                          style: GoogleFonts.fraunces(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: _coral,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    child: Center(
+                ),
+                const SizedBox(width: 36),
+              ],
+            ),
+          ),
+
+          // ── Scan tips (hidden once ingredients detected) ─────────────────
+          AnimatedOpacity(
+            opacity: _detectedList.isEmpty ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 400),
+            child: Positioned(
+              bottom: vPad + 190,
+              left: 40,
+              right: 40,
+              child: const _ScanTips(),
+            ),
+          ),
+
+          // ── Bottom controls ──────────────────────────────────────────────
+          Positioned(
+            bottom: vPad + 76,
+            left: 32,
+            right: 32,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Thumbnail gallery
+                Positioned(
+                  left: 0,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      SizedBox(
+                        width: 172,
+                        height: 70,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned(
+                              left: 0,
+                              bottom: 0,
+                              child: Container(
+                                key: _thumbnailKey,
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: hasPhotos
+                                        ? _coral
+                                        : Colors.white24,
+                                    width: hasPhotos ? 2 : 1,
+                                  ),
+                                  color: Colors.white10,
+                                ),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    if (!hasPhotos)
+                                      const Center(
+                                        child: Icon(
+                                          Icons.grid_view_rounded,
+                                          color: Colors.white38,
+                                          size: 22,
+                                        ),
+                                      )
+                                    else if (_photos.length == 1)
+                                      ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                        child: Image.memory(
+                                          _photos.last,
+                                          width: 56,
+                                          height: 56,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    else ...[
+                                      Positioned(
+                                        left: -8,
+                                        top: 7,
+                                        child: Transform.rotate(
+                                          angle: -0.26,
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            child: Image.memory(
+                                              _photos[_photos.length - 2],
+                                              width: 42,
+                                              height: 42,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: 12,
+                                        top: -4,
+                                        child: Transform.rotate(
+                                          angle: 0.22,
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            child: Image.memory(
+                                              _photos.last,
+                                              width: 46,
+                                              height: 46,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (hasPhotos && !isScanning)
+                        Positioned(
+                          top: -7,
+                          left: -7,
+                          child: GestureDetector(
+                            onTap: _removeLastPhoto,
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade600,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: Colors.white, width: 1.5),
+                              ),
+                              child: const Icon(Icons.close,
+                                  size: 13, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+                // Capture button
+                Center(
+                  child: GestureDetector(
+                    onTap: (isScanning || _isAnimating)
+                        ? null
+                        : _showSourcePicker,
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.transparent,
+                        border: Border.all(color: Colors.white, width: 4),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Send button
+                if (hasPhotos && !isScanning)
+                  Positioned(
+                    right: 0,
+                    bottom: 10,
+                    child: GestureDetector(
+                      onTap: _analyzePhotos,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.kitchen_outlined, color: AppTokens.coral, size: 24),
-                          const SizedBox(width: 7),
-                          Text('fridge·ai',
-                            style: GoogleFonts.fraunces(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              color: AppTokens.coral,
-                              letterSpacing: -0.5,
+                          Container(
+                            height: 34,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: _coral,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color: Colors.white, width: 1.4),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                'envoyer',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Transform.translate(
+                            offset: const Offset(-1, 0),
+                            child: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 13,
+                              color: Colors.white,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 36),
-                ],
-              ),
+              ],
             ),
-
-            // Tips défilants
-            Positioned(
-              bottom: MediaQuery.of(context).viewPadding.bottom + 190,
-              left: 40,
-              right: 40,
-              child: const _ScanTips(),
-            ),
-
-            // Contrôles bas : miniature + bouton capture
-            // Positionnée juste au-dessus de la nav bar.
-            Positioned(
-              bottom: MediaQuery.of(context).viewPadding.bottom + 76, left: 32, right: 32,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Miniature / envoyer
-                  Positioned(
-                    left: 0,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        SizedBox(
-                          width: 172,
-                          height: 70,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned(
-                                left: 0,
-                                bottom: 0,
-                                child: Container(
-                                  key: _thumbnailKey,
-                                  width: 56,
-                                  height: 56,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: hasPhotos ? AppTokens.coral : Colors.white24,
-                                      width: hasPhotos ? 2 : 1,
-                                    ),
-                                    color: Colors.white10,
-                                  ),
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      if (!hasPhotos)
-                                        const Center(
-                                          child: Icon(
-                                            Icons.grid_view_rounded,
-                                            color: Colors.white38,
-                                            size: 22,
-                                          ),
-                                        )
-                                      else if (_photos.length == 1)
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(10),
-                                          child: Image.memory(
-                                            _photos.last,
-                                            width: 56,
-                                            height: 56,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        )
-                                      else ...[
-                                        Positioned(
-                                          left: -8,
-                                          top: 7,
-                                          child: Transform.rotate(
-                                            angle: -0.26,
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(10),
-                                              child: Image.memory(
-                                                _photos[_photos.length - 2],
-                                                width: 42,
-                                                height: 42,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          left: 12,
-                                          top: -4,
-                                          child: Transform.rotate(
-                                            angle: 0.22,
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(10),
-                                              child: Image.memory(
-                                                _photos.last,
-                                                width: 46,
-                                                height: 46,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Bulle X — supprimer la dernière photo
-                        if (hasPhotos && !isScanning)
-                          Positioned(
-                            top: -7, left: -7,
-                            child: GestureDetector(
-                              onTap: _removeLastPhoto,
-                              child: Container(
-                                width: 22, height: 22,
-                                decoration: BoxDecoration(
-                                  color: Colors.red.shade600,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1.5),
-                                ),
-                                child: const Icon(Icons.close, size: 13, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  Center(
-                    child: GestureDetector(
-                      onTap: (isScanning || _isAnimating) ? null : _showSourcePicker,
-                      child: Container(
-                        width: 80, height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.transparent,
-                          border: Border.all(color: Colors.white, width: 4),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (hasPhotos && !isScanning)
-                    Positioned(
-                      right: 0,
-                      bottom: 10,
-                      child: GestureDetector(
-                        onTap: _analyzePhotos,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              height: 34,
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
-                              decoration: BoxDecoration(
-                                color: AppTokens.coral,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.white, width: 1.4),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 6,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'envoyer',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Transform.translate(
-                              offset: const Offset(-1, 0),
-                              child: const Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 13,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  final String value;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
+// ─── Futuristic scan frame painter ───────────────────────────────────────────
 
-  const _FilterChip({
-    required this.value,
-    required this.options,
-    required this.onChanged,
+class _FuturisticScanPainter extends CustomPainter {
+  final double scanProgress;
+  final double glowIntensity;
+  final bool isActive;
+
+  const _FuturisticScanPainter({
+    required this.scanProgress,
+    required this.glowIntensity,
+    required this.isActive,
   });
+
+  static const _coral = Color(0xFFEE5C42);
+  static const _arm = 28.0;
+  static const _r = 6.0;
+  static const _topLift = 10.0;
+  static const _bottomDrop = 46.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // Glow layer
+    final glowPaint = Paint()
+      ..color = _coral.withOpacity(0.28 + 0.18 * glowIntensity)
+      ..strokeWidth = 5.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
+
+    // Solid layer
+    final solidPaint = Paint()
+      ..color = _coral
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    for (final paint in [glowPaint, solidPaint]) {
+      _corner(canvas, paint, 0, -_topLift, _CornerType.topLeft);
+      _corner(canvas, paint, w, -_topLift, _CornerType.topRight);
+      _corner(canvas, paint, 0, h + _bottomDrop, _CornerType.bottomLeft);
+      _corner(canvas, paint, w, h + _bottomDrop, _CornerType.bottomRight);
+    }
+
+    if (!isActive) return;
+
+    // Scan line sweeps the full visual range (topLift to bottomDrop)
+    final totalH = h + _topLift + _bottomDrop;
+    final scanY = -_topLift + totalH * scanProgress;
+
+    // Gradient scan line
+    final shader = LinearGradient(
+      colors: [
+        Colors.transparent,
+        _coral.withOpacity(0.55),
+        _coral.withOpacity(0.95),
+        _coral.withOpacity(0.55),
+        Colors.transparent,
+      ],
+      stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
+    ).createShader(Rect.fromLTWH(0, scanY - 1, w, 2));
+
+    canvas.drawLine(
+      Offset(0, scanY),
+      Offset(w, scanY),
+      Paint()
+        ..shader = shader
+        ..strokeWidth = 1.5
+        ..style = PaintingStyle.stroke,
+    );
+
+    // Glow below scan line
+    canvas.drawLine(
+      Offset(0, scanY),
+      Offset(w, scanY),
+      Paint()
+        ..color = _coral.withOpacity(0.12)
+        ..strokeWidth = 8
+        ..style = PaintingStyle.stroke
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+    );
+  }
+
+  void _corner(Canvas canvas, Paint paint, double x, double y,
+      _CornerType type) {
+    final path = Path();
+    switch (type) {
+      case _CornerType.topLeft:
+        path.moveTo(x, y + _arm);
+        path.lineTo(x, y + _r);
+        path.arcToPoint(Offset(x + _r, y), radius: Radius.circular(_r));
+        path.lineTo(x + _arm, y);
+      case _CornerType.topRight:
+        path.moveTo(x - _arm, y);
+        path.lineTo(x - _r, y);
+        path.arcToPoint(Offset(x, y + _r), radius: Radius.circular(_r));
+        path.lineTo(x, y + _arm);
+      case _CornerType.bottomLeft:
+        path.moveTo(x, y - _arm);
+        path.lineTo(x, y - _r);
+        path.arcToPoint(Offset(x + _r, y),
+            radius: Radius.circular(_r), clockwise: false);
+        path.lineTo(x + _arm, y);
+      case _CornerType.bottomRight:
+        path.moveTo(x - _arm, y);
+        path.lineTo(x - _r, y);
+        path.arcToPoint(Offset(x, y - _r),
+            radius: Radius.circular(_r), clockwise: false);
+        path.lineTo(x, y - _arm);
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_FuturisticScanPainter old) =>
+      old.scanProgress != scanProgress ||
+      old.glowIntensity != glowIntensity ||
+      old.isActive != isActive;
+}
+
+enum _CornerType { topLeft, topRight, bottomLeft, bottomRight }
+
+// ─── AI Live badge ────────────────────────────────────────────────────────────
+
+class _AiLiveBadge extends StatelessWidget {
+  final AnimationController pulseAnim;
+  const _AiLiveBadge({required this.pulseAnim});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () async {
-          final selected = await showModalBottomSheet<String>(
-            context: context,
-            backgroundColor: const Color(0xFF111811),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (_) => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...options.map(
-                  (o) => ListTile(
-                    title: Text(o,
-                        style: GoogleFonts.dmSans(color: Colors.white)),
-                    trailing: o == value
-                        ? Icon(Icons.check, color: AppTokens.accent)
-                        : null,
-                    onTap: () => Navigator.pop(context, o),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          );
-          if (selected != null) onChanged(selected);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF141F14),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white12),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(
-                  value,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
+    return AnimatedBuilder(
+      animation: pulseAnim,
+      builder: (_, __) {
+        final t = pulseAnim.value;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.38),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color:
+                      const Color(0xFFEE5C42).withOpacity(0.35 + 0.3 * t),
+                  width: 1,
                 ),
               ),
-              const SizedBox(width: 4),
-              const Icon(Icons.keyboard_arrow_down,
-                  color: Colors.white54, size: 16),
-            ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color.lerp(
+                        const Color(0xFFEE5C42).withOpacity(0.7),
+                        const Color(0xFFFF7055),
+                        t,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFEE5C42)
+                              .withOpacity(0.5 + 0.35 * t),
+                          blurRadius: 5,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'IA SCAN',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withOpacity(0.88),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─── Live ingredient tags ─────────────────────────────────────────────────────
+
+class _LiveIngredientTags extends StatelessWidget {
+  final List<_DetectedIngredient> ingredients;
+  const _LiveIngredientTags({required this.ingredients});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.center,
+      children: ingredients
+          .map((i) => _SingleIngredientTag(ingredient: i))
+          .toList(),
+    );
+  }
+}
+
+class _SingleIngredientTag extends StatelessWidget {
+  final _DetectedIngredient ingredient;
+  const _SingleIngredientTag({required this.ingredient, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: ingredient.fade,
+      child: SlideTransition(
+        position: ingredient.slide,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.48),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: const Color(0xFFEE5C42).withOpacity(0.5),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEE5C42).withOpacity(0.14),
+                    blurRadius: 14,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFEE5C42),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              const Color(0xFFEE5C42).withOpacity(0.85),
+                          blurRadius: 6,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    ingredient.name,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -686,11 +1109,14 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+// ─── Source picker option ─────────────────────────────────────────────────────
+
 class _SourceOption extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _SourceOption({required this.icon, required this.label, required this.onTap});
+  const _SourceOption(
+      {required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -707,9 +1133,12 @@ class _SourceOption extends StatelessWidget {
           children: [
             Icon(icon, color: AppTokens.coral, size: 22),
             const SizedBox(width: 14),
-            Text(label,
+            Text(
+              label,
               style: GoogleFonts.inter(
-                fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
               ),
             ),
           ],
@@ -719,67 +1148,7 @@ class _SourceOption extends StatelessWidget {
   }
 }
 
-class _ScanFramePainter extends CustomPainter {
-  const _ScanFramePainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFEE5C42)
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    const arm = 28.0;
-    const r = 6.0;
-    const topCornerLift = 10.0;
-    const bottomCornerDrop = 46.0;
-    final w = size.width;
-    final h = size.height;
-
-    // Top-left
-    _drawCorner(canvas, paint, 0, -topCornerLift, arm, r, _CornerType.topLeft);
-    // Top-right
-    _drawCorner(canvas, paint, w, -topCornerLift, arm, r, _CornerType.topRight);
-    // Bottom-left
-    _drawCorner(canvas, paint, 0, h + bottomCornerDrop, arm, r, _CornerType.bottomLeft);
-    // Bottom-right
-    _drawCorner(canvas, paint, w, h + bottomCornerDrop, arm, r, _CornerType.bottomRight);
-  }
-
-  void _drawCorner(Canvas canvas, Paint paint, double x, double y,
-      double arm, double r, _CornerType type) {
-    final path = Path();
-    switch (type) {
-      case _CornerType.topLeft:
-        path.moveTo(x, y + arm);
-        path.lineTo(x, y + r);
-        path.arcToPoint(Offset(x + r, y), radius: Radius.circular(r));
-        path.lineTo(x + arm, y);
-      case _CornerType.topRight:
-        path.moveTo(x - arm, y);
-        path.lineTo(x - r, y);
-        path.arcToPoint(Offset(x, y + r), radius: Radius.circular(r));
-        path.lineTo(x, y + arm);
-      case _CornerType.bottomLeft:
-        path.moveTo(x, y - arm);
-        path.lineTo(x, y - r);
-        path.arcToPoint(Offset(x + r, y), radius: Radius.circular(r), clockwise: false);
-        path.lineTo(x + arm, y);
-      case _CornerType.bottomRight:
-        path.moveTo(x - arm, y);
-        path.lineTo(x - r, y);
-        path.arcToPoint(Offset(x, y - r), radius: Radius.circular(r), clockwise: false);
-        path.lineTo(x, y - arm);
-    }
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_ScanFramePainter old) => false;
-}
-
-enum _CornerType { topLeft, topRight, bottomLeft, bottomRight }
+// ─── Rotating scan tips ───────────────────────────────────────────────────────
 
 class _ScanTips extends StatefulWidget {
   const _ScanTips();
@@ -841,87 +1210,4 @@ class _ScanTipsState extends State<_ScanTips> {
       ),
     );
   }
-}
-
-class _Corner extends StatelessWidget {
-  final bool topLeft;
-  final bool topRight;
-  final bool bottomLeft;
-  final bool bottomRight;
-
-  const _Corner({
-    this.topLeft = false,
-    this.topRight = false,
-    this.bottomLeft = false,
-    this.bottomRight = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 28,
-      height: 28,
-      child: CustomPaint(
-        painter: _CornerPainter(
-          topLeft: topLeft,
-          topRight: topRight,
-          bottomLeft: bottomLeft,
-          bottomRight: bottomRight,
-        ),
-      ),
-    );
-  }
-}
-
-class _CornerPainter extends CustomPainter {
-  final bool topLeft, topRight, bottomLeft, bottomRight;
-
-  _CornerPainter({
-    this.topLeft = false,
-    this.topRight = false,
-    this.bottomLeft = false,
-    this.bottomRight = false,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFEE5C42)
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    const r = 6.0;
-    final w = size.width;
-    final h = size.height;
-    final path = Path();
-
-    if (topLeft) {
-      path.moveTo(0, h);
-      path.lineTo(0, r);
-      path.arcToPoint(Offset(r, 0), radius: Radius.circular(r));
-      path.lineTo(w, 0);
-    } else if (topRight) {
-      path.moveTo(0, 0);
-      path.lineTo(w - r, 0);
-      path.arcToPoint(Offset(w, r), radius: Radius.circular(r));
-      path.lineTo(w, h);
-    } else if (bottomLeft) {
-      path.moveTo(w, h);
-      path.lineTo(r, h);
-      path.arcToPoint(Offset(0, h - r), radius: Radius.circular(r));
-      path.lineTo(0, 0);
-    } else if (bottomRight) {
-      path.moveTo(0, h);
-      path.lineTo(w - r, h);
-      path.arcToPoint(Offset(w, h - r),
-          radius: Radius.circular(r), clockwise: false);
-      path.lineTo(w, 0);
-    }
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_CornerPainter old) => false;
 }

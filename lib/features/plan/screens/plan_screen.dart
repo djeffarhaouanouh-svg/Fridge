@@ -229,7 +229,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
           CustomScrollView(
             controller: _scrollController,
             slivers: [
-              const SliverToBoxAdapter(child: AppHeader(brand: true)),
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(18, 8, 18, 75),

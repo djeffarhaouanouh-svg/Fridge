@@ -268,8 +268,7 @@ class ProfileScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 80),
           children: [
-            const AppHeader(brand: true),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             // ── 1. Identité ─────────────────────────────────────────
             Padding(

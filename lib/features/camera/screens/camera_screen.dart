@@ -179,7 +179,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       } catch (_) {}
 
       final compressed = await _compressFrame(bytes);
-      final ingredients = await OpenAiVisionService().detectIngredients([compressed]);
+      final ingredients = await OpenAiVisionService().detectIngredients([compressed], lowDetail: true);
       if (mounted) {
         _handleNewIngredients(ingredients);
         _pruneStaleIngredients();

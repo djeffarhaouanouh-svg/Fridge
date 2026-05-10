@@ -8,7 +8,7 @@ class OpenAiVisionService {
 
   OpenAiVisionService();
 
-  Future<List<String>> detectIngredients(List<Uint8List> images) async {
+  Future<List<String>> detectIngredients(List<Uint8List> images, {bool lowDetail = false}) async {
     if (_openAiApiKey.isEmpty) {
       throw Exception('OPENAI_API_KEY is missing.');
     }
@@ -24,7 +24,7 @@ class OpenAiVisionService {
         'type': 'image_url',
         'image_url': {
           'url': 'data:image/jpeg;base64,${base64Encode(bytes)}',
-          'detail': 'low',
+          if (lowDetail) 'detail': 'low',
         },
       }),
     ];

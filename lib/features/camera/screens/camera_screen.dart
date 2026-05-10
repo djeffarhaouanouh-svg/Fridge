@@ -72,6 +72,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   // Live detection state
   Timer? _liveDetectionTimer;
+  Timer? _liveDetectionTimeoutTimer;
   bool _isProcessingFrame = false;
   bool _liveDetectionPaused = false;
   final Set<String> _detectedSet = {};
@@ -141,9 +142,19 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   void _startLiveDetection() {
     _liveDetectionTimer?.cancel();
+    _liveDetectionTimeoutTimer?.cancel();
+
     _liveDetectionTimer = Timer.periodic(
       const Duration(milliseconds: 950),
       (_) => _captureAndAnalyze(),
+    );
+
+    _liveDetectionTimeoutTimer = Timer(
+      const Duration(seconds: 30),
+      () {
+        _liveDetectionTimer?.cancel();
+        _liveDetectionTimer = null;
+      },
     );
   }
 
@@ -249,6 +260,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     _glowController.dispose();
     _flyEntry?.remove();
     _liveDetectionTimer?.cancel();
+    _liveDetectionTimeoutTimer?.cancel();
     for (final tag in _detectedList) {
       tag.dispose();
     }

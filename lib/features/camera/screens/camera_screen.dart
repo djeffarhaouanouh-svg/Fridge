@@ -150,7 +150,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     );
 
     _liveDetectionTimeoutTimer = Timer(
-      const Duration(seconds: 30),
+      const Duration(seconds: 20),
       () {
         _liveDetectionTimer?.cancel();
         _liveDetectionTimer = null;
@@ -221,7 +221,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       ctrl.forward();
     }
 
-    if (foundNew) HapticFeedback.lightImpact();
+    if (foundNew) {
+      HapticFeedback.lightImpact();
+      SystemSound.play(SystemSoundType.click);
+    }
   }
 
   void _pruneStaleIngredients() {

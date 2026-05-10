@@ -76,6 +76,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   bool _liveDetectionPaused = false;
   final Set<String> _detectedSet = {};
   final List<_DetectedIngredient> _detectedList = [];
+  final Map<String, int> _lastSeenMs = {};
 
   static const _coral = Color(0xFFEE5C42);
 
@@ -159,7 +160,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       } catch (_) {}
 
       final ingredients = await OpenAiVisionService().detectIngredients([bytes]);
-      if (mounted) _handleNewIngredients(ingredients);
+      if (mounted) {
+        _handleNewIngredients(ingredients);
+        _pruneStaleIngredients();
+      }
     } catch (_) {
       // Camera busy or API error — silently skip
     } finally {
@@ -168,12 +172,25 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   }
 
   void _handleNewIngredients(List<String> incoming) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     bool foundNew = false;
+
     for (final raw in incoming) {
       final trimmed = raw.trim();
       if (trimmed.isEmpty) continue;
       final key = trimmed.toLowerCase();
+
+      _lastSeenMs[key] = now;
+
       if (_detectedSet.contains(key)) continue;
+
+      // Re-show if currently fading out
+      final fadingIdx = _detectedList.indexWhere((i) => i.name.toLowerCase() == key);
+      if (fadingIdx != -1) {
+        _detectedSet.add(key);
+        _detectedList[fadingIdx].controller.forward();
+        continue;
+      }
 
       _detectedSet.add(key);
       foundNew = true;
@@ -194,6 +211,34 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     }
 
     if (foundNew) HapticFeedback.lightImpact();
+  }
+
+  void _pruneStaleIngredients() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    const staleMs = 2500;
+
+    final staleKeys = _lastSeenMs.entries
+        .where((e) => now - e.value > staleMs)
+        .map((e) => e.key)
+        .toList();
+
+    for (final key in staleKeys) {
+      _lastSeenMs.remove(key);
+      _detectedSet.remove(key);
+
+      final idx = _detectedList.indexWhere((i) => i.name.toLowerCase() == key);
+      if (idx == -1) continue;
+
+      final ingredient = _detectedList[idx];
+      ingredient.controller.reverse().then((_) {
+        if (!mounted) {
+          ingredient.dispose();
+          return;
+        }
+        setState(() => _detectedList.remove(ingredient));
+        ingredient.dispose();
+      });
+    }
   }
 
   @override
@@ -450,32 +495,16 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   child: SizedBox(
                     width: frameW,
                     height: frameH,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        // Animated scan painter
-                        Positioned.fill(
-                          child: AnimatedBuilder(
-                            animation: Listenable.merge(
-                                [_scanLineController, _glowController]),
-                            builder: (_, __) => CustomPaint(
-                              painter: _FuturisticScanPainter(
-                                scanProgress: _scanLineController.value,
-                                glowIntensity: _glowController.value,
-                                isActive: _cameraReady && !isScanning,
-                              ),
-                            ),
-                          ),
+                    child: AnimatedBuilder(
+                      animation: Listenable.merge(
+                          [_scanLineController, _glowController]),
+                      builder: (_, __) => CustomPaint(
+                        painter: _FuturisticScanPainter(
+                          scanProgress: _scanLineController.value,
+                          glowIntensity: _glowController.value,
+                          isActive: _cameraReady && !isScanning,
                         ),
-
-                        // AI SCAN badge — top-right of frame
-                        if (_cameraReady && !isScanning)
-                          Positioned(
-                            top: -38,
-                            right: 0,
-                            child: _AiLiveBadge(pulseAnim: _glowController),
-                          ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -929,69 +958,6 @@ class _FuturisticScanPainter extends CustomPainter {
 }
 
 enum _CornerType { topLeft, topRight, bottomLeft, bottomRight }
-
-// ─── AI Live badge ────────────────────────────────────────────────────────────
-
-class _AiLiveBadge extends StatelessWidget {
-  final AnimationController pulseAnim;
-  const _AiLiveBadge({required this.pulseAnim});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: pulseAnim,
-      builder: (_, __) {
-        final t = pulseAnim.value;
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.55),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: const Color(0xFFEE5C42).withOpacity(0.35 + 0.3 * t),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color.lerp(
-                    const Color(0xFFEE5C42).withOpacity(0.7),
-                    const Color(0xFFFF7055),
-                    t,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFEE5C42)
-                          .withOpacity(0.5 + 0.35 * t),
-                      blurRadius: 5,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                'IA SCAN',
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white.withOpacity(0.88),
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
 
 // ─── Live ingredient tags ─────────────────────────────────────────────────────
 

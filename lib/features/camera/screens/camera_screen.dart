@@ -150,7 +150,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     );
 
     _liveDetectionTimeoutTimer = Timer(
-      const Duration(seconds: 20),
+      const Duration(seconds: 30),
       () {
         _liveDetectionTimer?.cancel();
         _liveDetectionTimer = null;

@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
-class GoogleVisionService {
+class OpenAiVisionService {
   static const _openAiApiKey = String.fromEnvironment('OPENAI_API_KEY');
   static const _endpoint = 'https://api.openai.com/v1/chat/completions';
 
-  GoogleVisionService();
+  OpenAiVisionService();
 
   Future<List<String>> detectIngredients(List<Uint8List> images) async {
     if (_openAiApiKey.isEmpty) {

@@ -10,7 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
-import '../../../core/services/google_vision_service.dart';
+import '../../../core/services/openai_vision_service.dart';
 import '../../../core/services/fridge_sync.dart';
 import '../../../core/services/neon_service.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -235,7 +235,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     ref.read(latestScanMealsProvider.notifier).state = const [];
     ref.read(latestScanIngredientsProvider.notifier).state = const [];
     final claude = ClaudeService();
-    final vision = GoogleVisionService();
+    final vision = OpenAiVisionService();
 
     try {
       final ingredients = await vision.detectIngredients(List.from(_photos));

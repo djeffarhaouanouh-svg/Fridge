@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'dart:ui' show lerpDouble, ImageFilter;
+import 'dart:ui' show lerpDouble;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -441,24 +441,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   ),
           ),
 
-          // ── Radial vignette for focus ────────────────────────────────────
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 1.1,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.5),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
           // ── Futuristic scan overlay (corners + scan line + AI badge) ────
           Positioned.fill(
             child: IgnorePointer(
@@ -610,13 +592,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           ),
 
           // ── Scan tips (hidden once ingredients detected) ─────────────────
-          AnimatedOpacity(
-            opacity: _detectedList.isEmpty ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 400),
-            child: Positioned(
-              bottom: vPad + 190,
-              left: 40,
-              right: 40,
+          Positioned(
+            bottom: vPad + 190,
+            left: 40,
+            right: 40,
+            child: AnimatedOpacity(
+              opacity: _detectedList.isEmpty ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 400),
               child: const _ScanTips(),
             ),
           ),
@@ -960,58 +942,50 @@ class _AiLiveBadge extends StatelessWidget {
       animation: pulseAnim,
       builder: (_, __) {
         final t = pulseAnim.value;
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.38),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color:
-                      const Color(0xFFEE5C42).withOpacity(0.35 + 0.3 * t),
-                  width: 1,
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: const Color(0xFFEE5C42).withOpacity(0.35 + 0.3 * t),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.lerp(
+                    const Color(0xFFEE5C42).withOpacity(0.7),
+                    const Color(0xFFFF7055),
+                    t,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFEE5C42)
+                          .withOpacity(0.5 + 0.35 * t),
+                      blurRadius: 5,
+                      spreadRadius: 1,
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color.lerp(
-                        const Color(0xFFEE5C42).withOpacity(0.7),
-                        const Color(0xFFFF7055),
-                        t,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFEE5C42)
-                              .withOpacity(0.5 + 0.35 * t),
-                          blurRadius: 5,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    'IA SCAN',
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white.withOpacity(0.88),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 5),
+              Text(
+                'IA SCAN',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white.withOpacity(0.88),
+                  letterSpacing: 1.2,
+                ),
               ),
-            ),
+            ],
           ),
         );
       },
@@ -1048,60 +1022,51 @@ class _SingleIngredientTag extends StatelessWidget {
       opacity: ingredient.fade,
       child: SlideTransition(
         position: ingredient.slide,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.48),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: const Color(0xFFEE5C42).withOpacity(0.5),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFEE5C42).withOpacity(0.14),
-                    blurRadius: 14,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 5,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFFEE5C42),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              const Color(0xFFEE5C42).withOpacity(0.85),
-                          blurRadius: 6,
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 7),
-                  Text(
-                    ingredient.name,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: 0.1,
-                    ),
-                  ),
-                ],
-              ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.62),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: const Color(0xFFEE5C42).withOpacity(0.5),
+              width: 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFEE5C42).withOpacity(0.18),
+                blurRadius: 10,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFEE5C42),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFEE5C42).withOpacity(0.85),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 7),
+              Text(
+                ingredient.name,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  letterSpacing: 0.1,
+                ),
+              ),
+            ],
           ),
         ),
       ),

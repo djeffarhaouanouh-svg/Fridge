@@ -231,8 +231,27 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final selections = ref.watch(planMealSelectionsProvider);
     final slotPhotos = ref.watch(planSlotPhotosProvider);
     final slotAnalyses = ref.watch(planSlotAnalysisProvider);
-    final consumed = ref.watch(todayConsumedProvider);
     final isLoading = status == PlanStatus.loading;
+
+    // Calcul local des calories/macros d'aujourd'hui — réactif et instantané
+    final _now = DateTime.now();
+    final todayPrefix =
+        '${_now.year.toString().padLeft(4, '0')}-'
+        '${_now.month.toString().padLeft(2, '0')}-'
+        '${_now.day.toString().padLeft(2, '0')}';
+    int consumedKcal = 0, consumedPro = 0, consumedCarbs = 0, consumedFats = 0;
+    for (final entry in selections.entries) {
+      if (!entry.key.startsWith(todayPrefix)) continue;
+      final analysis = slotAnalyses[entry.key];
+      if (analysis != null) {
+        consumedKcal  += (analysis['kcal']     as num?)?.toInt() ?? 0;
+        consumedPro   += (analysis['proteins'] as num?)?.toInt() ?? 0;
+        consumedCarbs += (analysis['carbs']    as num?)?.toInt() ?? 0;
+        consumedFats  += (analysis['fats']     as num?)?.toInt() ?? 0;
+      } else {
+        consumedKcal += entry.value.kcal;
+      }
+    }
     final days = _days;
     final planByDate = {for (final d in weekPlan) d.date: d};
     final frDays = days.map((d) => _weekdayToFr[d.weekday]!).toList();
@@ -261,10 +280,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   targetProtein: profile.targetProtein,
                   targetCarbs: profile.targetCarbs,
                   targetFats: profile.targetFats,
-                  consumedCalories: consumed['kcal'] ?? 0,
-                  consumedProtein: consumed['proteins'] ?? 0,
-                  consumedCarbs: consumed['carbs'] ?? 0,
-                  consumedFats: consumed['fats'] ?? 0,
+                  consumedCalories: consumedKcal,
+                  consumedProtein: consumedPro,
+                  consumedCarbs: consumedCarbs,
+                  consumedFats: consumedFats,
                 ),
               ),
               SliverToBoxAdapter(

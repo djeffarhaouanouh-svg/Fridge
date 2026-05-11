@@ -1538,6 +1538,12 @@ class _NutritionDashboardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1A1A1A) : AppTokens.surface;
+    final textColor = isDark ? Colors.white : AppTokens.ink;
+    final mutedColor = isDark ? Colors.white54 : AppTokens.muted;
+    final dividerColor = isDark ? Colors.white12 : AppTokens.hairline;
+
     const consumed = 0;
     const burned = 0;
     final remaining = targetCalories - consumed + burned;
@@ -1547,20 +1553,21 @@ class _NutritionDashboardCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 18),
       padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: cardBg,
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+        border: isDark ? null : Border.all(color: AppTokens.hairline),
       ),
       child: Column(
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _CalorieStatItem(value: '$consumed', label: 'Mangées'),
+              _CalorieStatItem(value: '$consumed', label: 'Mangées', textColor: textColor, mutedColor: mutedColor),
               Expanded(
                 child: SizedBox(
                   height: 110,
                   child: CustomPaint(
-                    painter: _ArcGaugePainter(progress: progress),
+                    painter: _ArcGaugePainter(progress: progress, isDark: isDark),
                     child: Center(
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -1572,14 +1579,14 @@ class _NutritionDashboardCard extends StatelessWidget {
                               style: GoogleFonts.fraunces(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: textColor,
                               ),
                             ),
                             Text(
                               'Restantes',
                               style: GoogleFonts.inter(
                                 fontSize: 11,
-                                color: Colors.white54,
+                                color: mutedColor,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -1590,17 +1597,17 @@ class _NutritionDashboardCard extends StatelessWidget {
                   ),
                 ),
               ),
-              _CalorieStatItem(value: '$burned', label: 'Brûlées'),
+              _CalorieStatItem(value: '$burned', label: 'Brûlées', textColor: textColor, mutedColor: mutedColor),
             ],
           ),
           const SizedBox(height: 14),
-          Container(height: 1, color: Colors.white12),
+          Container(height: 1, color: dividerColor),
           const SizedBox(height: 14),
           Row(
             children: [
-              _MacroProgressBar(label: 'Glucides', current: 0, target: targetCarbs, color: const Color(0xFF2196F3)),
-              _MacroProgressBar(label: 'Protéines', current: 0, target: targetProtein, color: AppTokens.coral),
-              _MacroProgressBar(label: 'Lipides', current: 0, target: targetFats, color: const Color(0xFFFF9800)),
+              _MacroProgressBar(label: 'Glucides', current: 0, target: targetCarbs, color: const Color(0xFF2196F3), mutedColor: mutedColor),
+              _MacroProgressBar(label: 'Protéines', current: 0, target: targetProtein, color: AppTokens.coral, mutedColor: mutedColor),
+              _MacroProgressBar(label: 'Lipides', current: 0, target: targetFats, color: const Color(0xFFFF9800), mutedColor: mutedColor),
             ],
           ),
         ],
@@ -1612,7 +1619,9 @@ class _NutritionDashboardCard extends StatelessWidget {
 class _CalorieStatItem extends StatelessWidget {
   final String value;
   final String label;
-  const _CalorieStatItem({required this.value, required this.label});
+  final Color textColor;
+  final Color mutedColor;
+  const _CalorieStatItem({required this.value, required this.label, required this.textColor, required this.mutedColor});
 
   @override
   Widget build(BuildContext context) {
@@ -1621,9 +1630,9 @@ class _CalorieStatItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(value, style: GoogleFonts.fraunces(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white)),
+          Text(value, style: GoogleFonts.fraunces(fontSize: 22, fontWeight: FontWeight.w700, color: textColor)),
           const SizedBox(height: 4),
-          Text(label, style: GoogleFonts.inter(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, color: mutedColor, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
         ],
       ),
     );
@@ -1635,30 +1644,33 @@ class _MacroProgressBar extends StatelessWidget {
   final int current;
   final int target;
   final Color color;
-  const _MacroProgressBar({required this.label, required this.current, required this.target, required this.color});
+  final Color mutedColor;
+  const _MacroProgressBar({required this.label, required this.current, required this.target, required this.color, required this.mutedColor});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+    final trackColor = isDark ? Colors.white12 : AppTokens.hairline;
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: GoogleFonts.inter(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.w500)),
+            Text(label, style: GoogleFonts.inter(fontSize: 11, color: mutedColor, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: progress,
-                backgroundColor: Colors.white12,
+                backgroundColor: trackColor,
                 valueColor: AlwaysStoppedAnimation<Color>(color),
                 minHeight: 4,
               ),
             ),
             const SizedBox(height: 6),
-            Text('$current / ${target}g', style: GoogleFonts.inter(fontSize: 11, color: Colors.white70)),
+            Text('$current / ${target}g', style: GoogleFonts.inter(fontSize: 11, color: mutedColor)),
           ],
         ),
       ),
@@ -1668,18 +1680,20 @@ class _MacroProgressBar extends StatelessWidget {
 
 class _ArcGaugePainter extends CustomPainter {
   final double progress;
-  const _ArcGaugePainter({required this.progress});
+  final bool isDark;
+  const _ArcGaugePainter({required this.progress, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height * 0.88);
     final radius = size.width * 0.40;
+    final trackColor = isDark ? Colors.white12 : const Color(0xFFE0E0E0);
 
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       pi, pi, false,
       Paint()
-        ..color = Colors.white12
+        ..color = trackColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 7
         ..strokeCap = StrokeCap.round,
@@ -1706,7 +1720,7 @@ class _ArcGaugePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ArcGaugePainter old) => old.progress != progress;
+  bool shouldRepaint(_ArcGaugePainter old) => old.progress != progress || old.isDark != isDark;
 }
 
 class _MacroCard extends StatelessWidget {

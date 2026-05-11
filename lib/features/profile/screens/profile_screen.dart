@@ -1565,11 +1565,11 @@ class _NutritionDashboardCard extends StatelessWidget {
               _CalorieStatItem(value: '$consumed', label: 'Mangées', textColor: textColor, mutedColor: mutedColor),
               Expanded(
                 child: SizedBox(
-                  height: 120,
+                  height: 160,
                   child: CustomPaint(
                     painter: _ArcGaugePainter(progress: progress, isDark: isDark),
                     child: Align(
-                      alignment: const Alignment(0, 0.2),
+                      alignment: const Alignment(0, 0.1),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1683,8 +1683,8 @@ class _ArcGaugePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height);
-    final radius = size.width / 2 - 8;
+    final center = Offset(size.width / 2, size.height * 0.88);
+    final radius = size.width * 0.40;
     final trackColor = isDark ? Colors.white12 : const Color(0xFFE0E0E0);
 
     canvas.drawArc(

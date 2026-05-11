@@ -460,6 +460,24 @@ class ProfileScreen extends ConsumerWidget {
 
             _Divider(),
 
+            // ── Favoris ──────────────────────────────────────────────
+            if (favoriteMeals.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+                child: _SectionTitle(title: 'Mes favoris'),
+              ),
+              SizedBox(
+                height: 160,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                  itemCount: favoriteMeals.length,
+                  itemBuilder: (_, i) => _MealCard(meal: favoriteMeals[i]),
+                ),
+              ),
+              _Divider(),
+            ],
+
             // ── Préférences culinaires ───────────────────────────────
             _SettingRow(
               label: 'Mon corps',
@@ -498,95 +516,6 @@ class ProfileScreen extends ConsumerWidget {
               isLast: true,
               onTap: () => _showKitchenEquipmentsSheet(context, ref, notifier),
             ),
-
-            _Divider(),
-
-            // ── 4. Favoris ───────────────────────────────────────────
-            if (favoriteMeals.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-                child: _SectionTitle(title: 'Mes favoris'),
-              ),
-              SizedBox(
-                height: 160,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                  itemCount: favoriteMeals.length,
-                  itemBuilder: (_, i) => _MealCard(meal: favoriteMeals[i]),
-                ),
-              ),
-              _Divider(),
-            ],
-
-            // ── 4b. Recettes adaptées ────────────────────────────────
-            Builder(builder: (context) {
-              final adaptedMeals = ref.watch(adaptedMealsProvider);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-                    child: Row(
-                      children: [
-                        _SectionTitle(title: 'Recettes générées'),
-                        if (adaptedMeals.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppTokens.coralSoft,
-                              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                            ),
-                            child: Text(
-                              '${adaptedMeals.length}',
-                              style: GoogleFonts.inter(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppTokens.coral,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  if (adaptedMeals.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E1E1E) : AppTokens.surface,
-                          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                        ),
-                        child: Column(
-                          children: [
-                            const Icon(Icons.auto_awesome_outlined, color: AppTokens.muted, size: 28),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Adapte une recette avec ton frigo',
-                              style: GoogleFonts.inter(fontSize: 13, color: AppTokens.muted, fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    SizedBox(
-                      height: 160,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                        itemCount: adaptedMeals.length,
-                        itemBuilder: (_, i) => _MealCard(meal: adaptedMeals[i]),
-                      ),
-                    ),
-                  _Divider(),
-                ],
-              );
-            }),
 
             // ── 7. Abonnement ────────────────────────────────────────
             Padding(

@@ -384,14 +384,18 @@ class NeonService {
       INSERT INTO recipes (
         id, title, image_url, duration, calories,
         difficulty, type, type_label, emoji, color, locked,
-        prep_time_min, rest_time_min, cook_time_min
-      ) VALUES (\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14)
+        prep_time_min, rest_time_min, cook_time_min,
+        protein_g, carbs_g, fats_g
+      ) VALUES (\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14,\$15,\$16,\$17)
       ON CONFLICT (id) DO UPDATE SET
-        title     = EXCLUDED.title,
-        image_url = EXCLUDED.image_url,
+        title         = EXCLUDED.title,
+        image_url     = EXCLUDED.image_url,
         prep_time_min = EXCLUDED.prep_time_min,
         rest_time_min = EXCLUDED.rest_time_min,
-        cook_time_min = EXCLUDED.cook_time_min
+        cook_time_min = EXCLUDED.cook_time_min,
+        protein_g     = EXCLUDED.protein_g,
+        carbs_g       = EXCLUDED.carbs_g,
+        fats_g        = EXCLUDED.fats_g
     ''', [
       rid,
       meal.title,
@@ -407,6 +411,9 @@ class NeonService {
       prep,
       rest,
       cook,
+      meal.proteinG,
+      meal.carbsG,
+      meal.fatsG,
     ]);
 
     await execute(

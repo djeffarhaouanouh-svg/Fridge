@@ -710,8 +710,7 @@ class _DayMealSlotTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+              ClipOval(
                 child: SizedBox(
                   width: 48,
                   height: 48,

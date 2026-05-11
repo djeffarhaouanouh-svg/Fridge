@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,7 @@ import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
 import '../../meals/screens/recipe_screen.dart';
 import '../../home/providers/daily_hero_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../models/day_plan.dart';
 
 /// Clé stockage créneau plan : `YYYY-MM-DD_Type`.
@@ -212,6 +214,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profile = ref.watch(userProfileProvider);
     final status = ref.watch(planStatusProvider);
     final weekPlan = ref.watch(weekPlanProvider);
     final selections = ref.watch(planMealSelectionsProvider);
@@ -241,8 +244,16 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
             slivers: [
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
               SliverToBoxAdapter(
+                child: _PlanNutritionDashboard(
+                  targetCalories: profile.targetCalories,
+                  targetProtein: profile.targetProtein,
+                  targetCarbs: profile.targetCarbs,
+                  targetFats: profile.targetFats,
+                ),
+              ),
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 75),
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 75),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -292,7 +303,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                               slotPhotos: slotPhotos,
                               slotAnalyses: slotAnalyses,
                               slotDefs: _slotDefs,
-                              onAddTap: () => _openAddSlotMenu(day, planByDate),
                               onSlotTap: (mealType) => _openSlotEditor(day, mealType, planByDate),
                               slotTitle: (mealType) => _slotLineTitle(
                                 day,
@@ -544,7 +554,6 @@ class _DayPlanCard extends StatelessWidget {
   final Map<String, Uint8List> slotPhotos;
   final Map<String, Map<String, dynamic>> slotAnalyses;
   final List<(String, String)> slotDefs;
-  final VoidCallback onAddTap;
   final void Function(String mealType) onSlotTap;
   final String Function(String mealType) slotTitle;
 
@@ -561,16 +570,12 @@ class _DayPlanCard extends StatelessWidget {
     required this.slotPhotos,
     required this.slotAnalyses,
     required this.slotDefs,
-    required this.onAddTap,
     required this.onSlotTap,
     required this.slotTitle,
   });
 
   @override
   Widget build(BuildContext context) {
-    final addBg = isDark ? const Color(0xFF1B3D24) : const Color(0xFFE8F5E9);
-    final addIcon = isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32);
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
@@ -592,33 +597,13 @@ class _DayPlanCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    headerTitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      color: headerAccentColor,
-                    ),
-                  ),
-                ),
-                Material(
-                  color: addBg,
-                  borderRadius: BorderRadius.circular(9),
-                  child: InkWell(
-                    onTap: onAddTap,
-                    borderRadius: BorderRadius.circular(9),
-                    child: SizedBox(
-                      width: 30,
-                      height: 30,
-                      child: Icon(Icons.add, color: addIcon, size: 18),
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              headerTitle,
+              style: GoogleFonts.inter(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: headerAccentColor,
+              ),
             ),
             const SizedBox(height: 6),
             for (var i = 0; i < slotDefs.length; i++) ...[
@@ -713,7 +698,7 @@ class _DayMealSlotTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: muted.withValues(alpha: 0.45), size: 18),
+              Icon(Icons.add, color: AppTokens.coral, size: 18),
             ],
           ),
         ),
@@ -1456,6 +1441,177 @@ final _saladMeals = [
     prepTimeMin: 9, cookTimeMin: 6,
   ),
 ];
+
+// ─── Dashboard nutrition ────────────────────────────────────────────────────
+
+class _PlanNutritionDashboard extends StatelessWidget {
+  final int targetCalories;
+  final int targetProtein;
+  final int targetCarbs;
+  final int targetFats;
+
+  const _PlanNutritionDashboard({
+    required this.targetCalories,
+    required this.targetProtein,
+    required this.targetCarbs,
+    required this.targetFats,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1A1A1A) : AppTokens.surface;
+    final textColor = isDark ? Colors.white : AppTokens.ink;
+    final mutedColor = isDark ? Colors.white54 : AppTokens.muted;
+    final dividerColor = isDark ? Colors.white12 : AppTokens.hairline;
+
+    const consumed = 0;
+    const burned = 0;
+    final remaining = targetCalories - consumed + burned;
+    final progress = targetCalories > 0 ? (consumed / targetCalories).clamp(0.0, 1.0) : 0.0;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+        border: isDark ? null : Border.all(color: AppTokens.hairline),
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _DashCalorieItem(value: '$consumed', label: 'Mangées', textColor: textColor, mutedColor: mutedColor),
+              Expanded(
+                child: SizedBox(
+                  height: 160,
+                  child: CustomPaint(
+                    painter: _DashArcPainter(progress: progress, isDark: isDark),
+                    child: Align(
+                      alignment: const Alignment(0, 0.1),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('$remaining', style: GoogleFonts.fraunces(fontSize: 28, fontWeight: FontWeight.w700, color: textColor)),
+                          Text('Restantes', style: GoogleFonts.inter(fontSize: 11, color: mutedColor, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              _DashCalorieItem(value: '$burned', label: 'Brûlées', textColor: textColor, mutedColor: mutedColor),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(height: 1, color: dividerColor),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _DashMacroBar(label: 'Glucides', current: 0, target: targetCarbs, color: const Color(0xFF2196F3), mutedColor: mutedColor),
+              _DashMacroBar(label: 'Protéines', current: 0, target: targetProtein, color: AppTokens.coral, mutedColor: mutedColor),
+              _DashMacroBar(label: 'Lipides', current: 0, target: targetFats, color: const Color(0xFFFF9800), mutedColor: mutedColor),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashCalorieItem extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color textColor;
+  final Color mutedColor;
+  const _DashCalorieItem({required this.value, required this.label, required this.textColor, required this.mutedColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 60,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value, style: GoogleFonts.fraunces(fontSize: 22, fontWeight: FontWeight.w700, color: textColor)),
+          const SizedBox(height: 4),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, color: mutedColor, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashMacroBar extends StatelessWidget {
+  final String label;
+  final int current;
+  final int target;
+  final Color color;
+  final Color mutedColor;
+  const _DashMacroBar({required this.label, required this.current, required this.target, required this.color, required this.mutedColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: GoogleFonts.inter(fontSize: 11, color: mutedColor, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: isDark ? Colors.white12 : AppTokens.hairline,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                minHeight: 4,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text('$current / ${target}g', style: GoogleFonts.inter(fontSize: 11, color: mutedColor)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DashArcPainter extends CustomPainter {
+  final double progress;
+  final bool isDark;
+  const _DashArcPainter({required this.progress, required this.isDark});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height * 0.88);
+    final radius = size.width * 0.40;
+    final trackColor = isDark ? Colors.white12 : const Color(0xFFE0E0E0);
+
+    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), pi, pi, false,
+      Paint()..color = trackColor..style = PaintingStyle.stroke..strokeWidth = 7..strokeCap = StrokeCap.round);
+
+    if (progress > 0) {
+      canvas.drawArc(Rect.fromCircle(center: center, radius: radius), pi, pi * progress, false,
+        Paint()..color = AppTokens.coral..style = PaintingStyle.stroke..strokeWidth = 7..strokeCap = StrokeCap.round);
+    }
+
+    final dotAngle = pi + pi * progress;
+    canvas.drawCircle(
+      Offset(center.dx + radius * cos(dotAngle), center.dy + radius * sin(dotAngle)),
+      5,
+      Paint()..color = AppTokens.coral..style = PaintingStyle.fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_DashArcPainter old) => old.progress != progress || old.isDark != isDark;
+}
 
 class _MealPickCard extends ConsumerWidget {
   final Meal meal;

@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../features/meals/models/meal.dart';
 import '../../features/plan/models/day_plan.dart';
 import '../../features/profile/providers/profile_provider.dart';
+import 'neon_service.dart';
 
 class ClaudeService {
   static const _apiKey = String.fromEnvironment('ANTHROPIC_API_KEY');
@@ -169,10 +170,86 @@ class ClaudeService {
   String _joinOrNone(Iterable<String> values) =>
       values.isEmpty ? 'aucun' : values.join(', ');
 
+  String _formatExamplesSection(List<Map<String, dynamic>> examples) {
+    if (examples.isEmpty) return '';
+
+    // Groupe par catégorie pour une présentation claire
+    final byCategory = <String, List<Map<String, dynamic>>>{};
+    for (final ex in examples) {
+      final cat = (ex['category']?.toString() ?? 'plat principal').toLowerCase();
+      byCategory.putIfAbsent(cat, () => []).add(ex);
+    }
+
+    final buf = StringBuffer();
+    buf.writeln('\nEXEMPLES DE RECETTES EN BASE PAR CATÉGORIE (structure de référence — génère de NOUVELLES recettes adaptées aux ingrédients de l\'utilisateur) :');
+
+    for (final entry in byCategory.entries) {
+      buf.writeln('\n[${entry.key.toUpperCase()}]');
+      for (final ex in entry.value) {
+        final title = ex['title']?.toString() ?? '';
+        if (title.isEmpty) continue;
+        buf.write('  • "$title"');
+
+        final kcal = ex['calories'];
+        final diff = ex['difficulty']?.toString() ?? '';
+        final dur = ex['duration'];
+        if (kcal != null && kcal != 0) buf.write(' | ${kcal} kcal');
+        if (diff.isNotEmpty) buf.write(' | $diff');
+        if (dur != null && dur != 0) buf.write(' | ${dur} min');
+        buf.writeln();
+
+        // Ingrédients principaux
+        final ingText = ex['ingredients_text']?.toString() ?? '';
+        if (ingText.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(ingText);
+            final names = <String>[];
+            if (decoded is List) {
+              for (final e in decoded) {
+                if (e is Map) {
+                  final n = (e['name'] ?? e['ingredient'] ?? '').toString();
+                  if (n.isNotEmpty) names.add(n);
+                } else {
+                  final s = e.toString().trim();
+                  if (s.isNotEmpty) names.add(s);
+                }
+              }
+            }
+            if (names.isNotEmpty) {
+              buf.writeln('    Ingrédients : ${names.take(5).join(', ')}');
+            }
+          } catch (_) {
+            final flat = ingText.replaceAll(RegExp(r'["\[\]{}]'), '').trim();
+            if (flat.isNotEmpty) {
+              buf.writeln('    Ingrédients : ${flat.substring(0, flat.length.clamp(0, 100))}');
+            }
+          }
+        }
+
+        // Première étape pour montrer le style d'écriture
+        final stepsText = ex['steps_text']?.toString() ?? '';
+        if (stepsText.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(stepsText);
+            if (decoded is List && decoded.isNotEmpty) {
+              final first = decoded.first.toString().trim();
+              if (first.isNotEmpty) {
+                buf.writeln('    Exemple d\'étape : "${first.substring(0, first.length.clamp(0, 120))}"');
+              }
+            }
+          } catch (_) {}
+        }
+      }
+    }
+    return buf.toString();
+  }
+
   String _buildRecipesPrompt({
     required List<String> ingredients,
     required UserProfile? profile,
+    List<Map<String, dynamic>> exampleRecipes = const [],
   }) {
+    final examplesSection = _formatExamplesSection(exampleRecipes);
     return '''Tu es un assistant culinaire intelligent spécialisé dans les recettes réalistes.
 
 MISSION :
@@ -187,7 +264,7 @@ DONNÉES UTILISATEUR :
 
 INGRÉDIENTS DISPONIBLES :
 ${ingredients.join(', ')}
-
+$examplesSection
 RÈGLES IMPORTANTES :
 - Proposer uniquement des recettes réalistes et crédibles
 - Éviter les plats inventés ou les associations étranges
@@ -278,14 +355,32 @@ Contraintes supplémentaires :
     return meals;
   }
 
-  Future<List<Meal>> findRecipes(List<String> ingredients, {UserProfile? profile}) async {
+  Future<List<Meal>> findRecipes(
+    List<String> ingredients, {
+    UserProfile? profile,
+    NeonService? neonService,
+  }) async {
     if (_openAiApiKey.isEmpty) {
       throw Exception('OPENAI_API_KEY is missing.');
+    }
+
+    List<Map<String, dynamic>> examples = [];
+    if (neonService != null) {
+      final goal = switch (profile?.objective) {
+        CookingObjective.muscleGain => 'muscleGain',
+        CookingObjective.weightLoss => 'weightLoss',
+        _ => null,
+      };
+      examples = await neonService.fetchStructureExamples(
+        goal: goal,
+        perSource: 3,
+      );
     }
 
     final prompt = _buildRecipesPrompt(
       ingredients: ingredients,
       profile: profile,
+      exampleRecipes: examples,
     );
 
     final response = await http.post(

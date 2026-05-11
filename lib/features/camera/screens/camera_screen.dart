@@ -451,7 +451,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       await persistFridgeToNeon(merged);
 
       final profile = ref.read(userProfileProvider);
-      final meals = await claude.findRecipes(merged, profile: profile);
+      final meals = await claude.findRecipes(merged, profile: profile, neonService: NeonService());
       if (meals.isNotEmpty) {
         ref.read(latestScanMealsProvider.notifier).state = meals;
         await ref.read(mealsProvider.notifier).mergeScanResultsAndPersist(meals);

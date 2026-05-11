@@ -481,6 +481,80 @@ class NeonService {
     return meals;
   }
 
+  /// Récupère des exemples de recettes depuis la DB pour guider l'IA sur le style,
+  /// la structure et le niveau de détail. La table principale varie selon l'objectif :
+  /// - 'muscleGain' → priorité recipes_v2 (sport / protéiné)
+  /// - 'weightLoss' → priorité recipes_v3 (minceur / léger)
+  /// - autres → priorité recipes_marmiton (cuisine générale diversifiée)
+  Future<List<Map<String, dynamic>>> fetchStructureExamples({
+    String? goal,
+    int perSource = 3,
+  }) async {
+    final results = <Map<String, dynamic>>[];
+
+    Future<void> tryFetch(String table, String defaultCategory, int limit) async {
+      try {
+        final rows = await query(
+          '''
+          SELECT DISTINCT ON (COALESCE(category, title))
+            title,
+            COALESCE(category, '$defaultCategory') AS category,
+            ingredients_json::text AS ingredients_text,
+            steps_json::text       AS steps_text,
+            COALESCE(calories, 0)  AS calories,
+            COALESCE(difficulty, 'facile') AS difficulty,
+            COALESCE(duration, 30) AS duration
+          FROM $table
+          WHERE steps_json IS NOT NULL AND ingredients_json IS NOT NULL
+          ORDER BY COALESCE(category, title), RANDOM()
+          LIMIT \$1
+          ''',
+          [limit],
+        );
+        results.addAll(rows);
+      } catch (_) {
+        // Fallback sans colonne category
+        try {
+          final rows = await query(
+            '''
+            SELECT
+              title,
+              '$defaultCategory' AS category,
+              ingredients_json::text AS ingredients_text,
+              steps_json::text       AS steps_text,
+              COALESCE(calories, 0)  AS calories,
+              COALESCE(difficulty, 'facile') AS difficulty,
+              COALESCE(duration, 30) AS duration
+            FROM $table
+            WHERE steps_json IS NOT NULL AND ingredients_json IS NOT NULL
+            ORDER BY RANDOM()
+            LIMIT \$1
+            ''',
+            [limit],
+          );
+          results.addAll(rows);
+        } catch (_) {}
+      }
+    }
+
+    if (goal == 'muscleGain') {
+      // Sport en priorité, complété par marmiton pour la diversité
+      await tryFetch('recipes_v2', 'sport', perSource * 3);
+      await tryFetch('recipes_marmiton', 'plat principal', perSource);
+    } else if (goal == 'weightLoss') {
+      // Minceur en priorité, complété par marmiton
+      await tryFetch('recipes_v3', 'minceur', perSource * 3);
+      await tryFetch('recipes_marmiton', 'plat principal', perSource);
+    } else {
+      // Cuisine générale : marmiton en base + un peu de v2 et v3 pour la diversité
+      await tryFetch('recipes_marmiton', 'plat principal', perSource * 3);
+      await tryFetch('recipes_v2', 'sport', perSource);
+      await tryFetch('recipes_v3', 'minceur', perSource);
+    }
+
+    return results;
+  }
+
   Future<List<Meal>> loadMarmitonRecipes({int limit = 20}) async {
     final rows = await query(
       '''

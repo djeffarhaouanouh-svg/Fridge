@@ -70,6 +70,7 @@ class DailyHeroRecipesNotifier extends AsyncNotifier<List<Meal>> {
     final meals = await ClaudeService().findRecipes(
       ingredients,
       profile: profile,
+      neonService: _db,
     );
 
     await _db.saveHeroRecipes(meals);

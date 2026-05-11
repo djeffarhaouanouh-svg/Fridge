@@ -108,6 +108,44 @@ Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) 
   }
 }
 
+/// Case à cocher « frigo » : contour fin (thème sombre) ou bord discret (clair), état coché = fond corail + coche blanche.
+class _FridgeRemovalCheckbox extends StatelessWidget {
+  const _FridgeRemovalCheckbox({required this.checked, required this.isDark});
+
+  final bool checked;
+  final bool isDark;
+
+  static const double _size = 20;
+  static const double _radius = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    if (checked) {
+      return Container(
+        width: _size,
+        height: _size,
+        decoration: BoxDecoration(
+          color: AppTokens.coral,
+          borderRadius: BorderRadius.circular(_radius),
+        ),
+        alignment: Alignment.center,
+        child: const Icon(Icons.check, size: 13, color: Colors.white),
+      );
+    }
+    return Container(
+      width: _size,
+      height: _size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(_radius),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.9) : AppTokens.inkSoft.withValues(alpha: 0.45),
+          width: 1.5,
+        ),
+      ),
+    );
+  }
+}
+
 Future<void> showRemoveFridgeIngredientDialog(BuildContext context, WidgetRef ref) async {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   final list = List<String>.from(ref.read(detectedIngredientsProvider));
@@ -124,70 +162,220 @@ Future<void> showRemoveFridgeIngredientDialog(BuildContext context, WidgetRef re
     return;
   }
 
-  final selected = await showModalBottomSheet<String>(
+  await showModalBottomSheet<void>(
     context: context,
-    backgroundColor: isDark ? const Color(0xFF1E1E1E) : AppTokens.paper,
+    backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (sheetContext) => SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Supprimer un ingrédient',
-              style: GoogleFonts.fraunces(
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : AppTokens.ink,
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 260,
-              child: ListView.separated(
-                itemCount: list.length,
-                separatorBuilder: (_, __) => Divider(
-                  height: 1,
-                  color: isDark ? Colors.white12 : AppTokens.hairline,
-                ),
-                itemBuilder: (_, i) {
-                  final ing = list[i];
-                  return ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: Center(child: buildIngredientIcon(ing, emojiSize: 15)),
-                    ),
-                    title: Text(
-                      ing,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: isDark ? Colors.white : AppTokens.ink,
-                      ),
-                    ),
-                    trailing: Icon(Icons.delete_outline, color: Colors.red.shade400),
-                    onTap: () => Navigator.pop(sheetContext, ing),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+    builder: (sheetContext) => _RemoveFridgeIngredientsSheet(
+      ingredients: list,
+      isDark: isDark,
+      onConfirm: (Set<String> toRemove) async {
+        final updated = List<String>.from(ref.read(detectedIngredientsProvider));
+        for (final name in toRemove) {
+          updated.remove(name);
+          await removeIngredientDate(name);
+        }
+        ref.read(detectedIngredientsProvider.notifier).state = updated;
+        await persistFridgeToNeon(updated);
+        if (sheetContext.mounted) Navigator.pop(sheetContext);
+      },
     ),
   );
+}
 
-  if (selected == null) return;
-  final updated = List<String>.from(ref.read(detectedIngredientsProvider));
-  updated.remove(selected);
-  ref.read(detectedIngredientsProvider.notifier).state = updated;
-  await removeIngredientDate(selected);
-  await persistFridgeToNeon(updated);
+class _RemoveFridgeIngredientsSheet extends StatefulWidget {
+  const _RemoveFridgeIngredientsSheet({
+    required this.ingredients,
+    required this.isDark,
+    required this.onConfirm,
+  });
+
+  final List<String> ingredients;
+  final bool isDark;
+  final Future<void> Function(Set<String> toRemove) onConfirm;
+
+  @override
+  State<_RemoveFridgeIngredientsSheet> createState() => _RemoveFridgeIngredientsSheetState();
+}
+
+class _RemoveFridgeIngredientsSheetState extends State<_RemoveFridgeIngredientsSheet> {
+  final Set<String> _selected = {};
+
+  Color get _sheetBg =>
+      widget.isDark ? const Color(0xFF121212) : AppTokens.paper;
+
+  Color get _titleColor => widget.isDark ? Colors.white : AppTokens.ink;
+
+  Color get _subtitleColor =>
+      widget.isDark ? Colors.white.withValues(alpha: 0.55) : AppTokens.muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final maxH = mq.size.height * 0.72;
+    final bottomInset = mq.padding.bottom;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: _sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: widget.isDark ? Colors.white24 : AppTokens.hairline,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Supprimer des ingrédients',
+                style: GoogleFonts.fraunces(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: _titleColor,
+                  height: 1.15,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Coche ceux à retirer du frigo',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: _subtitleColor,
+                ),
+              ),
+              const SizedBox(height: 14),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxH - 200),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: widget.ingredients.length,
+                  separatorBuilder: (_, __) => SizedBox(
+                    height: 4,
+                    child: Center(
+                      child: Container(
+                        height: 1,
+                        margin: const EdgeInsets.only(left: 36),
+                        color: widget.isDark ? Colors.white10 : AppTokens.hairline.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ),
+                  itemBuilder: (_, i) {
+                    final ing = widget.ingredients[i];
+                    final on = _selected.contains(ing);
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            if (on) {
+                              _selected.remove(ing);
+                            } else {
+                              _selected.add(ing);
+                            }
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                          child: Row(
+                            children: [
+                              _FridgeRemovalCheckbox(checked: on, isDark: widget.isDark),
+                              const SizedBox(width: 14),
+                              SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: Center(
+                                  child: buildIngredientIcon(ing, emojiSize: 16),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  ing,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: _titleColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _titleColor,
+                        side: BorderSide(
+                          color: widget.isDark ? Colors.white24 : AppTokens.hairline,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: const StadiumBorder(),
+                      ),
+                      child: Text(
+                        'Annuler',
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: _selected.isEmpty
+                          ? null
+                          : () async {
+                              await widget.onConfirm(Set<String>.from(_selected));
+                            },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTokens.coral,
+                        disabledBackgroundColor: widget.isDark
+                            ? const Color(0xFF2C2C2C)
+                            : AppTokens.surface,
+                        foregroundColor: Colors.white,
+                        disabledForegroundColor: _subtitleColor,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: const StadiumBorder(),
+                      ),
+                      child: Text(
+                        _selected.isEmpty
+                            ? 'Supprimer'
+                            : 'Supprimer (${_selected.length})',
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: bottomInset > 0 ? 4 : 0),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 Future<void> showFridgeActionDialog(BuildContext context, WidgetRef ref) async {

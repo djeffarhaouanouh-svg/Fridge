@@ -248,16 +248,52 @@ class _RemoveFridgeIngredientsSheetState extends State<_RemoveFridgeIngredientsS
                   height: 1.15,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Coche ceux à retirer du frigo',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: _subtitleColor,
-                ),
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Sélectionne les ingrédients',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: _subtitleColor,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        final all = widget.ingredients.length;
+                        if (_selected.length == all) {
+                          _selected.clear();
+                        } else {
+                          _selected
+                            ..clear()
+                            ..addAll(widget.ingredients);
+                        }
+                      });
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTokens.coral,
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      _selected.length == widget.ingredients.length
+                          ? 'Tout désélectionner'
+                          : 'Tout sélectionner',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: maxH - 200),
                 child: ListView.separated(

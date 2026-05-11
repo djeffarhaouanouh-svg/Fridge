@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -252,9 +253,6 @@ class ProfileScreen extends ConsumerWidget {
     final notifier = ref.read(userProfileProvider.notifier);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
-    final loginStreak = ref.watch(loginStreakProvider);
-    final cookedCount = ref.watch(cookedCountProvider);
-    final streak = loginStreak;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isFridgeExpanded = ref.watch(fridgeSectionExpandedProvider);
     final hasMoreFridgeItems = detectedIngredients.length > 5;
@@ -268,8 +266,7 @@ class ProfileScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 80),
           children: [
-            const AppHeader(brand: true),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             // ── 1. Identité ─────────────────────────────────────────
             Padding(
@@ -312,41 +309,11 @@ class ProfileScreen extends ConsumerWidget {
 
             _Divider(),
 
-            // ── 4. Stats & streak ────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                children: [
-                  _Stat(value: '$cookedCount', label: 'Plats cuisinés', icon: Icons.restaurant_outlined),
-                  _Stat(value: '${favoriteMeals.length}', label: 'Favoris', icon: Icons.favorite_border),
-                  _Stat(value: '$streak', label: 'Jours actifs', icon: Icons.local_fire_department_outlined),
-                ],
-              ),
-            ),
-
-            _Divider(),
-
-            // ── 9. Profil nutrition ──────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionTitle(title: 'Profil nutrition'),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      _MacroCard(value: '${profile.targetCalories}', unit: 'kcal', label: 'Calories', color: AppTokens.coral),
-                      const SizedBox(width: 10),
-                      _MacroCard(value: '${profile.targetProtein}g', unit: '', label: 'Protéines', color: const Color(0xFF4CAF50)),
-                      const SizedBox(width: 10),
-                      _MacroCard(value: '${profile.targetCarbs}g', unit: '', label: 'Glucides', color: const Color(0xFF2196F3)),
-                      const SizedBox(width: 10),
-                      _MacroCard(value: '${profile.targetFats}g', unit: '', label: 'Lipides', color: const Color(0xFFFF9800)),
-                    ],
-                  ),
-                ],
-              ),
+            _NutritionDashboardCard(
+              targetCalories: profile.targetCalories,
+              targetProtein: profile.targetProtein,
+              targetCarbs: profile.targetCarbs,
+              targetFats: profile.targetFats,
             ),
 
             _Divider(),
@@ -1554,6 +1521,192 @@ class _Stat extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NutritionDashboardCard extends StatelessWidget {
+  final int targetCalories;
+  final int targetProtein;
+  final int targetCarbs;
+  final int targetFats;
+
+  const _NutritionDashboardCard({
+    required this.targetCalories,
+    required this.targetProtein,
+    required this.targetCarbs,
+    required this.targetFats,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const consumed = 0;
+    const burned = 0;
+    final remaining = targetCalories - consumed + burned;
+    final progress = targetCalories > 0 ? (consumed / targetCalories).clamp(0.0, 1.0) : 0.0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 18),
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _CalorieStatItem(value: '$consumed', label: 'Mangées'),
+              Expanded(
+                child: SizedBox(
+                  height: 110,
+                  child: CustomPaint(
+                    painter: _ArcGaugePainter(progress: progress),
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$remaining',
+                              style: GoogleFonts.fraunces(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              'Restantes',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: Colors.white54,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              _CalorieStatItem(value: '$burned', label: 'Brûlées'),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(height: 1, color: Colors.white12),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _MacroProgressBar(label: 'Glucides', current: 0, target: targetCarbs, color: const Color(0xFF2196F3)),
+              _MacroProgressBar(label: 'Protéines', current: 0, target: targetProtein, color: AppTokens.coral),
+              _MacroProgressBar(label: 'Lipides', current: 0, target: targetFats, color: const Color(0xFFFF9800)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CalorieStatItem extends StatelessWidget {
+  final String value;
+  final String label;
+  const _CalorieStatItem({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 60,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value, style: GoogleFonts.fraunces(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white)),
+          const SizedBox(height: 4),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+}
+
+class _MacroProgressBar extends StatelessWidget {
+  final String label;
+  final int current;
+  final int target;
+  final Color color;
+  const _MacroProgressBar({required this.label, required this.current, required this.target, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: GoogleFonts.inter(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: Colors.white12,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                minHeight: 4,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text('$current / ${target}g', style: GoogleFonts.inter(fontSize: 11, color: Colors.white70)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ArcGaugePainter extends CustomPainter {
+  final double progress;
+  const _ArcGaugePainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height * 0.88);
+    final radius = size.width * 0.40;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      pi, pi, false,
+      Paint()
+        ..color = Colors.white12
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 7
+        ..strokeCap = StrokeCap.round,
+    );
+
+    if (progress > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        pi, pi * progress, false,
+        Paint()
+          ..color = AppTokens.coral
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 7
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+
+    final dotAngle = pi + pi * progress;
+    canvas.drawCircle(
+      Offset(center.dx + radius * cos(dotAngle), center.dy + radius * sin(dotAngle)),
+      5,
+      Paint()..color = AppTokens.coral..style = PaintingStyle.fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ArcGaugePainter old) => old.progress != progress;
 }
 
 class _MacroCard extends StatelessWidget {

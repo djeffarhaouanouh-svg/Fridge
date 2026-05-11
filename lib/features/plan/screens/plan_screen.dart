@@ -249,7 +249,12 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         consumedCarbs += (analysis['carbs']    as num?)?.toInt() ?? 0;
         consumedFats  += (analysis['fats']     as num?)?.toInt() ?? 0;
       } else {
-        consumedKcal += entry.value.kcal;
+        final meal = entry.value;
+        consumedKcal  += meal.kcal;
+        // Macros explicites si l'IA les a fournis, sinon estimation 40/30/30
+        consumedPro   += meal.proteinG ?? (meal.kcal * 0.30 / 4).round();
+        consumedCarbs += meal.carbsG   ?? (meal.kcal * 0.40 / 4).round();
+        consumedFats  += meal.fatsG    ?? (meal.kcal * 0.30 / 9).round();
       }
     }
     final days = _days;

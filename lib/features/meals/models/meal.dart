@@ -55,6 +55,11 @@ class Meal {
   final int restTimeMin;
   final int cookTimeMin;
 
+  // Macros en grammes (optionnels, fournis par l'IA lors de la génération).
+  final int? proteinG;
+  final int? carbsG;
+  final int? fatsG;
+
   Meal({
     required this.id,
     required this.type,
@@ -74,6 +79,9 @@ class Meal {
     this.prepTimeMin = 0,
     this.restTimeMin = 0,
     this.cookTimeMin = 0,
+    this.proteinG,
+    this.carbsG,
+    this.fatsG,
   });
 
   Meal copyWith({
@@ -95,6 +103,9 @@ class Meal {
     int? prepTimeMin,
     int? restTimeMin,
     int? cookTimeMin,
+    int? proteinG,
+    int? carbsG,
+    int? fatsG,
   }) {
     return Meal(
       id: id ?? this.id,
@@ -115,6 +126,9 @@ class Meal {
       prepTimeMin: prepTimeMin ?? this.prepTimeMin,
       restTimeMin: restTimeMin ?? this.restTimeMin,
       cookTimeMin: cookTimeMin ?? this.cookTimeMin,
+      proteinG: proteinG ?? this.proteinG,
+      carbsG: carbsG ?? this.carbsG,
+      fatsG: fatsG ?? this.fatsG,
     );
   }
 
@@ -157,6 +171,9 @@ class Meal {
       prepTimeMin: prep,
       restTimeMin: rest,
       cookTimeMin: cook,
+      proteinG: json['proteinG'] as int?,
+      carbsG: json['carbsG'] as int?,
+      fatsG: json['fatsG'] as int?,
     );
   }
 
@@ -180,6 +197,9 @@ class Meal {
       'prepTimeMin': prepTimeMin,
       'restTimeMin': restTimeMin,
       'cookTimeMin': cookTimeMin,
+      if (proteinG != null) 'proteinG': proteinG,
+      if (carbsG != null) 'carbsG': carbsG,
+      if (fatsG != null) 'fatsG': fatsG,
     };
   }
 }

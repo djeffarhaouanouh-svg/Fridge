@@ -215,7 +215,10 @@ FORMAT JSON :
     "description": "",
     "time": "",
     "difficulty": "",
-    "calories": "",
+    "calories": 0,
+    "proteinG": 0,
+    "carbsG": 0,
+    "fatsG": 0,
     "missingIngredients": [],
     "ingredientsUsed": [],
     "steps": [],
@@ -246,6 +249,9 @@ Contraintes supplémentaires :
       final kcal = int.tryParse((raw['calories'] ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
       final time = (raw['time'] ?? '30 min').toString();
       final difficulty = (raw['difficulty'] ?? 'facile').toString().toLowerCase();
+      final proteinG = (raw['proteinG'] as num?)?.toInt();
+      final carbsG = (raw['carbsG'] as num?)?.toInt();
+      final fatsG = (raw['fatsG'] as num?)?.toInt();
 
       meals.add(Meal(
         id: uuid.v4(),
@@ -264,6 +270,9 @@ Contraintes supplémentaires :
             .toList(),
         steps: steps,
         color: meta.$4,
+        proteinG: proteinG,
+        carbsG: carbsG,
+        fatsG: fatsG,
       ));
     }
     return meals;
@@ -477,7 +486,10 @@ Réponds avec un JSON valide suivant ce schéma exact :
   "title": "titre adapté",
   "ingredients": [{"name": "...", "qty": "..."}],
   "steps": ["étape 1", "étape 2", "..."],
-  "kcal": 000,
+  "kcal": 0,
+  "proteinG": 0,
+  "carbsG": 0,
+  "fatsG": 0,
   "time": "XX min",
   "difficulty": "facile|moyen|difficile"
 }
@@ -535,6 +547,9 @@ Réponds uniquement avec le JSON ou NULL, rien d'autre.
       steps: (map['steps'] as List? ?? []).map((e) => e.toString()).toList(),
       prepTimeMin: recipe.prepTimeMin,
       cookTimeMin: recipe.cookTimeMin,
+      proteinG: (map['proteinG'] as num?)?.toInt(),
+      carbsG: (map['carbsG'] as num?)?.toInt(),
+      fatsG: (map['fatsG'] as num?)?.toInt(),
     );
     return adapted;
   }

@@ -462,6 +462,12 @@ class ProfileScreen extends ConsumerWidget {
 
             // ── Préférences culinaires ───────────────────────────────
             _SettingRow(
+              label: 'Mon corps',
+              value: _bodyDataSummary(profile),
+              icon: Icons.accessibility_new_outlined,
+              onTap: () => _showBodyDataSheet(context, ref, notifier),
+            ),
+            _SettingRow(
               label: 'Objectif',
               value: _objectiveLabel(profile.objective),
               icon: Icons.flag_outlined,
@@ -955,6 +961,349 @@ void _showThemeSheet(BuildContext context, WidgetRef ref) {
       ),
     ),
   );
+}
+
+String _bodyDataSummary(UserProfile profile) {
+  final parts = <String>[];
+  if (profile.gender == 'homme') parts.add('Homme');
+  if (profile.gender == 'femme') parts.add('Femme');
+  if (profile.age != null) parts.add('${profile.age} ans');
+  if (profile.currentWeight != null) {
+    final w = profile.currentWeight!;
+    final label = w == w.truncateToDouble() ? '${w.toInt()} kg' : '${w.toStringAsFixed(1)} kg';
+    parts.add(label);
+  }
+  return parts.isEmpty ? 'Non renseigné' : parts.join(' · ');
+}
+
+void _showBodyDataSheet(BuildContext context, WidgetRef ref, UserProfileNotifier notifier) {
+  final profile = ref.read(userProfileProvider);
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: _sheetBg(context),
+    isScrollControlled: true,
+    builder: (_) => _BodyDataSheet(
+      initialGender: profile.gender,
+      initialAge: profile.age,
+      initialWeight: profile.currentWeight,
+      initialTargetWeight: profile.targetWeight,
+      notifier: notifier,
+    ),
+  );
+}
+
+class _BodyDataSheet extends StatefulWidget {
+  final String? initialGender;
+  final int? initialAge;
+  final double? initialWeight;
+  final double? initialTargetWeight;
+  final UserProfileNotifier notifier;
+
+  const _BodyDataSheet({
+    required this.initialGender,
+    required this.initialAge,
+    required this.initialWeight,
+    required this.initialTargetWeight,
+    required this.notifier,
+  });
+
+  @override
+  State<_BodyDataSheet> createState() => _BodyDataSheetState();
+}
+
+class _BodyDataSheetState extends State<_BodyDataSheet> {
+  late String? _gender;
+  late final TextEditingController _ageCtrl;
+  late final TextEditingController _weightCtrl;
+  late final TextEditingController _targetCtrl;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _gender = widget.initialGender;
+    _ageCtrl = TextEditingController(
+      text: widget.initialAge != null ? '${widget.initialAge}' : '',
+    );
+    _weightCtrl = TextEditingController(
+      text: widget.initialWeight != null
+          ? widget.initialWeight!.toStringAsFixed(widget.initialWeight! == widget.initialWeight!.truncateToDouble() ? 0 : 1)
+          : '',
+    );
+    _targetCtrl = TextEditingController(
+      text: widget.initialTargetWeight != null
+          ? widget.initialTargetWeight!.toStringAsFixed(widget.initialTargetWeight! == widget.initialTargetWeight!.truncateToDouble() ? 0 : 1)
+          : '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _ageCtrl.dispose();
+    _weightCtrl.dispose();
+    _targetCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _canSave {
+    if (_gender == null) return false;
+    final age = int.tryParse(_ageCtrl.text);
+    if (age == null || age < 10 || age > 120) return false;
+    final w = double.tryParse(_weightCtrl.text.replaceAll(',', '.'));
+    if (w == null || w < 20 || w > 300) return false;
+    final tw = double.tryParse(_targetCtrl.text.replaceAll(',', '.'));
+    if (tw == null || tw < 20 || tw > 300) return false;
+    return true;
+  }
+
+  Future<void> _save() async {
+    if (!_canSave) return;
+    setState(() => _saving = true);
+    await widget.notifier.setBodyData(
+      gender: _gender!,
+      age: int.parse(_ageCtrl.text),
+      weight: double.parse(_weightCtrl.text.replaceAll(',', '.')),
+      targetWeight: double.parse(_targetCtrl.text.replaceAll(',', '.')),
+    );
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final textColor = isDark ? Colors.white : AppTokens.ink;
+    final mutedColor = isDark ? Colors.white54 : AppTokens.muted;
+    final fieldBg = isDark ? const Color(0xFF2A2A2A) : AppTokens.surface;
+    final borderColor = isDark ? Colors.white12 : AppTokens.hairline;
+
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+      borderSide: BorderSide(color: borderColor),
+    );
+    final focusedBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+      borderSide: BorderSide(color: primary, width: 1.5),
+    );
+    final inputStyle = GoogleFonts.inter(fontSize: 15, color: textColor);
+    final hintStyle = GoogleFonts.inter(color: mutedColor);
+    final labelStyle = GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: mutedColor);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Mon corps',
+            style: GoogleFonts.fraunces(fontSize: 22, fontWeight: FontWeight.w700, color: textColor),
+          ),
+          const SizedBox(height: 20),
+
+          // Genre
+          Text('Genre', style: labelStyle),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _GenderChip(
+                label: 'Homme',
+                icon: Icons.male_rounded,
+                selected: _gender == 'homme',
+                primary: primary,
+                isDark: isDark,
+                onTap: () => setState(() => _gender = 'homme'),
+              ),
+              const SizedBox(width: 10),
+              _GenderChip(
+                label: 'Femme',
+                icon: Icons.female_rounded,
+                selected: _gender == 'femme',
+                primary: primary,
+                isDark: isDark,
+                onTap: () => setState(() => _gender = 'femme'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Âge
+          Text('Âge', style: labelStyle),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _ageCtrl,
+            keyboardType: TextInputType.number,
+            onChanged: (_) => setState(() {}),
+            style: inputStyle,
+            decoration: InputDecoration(
+              hintText: 'Ex : 25',
+              hintStyle: hintStyle,
+              suffixText: 'ans',
+              suffixStyle: GoogleFonts.inter(color: mutedColor),
+              filled: true,
+              fillColor: fieldBg,
+              border: inputBorder,
+              enabledBorder: inputBorder,
+              focusedBorder: focusedBorder,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Poids + poids cible côte à côte
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Poids actuel', style: labelStyle),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _weightCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setState(() {}),
+                      style: inputStyle,
+                      decoration: InputDecoration(
+                        hintText: '70',
+                        hintStyle: hintStyle,
+                        suffixText: 'kg',
+                        suffixStyle: GoogleFonts.inter(color: mutedColor),
+                        filled: true,
+                        fillColor: fieldBg,
+                        border: inputBorder,
+                        enabledBorder: inputBorder,
+                        focusedBorder: focusedBorder,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Poids cible', style: labelStyle),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _targetCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setState(() {}),
+                      style: inputStyle,
+                      decoration: InputDecoration(
+                        hintText: '65',
+                        hintStyle: hintStyle,
+                        suffixText: 'kg',
+                        suffixStyle: GoogleFonts.inter(color: mutedColor),
+                        filled: true,
+                        fillColor: fieldBg,
+                        border: inputBorder,
+                        enabledBorder: inputBorder,
+                        focusedBorder: focusedBorder,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _canSave && !_saving ? _save : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primary,
+                disabledBackgroundColor: primary.withValues(alpha: 0.35),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                ),
+              ),
+              child: _saving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : Text(
+                      'Sauvegarder',
+                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GenderChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final Color primary;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _GenderChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.primary,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected
+        ? primary.withValues(alpha: 0.12)
+        : (isDark ? const Color(0xFF2A2A2A) : AppTokens.surface);
+    final borderColor = selected ? primary.withValues(alpha: 0.6) : Colors.transparent;
+    final contentColor = selected ? primary : (isDark ? Colors.white54 : AppTokens.inkSoft);
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            border: Border.all(color: borderColor, width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: contentColor),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: contentColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 String _objectiveLabel(CookingObjective? objective) => switch (objective) {

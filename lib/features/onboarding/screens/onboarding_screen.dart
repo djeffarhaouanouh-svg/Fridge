@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
@@ -16,7 +17,14 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
   final _nameCtrl = TextEditingController();
+  final _ageCtrl = TextEditingController();
+  final _weightCtrl = TextEditingController();
+  final _targetWeightCtrl = TextEditingController();
   int _page = 0;
+  String? _gender; // 'homme' or 'femme'
+
+  // Total pages: 0=Prénom, 1=Objectif, 2=Genre, 3=Âge, 4=Poids, 5=Poids cible, 6=Cuisine
+  static const _totalPages = 7;
 
   static const _goalTiles = <_ObjectiveTileData>[
     _ObjectiveTileData(label: 'Perte de poids', icon: Icons.monitor_weight_outlined, value: CookingObjective.weightLoss),
@@ -36,9 +44,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _OptionTileData(label: 'Air-fryer', icon: Icons.kitchen_outlined, value: 'Air-fryer'),
   ];
 
-  void _next() {
-    if (_page == 0 && _nameCtrl.text.trim().isEmpty) return;
-    if (_page >= 2) {
+  bool get _canProceed {
+    switch (_page) {
+      case 0:
+        return _nameCtrl.text.trim().isNotEmpty;
+      case 2:
+        return _gender != null;
+      case 3:
+        final age = int.tryParse(_ageCtrl.text);
+        return age != null && age >= 10 && age <= 120;
+      case 4:
+        final w = double.tryParse(_weightCtrl.text.replaceAll(',', '.'));
+        return w != null && w >= 20 && w <= 300;
+      case 5:
+        final tw = double.tryParse(_targetWeightCtrl.text.replaceAll(',', '.'));
+        return tw != null && tw >= 20 && tw <= 300;
+      default:
+        return true;
+    }
+  }
+
+  Future<void> _next() async {
+    if (!_canProceed) return;
+
+    if (_page >= _totalPages - 1) {
+      await _saveBodyDataAndCalories();
       widget.onComplete(_nameCtrl.text.trim());
       return;
     }
@@ -56,10 +86,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  Future<void> _saveBodyDataAndCalories() async {
+    await ref.read(userProfileProvider.notifier).setBodyData(
+      gender: _gender ?? 'homme',
+      age: int.tryParse(_ageCtrl.text) ?? 25,
+      weight: double.tryParse(_weightCtrl.text.replaceAll(',', '.')) ?? 70.0,
+      targetWeight: double.tryParse(_targetWeightCtrl.text.replaceAll(',', '.')) ?? 70.0,
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();
     _nameCtrl.dispose();
+    _ageCtrl.dispose();
+    _weightCtrl.dispose();
+    _targetWeightCtrl.dispose();
     super.dispose();
   }
 
@@ -73,7 +115,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final titleColor = isDark ? Colors.white : AppTokens.ink;
     final subtitleColor = isDark ? Colors.white70 : AppTokens.inkSoft;
     final lineBg = isDark ? Colors.white24 : AppTokens.hairline;
-    final progress = (_page + 1) / 3;
+    final progress = (_page + 1) / _totalPages;
 
     return Scaffold(
       backgroundColor: bg,
@@ -164,7 +206,58 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
 
-                  // ── Page 2 : Votre cuisine ───────────────────────────
+                  // ── Page 2 : Genre ───────────────────────────────────
+                  _QuestionPage(
+                    title: 'Genre',
+                    subtitle: 'Tu es…',
+                    child: _GenderPicker(
+                      selected: _gender,
+                      onSelect: (v) => setState(() => _gender = v),
+                    ),
+                  ),
+
+                  // ── Page 3 : Âge ─────────────────────────────────────
+                  _QuestionPage(
+                    title: 'Âge',
+                    subtitle: 'Tu as quel âge ?',
+                    child: _NumberInputField(
+                      controller: _ageCtrl,
+                      hint: 'Ton âge…',
+                      suffix: 'ans',
+                      onChanged: () => setState(() {}),
+                      onSubmitted: _next,
+                    ),
+                  ),
+
+                  // ── Page 4 : Poids actuel ────────────────────────────
+                  _QuestionPage(
+                    title: 'Poids',
+                    subtitle: 'Quel est ton poids actuel ?',
+                    child: _NumberInputField(
+                      controller: _weightCtrl,
+                      hint: 'Ton poids…',
+                      suffix: 'kg',
+                      decimal: true,
+                      onChanged: () => setState(() {}),
+                      onSubmitted: _next,
+                    ),
+                  ),
+
+                  // ── Page 5 : Poids cible ─────────────────────────────
+                  _QuestionPage(
+                    title: 'Objectif',
+                    subtitle: 'Quel est ton poids cible ?',
+                    child: _NumberInputField(
+                      controller: _targetWeightCtrl,
+                      hint: 'Poids visé…',
+                      suffix: 'kg',
+                      decimal: true,
+                      onChanged: () => setState(() {}),
+                      onSubmitted: _next,
+                    ),
+                  ),
+
+                  // ── Page 6 : Ta cuisine ───────────────────────────────
                   _QuestionPage(
                     title: 'Ta cuisine',
                     subtitle: 'Quels équipements tu as ?',
@@ -183,7 +276,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: (_page == 0 && _nameCtrl.text.trim().isEmpty) ? null : _next,
+                  onPressed: _canProceed ? _next : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primary,
                     disabledBackgroundColor: primary.withValues(alpha: 0.35),
@@ -194,7 +287,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                   child: Text(
-                    _page == 2 ? 'Terminer' : 'Suivant',
+                    _page == _totalPages - 1 ? 'Terminer' : 'Suivant',
                     style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -206,6 +299,193 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 }
+
+// ── Gender picker ─────────────────────────────────────────────────────────────
+
+class _GenderPicker extends StatelessWidget {
+  final String? selected;
+  final ValueChanged<String> onSelect;
+
+  const _GenderPicker({required this.selected, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Row(
+      children: [
+        _GenderTile(
+          label: 'Homme',
+          icon: Icons.male_rounded,
+          value: 'homme',
+          selected: selected == 'homme',
+          primary: primary,
+          isDark: isDark,
+          onTap: () => onSelect('homme'),
+        ),
+        const SizedBox(width: 16),
+        _GenderTile(
+          label: 'Femme',
+          icon: Icons.female_rounded,
+          value: 'femme',
+          selected: selected == 'femme',
+          primary: primary,
+          isDark: isDark,
+          onTap: () => onSelect('femme'),
+        ),
+      ],
+    );
+  }
+}
+
+class _GenderTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final String value;
+  final bool selected;
+  final Color primary;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _GenderTile({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.selected,
+    required this.primary,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = isDark ? Colors.white54 : const Color(0xFF66707A);
+    final textColor = isDark ? Colors.white : AppTokens.ink;
+    final bg = selected
+        ? primary.withValues(alpha: 0.1)
+        : (isDark ? const Color(0xFF1E1E1E) : AppTokens.surface);
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 130,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected ? primary.withValues(alpha: 0.6) : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 52, color: selected ? primary : baseColor),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? primary : textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Number input field ────────────────────────────────────────────────────────
+
+class _NumberInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final String suffix;
+  final bool decimal;
+  final VoidCallback onChanged;
+  final Future<void> Function() onSubmitted;
+
+  const _NumberInputField({
+    required this.controller,
+    required this.hint,
+    required this.suffix,
+    this.decimal = false,
+    required this.onChanged,
+    required this.onSubmitted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final titleColor = isDark ? Colors.white : AppTokens.ink;
+    final mutedColor = isDark ? Colors.white54 : AppTokens.muted;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: decimal
+                  ? const TextInputType.numberWithOptions(decimal: true)
+                  : TextInputType.number,
+              inputFormatters: [
+                if (decimal)
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))
+                else
+                  FilteringTextInputFormatter.digitsOnly,
+              ],
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => onSubmitted(),
+              onChanged: (_) => onChanged(),
+              style: GoogleFonts.fraunces(
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+                color: titleColor,
+              ),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: GoogleFonts.fraunces(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white24 : AppTokens.hairline,
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: primary, width: 2),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              suffix,
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: mutedColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Shared page shell ─────────────────────────────────────────────────────────
 
 class _QuestionPage extends StatelessWidget {
   final String title;
@@ -248,6 +528,8 @@ class _QuestionPage extends StatelessWidget {
     );
   }
 }
+
+// ── Grid components ───────────────────────────────────────────────────────────
 
 class _SingleChoiceGrid<T> extends StatelessWidget {
   final List<_SelectableTile<T>> options;
@@ -369,6 +651,8 @@ class _OptionTile extends StatelessWidget {
     );
   }
 }
+
+// ── Data classes ───────────────────────────────────────────────────────────────
 
 class _OptionTileData {
   final String label;

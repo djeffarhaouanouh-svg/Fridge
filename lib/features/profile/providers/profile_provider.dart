@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/neon_service.dart';
 import '../../../core/services/user_service.dart';
@@ -36,6 +37,10 @@ class UserProfile {
   final int targetProtein;
   final int targetCarbs;
   final int targetFats;
+  final String? gender;        // 'homme' or 'femme'
+  final int? age;
+  final double? currentWeight; // kg
+  final double? targetWeight;  // kg
 
   const UserProfile({
     this.name = '',
@@ -52,6 +57,10 @@ class UserProfile {
     this.targetProtein = 150,
     this.targetCarbs = 200,
     this.targetFats = 65,
+    this.gender,
+    this.age,
+    this.currentWeight,
+    this.targetWeight,
   });
 
   UserProfile copyWith({
@@ -69,6 +78,10 @@ class UserProfile {
     int? targetProtein,
     int? targetCarbs,
     int? targetFats,
+    Object? gender = _s,
+    Object? age = _s,
+    Object? currentWeight = _s,
+    Object? targetWeight = _s,
   }) {
     return UserProfile(
       name: name ?? this.name,
@@ -87,6 +100,10 @@ class UserProfile {
       targetProtein: targetProtein ?? this.targetProtein,
       targetCarbs: targetCarbs ?? this.targetCarbs,
       targetFats: targetFats ?? this.targetFats,
+      gender: gender == _s ? this.gender : gender as String?,
+      age: age == _s ? this.age : age as int?,
+      currentWeight: currentWeight == _s ? this.currentWeight : currentWeight as double?,
+      targetWeight: targetWeight == _s ? this.targetWeight : targetWeight as double?,
     );
   }
 
@@ -103,6 +120,18 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   Future<void> _init() async {
     final info = await UserService().fetchUser();
     state = state.copyWith(name: info.name, email: info.email);
+
+    // Load body data from SharedPreferences (local only)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      state = state.copyWith(
+        gender: prefs.getString('user_gender'),
+        age: prefs.getInt('user_age'),
+        currentWeight: prefs.getDouble('user_weight'),
+        targetWeight: prefs.getDouble('user_target_weight'),
+      );
+    } catch (_) {}
+
     try {
       await _db.upsertUser(info.name, info.email);
       final p = await _db.loadProfile();
@@ -141,10 +170,99 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     state = state.copyWith(objective: next);
     try {
       await _db.saveGoal(_objectiveToDb(next));
+      // Recalculate calories when objective changes (if body data is available)
+      final g = state.gender;
+      final a = state.age;
+      final w = state.currentWeight;
+      if (g != null && a != null && w != null) {
+        final cal = calcCalories(gender: g, age: a, weight: w, objective: next);
+        final pro = calcProtein(weight: w, objective: next);
+        final fat = calcFats(cal);
+        await setNutrition(
+          calories: cal,
+          protein: pro,
+          carbs: calcCarbs(calories: cal, protein: pro, fats: fat),
+          fats: fat,
+        );
+      }
     } catch (e, st) {
       debugPrint('UserProfile setObjective: $e\n$st');
     }
   }
+
+  Future<void> setBodyData({
+    required String gender,
+    required int age,
+    required double weight,
+    required double targetWeight,
+  }) async {
+    state = state.copyWith(
+      gender: gender,
+      age: age,
+      currentWeight: weight,
+      targetWeight: targetWeight,
+    );
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_gender', gender);
+      await prefs.setInt('user_age', age);
+      await prefs.setDouble('user_weight', weight);
+      await prefs.setDouble('user_target_weight', targetWeight);
+
+      final cal = calcCalories(gender: gender, age: age, weight: weight, objective: state.objective);
+      final pro = calcProtein(weight: weight, objective: state.objective);
+      final fat = calcFats(cal);
+      await setNutrition(
+        calories: cal,
+        protein: pro,
+        carbs: calcCarbs(calories: cal, protein: pro, fats: fat),
+        fats: fat,
+      );
+    } catch (e, st) {
+      debugPrint('UserProfile setBodyData: $e\n$st');
+    }
+  }
+
+  // ── Calorie calculation helpers ────────────────────────────────────────────
+
+  // Harris-Benedict + activity 1.375, average height (175 cm homme / 163 cm femme)
+  static int calcCalories({
+    required String gender,
+    required int age,
+    required double weight,
+    CookingObjective? objective,
+  }) {
+    final double bmr = gender == 'homme'
+        ? 66.47 + (13.75 * weight) + (5.0 * 175) - (6.75 * age)
+        : 655.1 + (9.56 * weight) + (1.85 * 163) - (4.68 * age);
+    double tdee = bmr * 1.375;
+    switch (objective) {
+      case CookingObjective.weightLoss:
+        tdee -= 500;
+        break;
+      case CookingObjective.muscleGain:
+        tdee += 300;
+        break;
+      default:
+        break;
+    }
+    return tdee.round().clamp(1200, 4000);
+  }
+
+  static int calcProtein({required double weight, CookingObjective? objective}) {
+    final double gPerKg = switch (objective) {
+      CookingObjective.muscleGain => 1.8,
+      CookingObjective.weightLoss => 1.6,
+      _ => 1.4,
+    };
+    return (weight * gPerKg).round().clamp(80, 250);
+  }
+
+  static int calcFats(int calories) =>
+      ((calories * 0.28) / 9).round().clamp(40, 120);
+
+  static int calcCarbs({required int calories, required int protein, required int fats}) =>
+      ((calories - protein * 4 - fats * 9) / 4).round().clamp(50, 400);
 
   Future<void> setCookingLevel(CookingLevel level) async {
     state = state.copyWith(cookingLevel: level);

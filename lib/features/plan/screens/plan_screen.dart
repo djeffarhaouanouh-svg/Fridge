@@ -1548,39 +1548,30 @@ class _PlanNutritionDashboard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _DashCalorieItem(value: '$consumedCalories', label: 'Mangées', textColor: textColor, mutedColor: mutedColor),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    const h = 160.0;
-                    final centerY = h * 0.88;
-                    final radius = constraints.maxWidth * 0.40;
-                    final midY = centerY - radius / 2;
-                    final alignY = ((midY / h) * 2 - 1).clamp(-1.0, 1.0);
-                    return SizedBox(
-                      height: h,
-                      child: CustomPaint(
-                        painter: _DashArcPainter(progress: progress, isDark: isDark),
-                        child: Align(
-                          alignment: Alignment(0, alignY),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('$remaining', style: GoogleFonts.fraunces(fontSize: 28, fontWeight: FontWeight.w700, color: textColor)),
-                              Text('Restantes', style: GoogleFonts.inter(fontSize: 11, color: mutedColor, fontWeight: FontWeight.w500)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const h = 160.0;
+              final centerY = h * 0.88;
+              final radius = constraints.maxWidth * 0.40;
+              final midY = centerY - radius / 2;
+              final alignY = ((midY / h) * 2 - 1).clamp(-1.0, 1.0);
+              return SizedBox(
+                height: h,
+                child: CustomPaint(
+                  painter: _DashArcPainter(progress: progress, isDark: isDark),
+                  child: Align(
+                    alignment: Alignment(0, alignY),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('$remaining', style: GoogleFonts.fraunces(fontSize: 28, fontWeight: FontWeight.w700, color: textColor)),
+                        Text('Restantes', style: GoogleFonts.inter(fontSize: 11, color: mutedColor, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              _DashCalorieItem(value: '$burned', label: 'Brûlées', textColor: textColor, mutedColor: mutedColor),
-            ],
+              );
+            },
           ),
           const SizedBox(height: 14),
           Container(height: 1, color: dividerColor),

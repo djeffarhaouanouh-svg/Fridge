@@ -9,6 +9,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../main.dart';
 import '../../../core/services/fridge_sync.dart';
+import '../../../core/services/fridge_expiry.dart';
 import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../meals/providers/meals_provider.dart';
@@ -100,6 +101,7 @@ Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) 
     }
     list.add(submitted);
     ref.read(detectedIngredientsProvider.notifier).state = list;
+    await recordIngredientsAdded([submitted]);
     await persistFridgeToNeon(list);
   } finally {
     controller.dispose();
@@ -184,6 +186,7 @@ Future<void> showRemoveFridgeIngredientDialog(BuildContext context, WidgetRef re
   final updated = List<String>.from(ref.read(detectedIngredientsProvider));
   updated.remove(selected);
   ref.read(detectedIngredientsProvider.notifier).state = updated;
+  await removeIngredientDate(selected);
   await persistFridgeToNeon(updated);
 }
 

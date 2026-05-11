@@ -22,6 +22,8 @@ import 'features/profile/providers/profile_provider.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'firebase_options.dart';
 import 'core/services/neon_service.dart';
+import 'core/services/fridge_expiry.dart';
+import 'core/services/fridge_sync.dart';
 
 // Provider global pour l'état de connexion
 final authStateProvider = StateProvider<bool>((ref) => false);
@@ -245,7 +247,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         })(),
         (() async {
           final fridge = await db.loadFridgeIngredients();
-          ref.read(detectedIngredientsProvider.notifier).state = fridge;
+          final fresh = await filterFresh(fridge);
+          ref.read(detectedIngredientsProvider.notifier).state = fresh;
+          // Nettoyage silencieux si des ingrédients ont expiré
+          if (fresh.length < fridge.length) {
+            await persistFridgeToNeon(fresh);
+          }
         })(),
         (() async {
           final plan = await db.loadPlanSelections();

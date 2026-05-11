@@ -14,6 +14,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
 import '../../../core/services/openai_vision_service.dart';
 import '../../../core/services/fridge_sync.dart';
+import '../../../core/services/fridge_expiry.dart';
 import '../../../core/services/neon_service.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../navigation/widgets/bottom_nav.dart';
@@ -446,6 +447,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       }
       ref.read(detectedIngredientsProvider.notifier).state = merged;
       ref.read(latestScanIngredientsProvider.notifier).state = latestDetected;
+      await recordIngredientsAdded(latestDetected);
       await persistFridgeToNeon(merged);
 
       final profile = ref.read(userProfileProvider);

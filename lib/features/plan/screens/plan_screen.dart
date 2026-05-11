@@ -695,7 +695,7 @@ class _DayMealSlotTile extends StatelessWidget {
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                         height: 1.2,
-                        color: titleText.isNotEmpty ? ink : muted,
+                        color: ink,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

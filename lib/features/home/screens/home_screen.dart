@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/services/fridge_sync.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/ingredient_category.dart';
+import '../../../core/utils/recipe_ids.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../meals/providers/meals_provider.dart';
@@ -33,6 +34,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final meals = ref.watch(mealsProvider);
+    // Recettes issues d'un vrai scan uniquement (exclut les mocks favorisés).
+    final scanIds = ref.read(mealsProvider.notifier).scanIds;
+    final scanMeals = meals.where((m) => scanIds.contains(m.id)).toList();
     final detectedIngredients = ref.watch(detectedIngredientsProvider);
     final heroAsync = ref.watch(dailyHeroRecipesProvider);
     final marmitonBudgetAsync = ref.watch(marmitonBudgetRecipesProvider);
@@ -232,9 +236,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        detectedIngredients.isEmpty
-                            ? 'Scanne ton frigo ou ajoute des recettes en favoris pour les voir ici'
-                            : 'Voici 3 recettes pour toi',
+                        'Scan ton frigo pour commencer',
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w500,
@@ -365,7 +367,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               padding: const EdgeInsets.fromLTRB(18, 36, 18, 14),
               titleColor: titleColor,
               onTap: () {
-                final list = meals.isEmpty ? _mockPopularMeals : meals;
+                final list = scanMeals.isEmpty ? _mockPopularMeals : scanMeals;
                 showRecipesGridSheet(
                   context,
                   title: 'Depuis ton dernier scan',
@@ -384,11 +386,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                itemCount: meals.isEmpty
+                itemCount: scanMeals.isEmpty
                     ? _mockPopularMeals.length
-                    : meals.length,
+                    : scanMeals.length,
                 itemBuilder: (context, i) => _CompactCard(
-                  meal: meals.isEmpty ? _mockPopularMeals[i] : meals[i],
+                  meal: scanMeals.isEmpty ? _mockPopularMeals[i] : scanMeals[i],
                 ),
               ),
             ),
@@ -951,11 +953,17 @@ class _CompactCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Cherche l'état courant dans le catalogue (gère mocks favorisés et recettes réelles).
+    final nid = normalizeRecipeId(meal.id);
+    final inState = ref.watch(mealsProvider).where((m) => m.id == nid).firstOrNull;
+    final isFav = inState?.isFavorite ?? meal.isFavorite;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => RecipeScreen(meal: meal)),
+          MaterialPageRoute(builder: (_) => RecipeScreen(meal: inState ?? meal)),
         );
       },
       child: Container(
@@ -990,12 +998,12 @@ class _CompactCard extends ConsumerWidget {
                             customBorder: const CircleBorder(),
                             onTap: () => ref
                                 .read(mealsProvider.notifier)
-                                .toggleFavorite(meal.id),
+                                .toggleFavorite(meal.id, meal: meal),
                             child: SizedBox(
                               width: 30,
                               height: 30,
                               child: Icon(
-                                meal.isFavorite
+                                isFav
                                     ? Icons.favorite
                                     : Icons.favorite_border,
                                 size: 16,

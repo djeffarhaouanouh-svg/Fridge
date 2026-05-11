@@ -62,6 +62,17 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     } catch (e) {
       debugPrint('_loadSlotExtras: $e');
     }
+    await _loadTodayConsumed();
+  }
+
+  Future<void> _loadTodayConsumed() async {
+    try {
+      final data = await NeonService().loadTodayConsumed();
+      if (!mounted) return;
+      ref.read(todayConsumedProvider.notifier).state = data;
+    } catch (e) {
+      debugPrint('_loadTodayConsumed: $e');
+    }
   }
 
   static const _weekdayToFr = {
@@ -167,7 +178,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         mealType: mealType,
         mealName: _defaultPlanMealName(iso, mealType, planByDate),
       ),
-    ));
+    )).then((_) => _loadTodayConsumed());
   }
 
   void _openAddSlotMenu(DateTime day, Map<String, DayPlan> planByDate) {
@@ -220,6 +231,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final selections = ref.watch(planMealSelectionsProvider);
     final slotPhotos = ref.watch(planSlotPhotosProvider);
     final slotAnalyses = ref.watch(planSlotAnalysisProvider);
+    final consumed = ref.watch(todayConsumedProvider);
     final isLoading = status == PlanStatus.loading;
     final days = _days;
     final planByDate = {for (final d in weekPlan) d.date: d};
@@ -249,6 +261,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   targetProtein: profile.targetProtein,
                   targetCarbs: profile.targetCarbs,
                   targetFats: profile.targetFats,
+                  consumedCalories: consumed['kcal'] ?? 0,
+                  consumedProtein: consumed['proteins'] ?? 0,
+                  consumedCarbs: consumed['carbs'] ?? 0,
+                  consumedFats: consumed['fats'] ?? 0,
                 ),
               ),
               SliverToBoxAdapter(
@@ -257,62 +273,92 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _WeekSelectorCard(
-                        days: days,
-                        frDays: frDays,
-                        rangeStart: _rangeStart,
-                        rangeEnd: _rangeEnd,
-                        frMonths: _frMonths,
-                        onDayTap: _handleDayTap,
-                        onPrev: _prevWeek,
-                        onNext: _nextWeek,
-                        isDark: isDark,
-                        titleColor: titleColor,
-                        mutedColor: mutedColor,
-                      ),
-                      const SizedBox(height: 16),
-                      if (_rangeStart == null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 32),
-                          child: Column(
-                            children: [
-                              Icon(Icons.touch_app_outlined, color: mutedColor, size: 36),
-                              const SizedBox(height: 10),
-                              Text(
-                                'Sélectionne un ou plusieurs jours',
-                                style: GoogleFonts.inter(fontSize: 14, color: mutedColor, fontWeight: FontWeight.w500),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                          border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
+                              blurRadius: 12,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _WeekSelectorCard(
+                              days: days,
+                              frDays: frDays,
+                              rangeStart: _rangeStart,
+                              rangeEnd: _rangeEnd,
+                              frMonths: _frMonths,
+                              onDayTap: _handleDayTap,
+                              onPrev: _prevWeek,
+                              onNext: _nextWeek,
+                              isDark: isDark,
+                              titleColor: titleColor,
+                              mutedColor: mutedColor,
+                              showDecoration: false,
+                            ),
+                            if (_rangeStart == null)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      Icon(Icons.touch_app_outlined, color: mutedColor, size: 36),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        'Sélectionne un ou plusieurs jours',
+                                        style: GoogleFonts.inter(fontSize: 14, color: mutedColor, fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else ...[
+                              Container(height: 1, color: isDark ? Colors.white12 : AppTokens.hairline),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                                child: Column(
+                                  children: [
+                                    for (final day in _visibleDays)
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 12),
+                                        child: _DayPlanCard(
+                                          day: day,
+                                          isDark: isDark,
+                                          isSelected: false,
+                                          headerTitle:
+                                              '${_weekdayLongFr[day.weekday]}, ${day.day} ${_frMonths[day.month - 1]}',
+                                          headerAccentColor: day.weekday == DateTime.monday ? mondayAccent : ink,
+                                          cardBg: isDark ? const Color(0xFF252525) : const Color(0xFFF2F2F2),
+                                          ink: ink,
+                                          muted: muted,
+                                          selections: selections,
+                                          slotPhotos: slotPhotos,
+                                          slotAnalyses: slotAnalyses,
+                                          slotDefs: _slotDefs,
+                                          onSlotTap: (mealType) => _openSlotEditor(day, mealType, planByDate),
+                                          slotTitle: (mealType) => _slotLineTitle(
+                                            day,
+                                            mealType,
+                                            selections,
+                                            planByDate,
+                                            slotAnalyses,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
                             ],
-                          ),
-                        )
-                      else
-                        for (final day in _visibleDays)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _DayPlanCard(
-                              day: day,
-                              isDark: isDark,
-                              isSelected: false,
-                              headerTitle:
-                                  '${_weekdayLongFr[day.weekday]}, ${day.day} ${_frMonths[day.month - 1]}',
-                              headerAccentColor: day.weekday == DateTime.monday ? mondayAccent : ink,
-                              cardBg: cardBg,
-                              ink: ink,
-                              muted: muted,
-                              selections: selections,
-                              slotPhotos: slotPhotos,
-                              slotAnalyses: slotAnalyses,
-                              slotDefs: _slotDefs,
-                              onSlotTap: (mealType) => _openSlotEditor(day, mealType, planByDate),
-                              slotTitle: (mealType) => _slotLineTitle(
-                                day,
-                                mealType,
-                                selections,
-                                planByDate,
-                                slotAnalyses,
-                              ),
-                            ),
-                          ),
+                          ],
+                        ),
+                      ),
                       if (isLoading)
                         const Padding(
                           padding: EdgeInsets.only(top: 16),
@@ -366,6 +412,7 @@ class _WeekSelectorCard extends StatelessWidget {
   final bool isDark;
   final Color titleColor;
   final Color mutedColor;
+  final bool showDecoration;
 
   const _WeekSelectorCard({
     required this.days,
@@ -379,6 +426,7 @@ class _WeekSelectorCard extends StatelessWidget {
     required this.isDark,
     required this.titleColor,
     required this.mutedColor,
+    this.showDecoration = true,
   });
 
   String _rangeTitle() {
@@ -401,14 +449,8 @@ class _WeekSelectorCard extends StatelessWidget {
     final bg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
     final bandColor = AppTokens.coral.withValues(alpha: 0.15);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-        border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline),
-      ),
-      child: Column(
-        children: [
+    final inner = Column(
+      children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
             child: Row(
@@ -511,7 +553,17 @@ class _WeekSelectorCard extends StatelessWidget {
             ),
           ),
         ],
+    );
+
+    if (!showDecoration) return inner;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+        border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline),
       ),
+      child: inner,
     );
   }
 }
@@ -715,10 +767,20 @@ class _DayMealSlotTile extends StatelessWidget {
     }
     return Container(
       color: AppTokens.placeholder,
-      child: const Center(
-        child: Icon(Icons.restaurant_outlined, color: AppTokens.placeholderDeep, size: 20),
+      child: Center(
+        child: Text(_slotEmoji(), style: const TextStyle(fontSize: 26)),
       ),
     );
+  }
+
+  String _slotEmoji() {
+    switch (typeLabel) {
+      case 'Petit-déjeuner': return '🥣';
+      case 'Déjeuner':       return '🥗';
+      case 'En cas':         return '🍎';
+      case 'Dîner':          return '🍜';
+      default:               return '🍽️';
+    }
   }
 }
 
@@ -1449,12 +1511,20 @@ class _PlanNutritionDashboard extends StatelessWidget {
   final int targetProtein;
   final int targetCarbs;
   final int targetFats;
+  final int consumedCalories;
+  final int consumedProtein;
+  final int consumedCarbs;
+  final int consumedFats;
 
   const _PlanNutritionDashboard({
     required this.targetCalories,
     required this.targetProtein,
     required this.targetCarbs,
     required this.targetFats,
+    required this.consumedCalories,
+    required this.consumedProtein,
+    required this.consumedCarbs,
+    required this.consumedFats,
   });
 
   @override
@@ -1465,10 +1535,9 @@ class _PlanNutritionDashboard extends StatelessWidget {
     final mutedColor = isDark ? Colors.white54 : AppTokens.muted;
     final dividerColor = isDark ? Colors.white12 : AppTokens.hairline;
 
-    const consumed = 0;
     const burned = 0;
-    final remaining = targetCalories - consumed + burned;
-    final progress = targetCalories > 0 ? (consumed / targetCalories).clamp(0.0, 1.0) : 0.0;
+    final remaining = (targetCalories - consumedCalories + burned).clamp(0, targetCalories);
+    final progress = targetCalories > 0 ? (consumedCalories / targetCalories).clamp(0.0, 1.0) : 0.0;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(18, 0, 18, 0),
@@ -1483,7 +1552,7 @@ class _PlanNutritionDashboard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _DashCalorieItem(value: '$consumed', label: 'Mangées', textColor: textColor, mutedColor: mutedColor),
+              _DashCalorieItem(value: '$consumedCalories', label: 'Mangées', textColor: textColor, mutedColor: mutedColor),
               Expanded(
                 child: SizedBox(
                   height: 160,
@@ -1510,9 +1579,9 @@ class _PlanNutritionDashboard extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              _DashMacroBar(label: 'Glucides', current: 0, target: targetCarbs, color: const Color(0xFF2196F3), mutedColor: mutedColor),
-              _DashMacroBar(label: 'Protéines', current: 0, target: targetProtein, color: AppTokens.coral, mutedColor: mutedColor),
-              _DashMacroBar(label: 'Lipides', current: 0, target: targetFats, color: const Color(0xFFFF9800), mutedColor: mutedColor),
+              _DashMacroBar(label: 'Glucides', current: consumedCarbs, target: targetCarbs, color: const Color(0xFF2196F3), mutedColor: mutedColor),
+              _DashMacroBar(label: 'Protéines', current: consumedProtein, target: targetProtein, color: AppTokens.coral, mutedColor: mutedColor),
+              _DashMacroBar(label: 'Lipides', current: consumedFats, target: targetFats, color: const Color(0xFFFF9800), mutedColor: mutedColor),
             ],
           ),
         ],

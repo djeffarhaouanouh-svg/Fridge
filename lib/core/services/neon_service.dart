@@ -1308,9 +1308,58 @@ class NeonService {
       await execute(
         'ALTER TABLE recipes ADD COLUMN IF NOT EXISTS cook_time_min INTEGER DEFAULT 0',
       );
+      await execute(
+        'ALTER TABLE recipes ADD COLUMN IF NOT EXISTS protein_g INT DEFAULT 0',
+      );
+      await execute(
+        'ALTER TABLE recipes ADD COLUMN IF NOT EXISTS carbs_g INT DEFAULT 0',
+      );
+      await execute(
+        'ALTER TABLE recipes ADD COLUMN IF NOT EXISTS fats_g INT DEFAULT 0',
+      );
     } catch (e) {
       debugPrint('ensureUserSyncSchema columns: $e');
     }
+  }
+
+  /// Totaux consommés aujourd'hui (kcal + macros).
+  /// Priorité : slot_analysis_json (photo IA) > colonnes recipes (recette).
+  Future<Map<String, int>> loadTodayConsumed() async {
+    final rows = await query(r'''
+      SELECT
+        COALESCE(SUM(CASE
+          WHEN mp.slot_analysis_json IS NOT NULL
+            THEN (mp.slot_analysis_json->>'kcal')::int
+          ELSE COALESCE(r.calories, 0)
+        END), 0) AS kcal,
+        COALESCE(SUM(CASE
+          WHEN mp.slot_analysis_json IS NOT NULL
+            THEN (mp.slot_analysis_json->>'proteins')::int
+          ELSE COALESCE(r.protein_g, 0)
+        END), 0) AS proteins,
+        COALESCE(SUM(CASE
+          WHEN mp.slot_analysis_json IS NOT NULL
+            THEN (mp.slot_analysis_json->>'carbs')::int
+          ELSE COALESCE(r.carbs_g, 0)
+        END), 0) AS carbs,
+        COALESCE(SUM(CASE
+          WHEN mp.slot_analysis_json IS NOT NULL
+            THEN (mp.slot_analysis_json->>'fats')::int
+          ELSE COALESCE(r.fats_g, 0)
+        END), 0) AS fats
+      FROM meal_plans mp
+      LEFT JOIN recipes r ON r.id = mp.recipe_id
+      WHERE mp.user_id = $1::uuid
+        AND mp.date = CURRENT_DATE
+    ''', [kUserId]);
+    if (rows.isEmpty) return {'kcal': 0, 'proteins': 0, 'carbs': 0, 'fats': 0};
+    final r = rows.first;
+    return {
+      'kcal':     (r['kcal']     as num?)?.toInt() ?? 0,
+      'proteins': (r['proteins'] as num?)?.toInt() ?? 0,
+      'carbs':    (r['carbs']    as num?)?.toInt() ?? 0,
+      'fats':     (r['fats']     as num?)?.toInt() ?? 0,
+    };
   }
 
   /// Crée les tables attendues par l’app si elles n’existent pas (Neon par défaut ≠ schéma Fridge).

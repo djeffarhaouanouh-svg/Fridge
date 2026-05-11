@@ -213,3 +213,8 @@ final planSlotPhotosProvider = StateProvider<Map<String, Uint8List>>((ref) => {}
 // Résultats d'analyse IA par créneau
 final planSlotAnalysisProvider =
     StateProvider<Map<String, Map<String, dynamic>>>((ref) => {});
+
+// Macros consommées aujourd'hui (kcal, proteins, carbs, fats)
+final todayConsumedProvider = StateProvider<Map<String, int>>(
+  (_) => {'kcal': 0, 'proteins': 0, 'carbs': 0, 'fats': 0},
+);

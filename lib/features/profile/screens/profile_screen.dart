@@ -1565,33 +1565,31 @@ class _NutritionDashboardCard extends StatelessWidget {
               _CalorieStatItem(value: '$consumed', label: 'Mangées', textColor: textColor, mutedColor: mutedColor),
               Expanded(
                 child: SizedBox(
-                  height: 110,
+                  height: 120,
                   child: CustomPaint(
                     painter: _ArcGaugePainter(progress: progress, isDark: isDark),
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '$remaining',
-                              style: GoogleFonts.fraunces(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: textColor,
-                              ),
+                    child: Align(
+                      alignment: const Alignment(0, 0.2),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$remaining',
+                            style: GoogleFonts.fraunces(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
                             ),
-                            Text(
-                              'Restantes',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: mutedColor,
-                                fontWeight: FontWeight.w500,
-                              ),
+                          ),
+                          Text(
+                            'Restantes',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: mutedColor,
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -1685,8 +1683,8 @@ class _ArcGaugePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height * 0.88);
-    final radius = size.width * 0.40;
+    final center = Offset(size.width / 2, size.height);
+    final radius = size.width / 2 - 8;
     final trackColor = isDark ? Colors.white12 : const Color(0xFFE0E0E0);
 
     canvas.drawArc(

@@ -1647,6 +1647,7 @@ class _DashMacroBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppTokens.ink;
     final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
     return Expanded(
       child: Padding(
@@ -1654,7 +1655,7 @@ class _DashMacroBar extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: GoogleFonts.inter(fontSize: 11, color: mutedColor, fontWeight: FontWeight.w500)),
+            Text(label, style: GoogleFonts.inter(fontSize: 11, color: textColor, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -1666,7 +1667,7 @@ class _DashMacroBar extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Text('$current / ${target}g', style: GoogleFonts.inter(fontSize: 11, color: mutedColor)),
+            Text('$current / ${target}g', style: GoogleFonts.inter(fontSize: 11, color: textColor)),
           ],
         ),
       ),

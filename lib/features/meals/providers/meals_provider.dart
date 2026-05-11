@@ -80,7 +80,13 @@ final mealsProvider = StateNotifierProvider<MealsNotifier, List<Meal>>((ref) {
 class MealsNotifier extends StateNotifier<List<Meal>> {
   final _db = NeonService();
 
+  /// IDs des recettes issues d'un vrai scan (jamais les mocks favorisés).
+  final Set<String> _scanIds = {};
+
   MealsNotifier() : super([]);
+
+  /// Retourne uniquement les recettes issues d'un scan réel.
+  Set<String> get scanIds => Set.unmodifiable(_scanIds);
 
   /// Catalogue Neon (favoris / plan / cuisiné) + recettes de scan persistées (`scan_meals_json`).
   Future<void> loadFromDatabase() async {
@@ -91,6 +97,7 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
       for (final m in scanPersisted) {
         final id = normalizeRecipeId(m.id);
         byId[id] = m.copyWith(id: id);
+        _scanIds.add(id);
       }
       for (final m in catalog) {
         final id = normalizeRecipeId(m.id);
@@ -112,6 +119,7 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
     for (final m in incoming) {
       final id = normalizeRecipeId(m.id);
       map[id] = m.copyWith(id: id);
+      _scanIds.add(id);
     }
     state = map.values.toList();
     try {
@@ -124,12 +132,16 @@ class MealsNotifier extends StateNotifier<List<Meal>> {
     }
   }
 
-  Future<void> toggleFavorite(String mealId) async {
+  Future<void> toggleFavorite(String mealId, {Meal? meal}) async {
     final nid = normalizeRecipeId(mealId);
-    final currentIndex = state.indexWhere((m) => m.id == nid);
-    if (currentIndex < 0) return;
+    int currentIndex = state.indexWhere((m) => m.id == nid);
+    if (currentIndex < 0) {
+      if (meal == null) return;
+      // Ajoute au catalogue (pour profil/favoris) sans marquer comme scan.
+      state = [...state, meal.copyWith(id: nid)];
+      currentIndex = state.length - 1;
+    }
     final current = state[currentIndex];
-    if (current == null) return;
     final becomingFavorite = !current.isFavorite;
     final optimistic = current.copyWith(isFavorite: becomingFavorite);
 
@@ -182,6 +194,7 @@ final favoriteMealsProvider = Provider<List<Meal>>((ref) {
 });
 
 final selectedMealProvider = StateProvider<Meal?>((ref) => null);
+
 
 final recentlyViewedProvider = StateProvider<List<Meal>>((ref) => []);
 

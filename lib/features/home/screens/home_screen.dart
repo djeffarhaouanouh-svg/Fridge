@@ -236,7 +236,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Scan ton frigo pour commencer',
+                        scanMeals.isEmpty
+                            ? 'Scan ton frigo pour commencer'
+                            : 'Voici 3 recettes pour toi',
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w500,

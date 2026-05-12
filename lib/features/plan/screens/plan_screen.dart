@@ -939,18 +939,10 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final key = _slotKey;
-      final savedMeal = ref.read(planMealSelectionsProvider)[key];
-      final savedPhoto = ref.read(planSlotPhotosProvider)[key];
-      final savedAnalysis = ref.read(planSlotAnalysisProvider)[key];
-      setState(() {
-        if (savedMeal != null) _selected = savedMeal;
-        if (savedPhoto != null) _pickedPhoto = savedPhoto;
-        if (savedAnalysis != null) _analysis = savedAnalysis;
-      });
-    });
+    final key = _slotKey;
+    _selected  = ref.read(planMealSelectionsProvider)[key];
+    _pickedPhoto = ref.read(planSlotPhotosProvider)[key];
+    _analysis  = ref.read(planSlotAnalysisProvider)[key];
   }
 
   String get _slotKey => planSlotStorageKey(widget.day, widget.mealType);

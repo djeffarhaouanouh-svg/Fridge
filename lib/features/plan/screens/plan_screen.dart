@@ -1566,7 +1566,7 @@ final _budgetMeals = [
 
 // ─── Série repas (gamification) ─────────────────────────────────────────────
 
-class _PlanMealLogStreakCard extends StatelessWidget {
+class _PlanMealLogStreakCard extends StatefulWidget {
   final int streakDays;
   final bool isDark;
   final Color cardBg;
@@ -1585,84 +1585,185 @@ class _PlanMealLogStreakCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final progress = streakDays <= 0
-        ? 0.0
-        : (streakDays / barCapDays).clamp(0.0, 1.0);
-    const streakOrange = Color(0xFFFF9800);
+  State<_PlanMealLogStreakCard> createState() => _PlanMealLogStreakCardState();
+}
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-        border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
+class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
+    with SingleTickerProviderStateMixin {
+  static const Color _streakOrange = Color(0xFFFF9800);
+
+  late final AnimationController _controller;
+  late Animation<double> _shakeTurns;
+  late Animation<double> _shakeDx;
+  late Animation<double> _emojiScale;
+  Animation<double>? _barFill;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    );
+    _attachAnimations();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  void _attachAnimations() {
+    _shakeTurns = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -0.12), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -0.12, end: 0.12), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.12, end: -0.1), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -0.1, end: 0.1), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.1, end: -0.07), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -0.07, end: 0.07), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.07, end: 0.0), weight: 1),
+    ]).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.26, curve: Curves.linear),
+    ));
+
+    _shakeDx = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -5.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -5.0, end: 6.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 6.0, end: -5.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -5.0, end: 4.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 4.0, end: -3.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -3.0, end: 0.0), weight: 1),
+    ]).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.26, curve: Curves.linear),
+    ));
+
+    _emojiScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.52), weight: 45),
+      TweenSequenceItem(tween: Tween(begin: 1.52, end: 1.0), weight: 55),
+    ]).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.26, 0.52, curve: Curves.easeOutBack),
+    ));
+
+    final target = widget.streakDays <= 0
+        ? 0.0
+        : (widget.streakDays / _PlanMealLogStreakCard.barCapDays).clamp(0.0, 1.0);
+    _barFill = Tween<double>(begin: 0, end: target).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.52, 1.0, curve: Curves.easeOutCubic),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlanMealLogStreakCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.streakDays != widget.streakDays) {
+      _attachAnimations();
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const streakOrange = _streakOrange;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final barVal = _barFill?.value ?? 0.0;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(
+            color: widget.cardBg,
+            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+            border: Border.all(color: widget.isDark ? Colors.white12 : AppTokens.hairline),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: widget.isDark ? 0.35 : 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('🔥', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      streakDays <= 0 ? 'Ta série repas' : 'Série repas',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: ink,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Transform.scale(
+                    scale: _emojiScale.value,
+                    alignment: Alignment.center,
+                    child: Transform.translate(
+                      offset: Offset(_shakeDx.value, 0),
+                      child: Transform.rotate(
+                        angle: _shakeTurns.value,
+                        child: const Text('🔥', style: TextStyle(fontSize: 24)),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      streakDays <= 0
-                          ? 'Ajoute au moins un plat par jour pour remplir la barre.'
-                          : streakDays == 1
-                              ? '1 jour d’affilée — continue comme ça !'
-                              : '$streakDays jours d’affilée',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: muted,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.streakDays <= 0 ? 'Ta série repas' : 'Série repas',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: widget.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.streakDays <= 0
+                              ? 'Ajoute au moins un plat par jour pour remplir la barre.'
+                              : widget.streakDays == 1
+                                  ? '1 jour d’affilée — continue comme ça !'
+                                  : '${widget.streakDays} jours d’affilée',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: widget.muted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    widget.streakDays <= 0 ? '0' : '${widget.streakDays}',
+                    style: GoogleFonts.fraunces(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: streakOrange,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                streakDays <= 0 ? '0' : '$streakDays',
-                style: GoogleFonts.fraunces(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: streakOrange,
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: barVal,
+                  backgroundColor: widget.isDark ? Colors.white12 : AppTokens.hairline,
+                  valueColor: const AlwaysStoppedAnimation<Color>(streakOrange),
+                  minHeight: 8,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: isDark ? Colors.white12 : AppTokens.hairline,
-              valueColor: const AlwaysStoppedAnimation<Color>(streakOrange),
-              minHeight: 8,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

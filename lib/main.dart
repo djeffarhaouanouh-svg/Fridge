@@ -1,5 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,7 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/config/app_secrets.dart';
+import 'core/providers/auth_providers.dart';
 import 'core/services/auth_service.dart';
+import 'core/services/purchase_service.dart';
 import 'core/services/push_notifications_service.dart';
 import 'core/theme/app_tokens.dart';
 import 'core/widgets/app_splash_screen.dart';
@@ -24,9 +29,6 @@ import 'firebase_options.dart';
 import 'core/services/neon_service.dart';
 import 'core/services/fridge_expiry.dart';
 import 'core/services/fridge_sync.dart';
-
-// Provider global pour l'état de connexion
-final authStateProvider = StateProvider<bool>((ref) => false);
 
 /// Série de jours consécutifs avec ouverture de l’app (persistée en base).
 final loginStreakProvider = StateProvider<int>((ref) => 0);
@@ -46,6 +48,22 @@ void main() async {
     await Hive.initFlutter();
     Hive.registerAdapter(MealAdapter());
     Hive.registerAdapter(IngredientAdapter());
+
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      try {
+        await PurchaseService.init(
+          androidApiKey: AppSecrets.revenueCatAndroidApiKey,
+          iosApiKey: AppSecrets.revenueCatIosApiKey,
+        );
+      } catch (e, st) {
+        debugPrint('[RC] PurchaseService.init (démarrage): $e\n$st');
+      }
+      debugPrint(
+        '[RC] clés compilées — android: ${AppSecrets.revenueCatAndroidApiKey.isNotEmpty ? "oui" : "non"}, '
+        'ios: ${AppSecrets.revenueCatIosApiKey.isNotEmpty ? "oui" : "non"}, '
+        'SDK prêt: ${PurchaseService.isConfigured}',
+      );
+    }
 
     if (kIsWeb) {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
@@ -166,12 +184,10 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     }
   }
 
-  Future<void> _completeOnboarding(String name) async {
-    await AuthService.autoRegister(name);
+  Future<void> _completeOnboarding(String _) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('profile_onboarding_done_v1', true);
     if (!mounted) return;
-    ref.read(authStateProvider.notifier).state = true;
     setState(() => _showOnboarding = false);
   }
 

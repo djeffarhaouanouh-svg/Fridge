@@ -54,6 +54,10 @@ dependencies:
   url_launcher: ^6.2.1
   audioplayers: ^6.6.0
 
+  # Abonnements (RevenueCat) — aligné sur nailbite_coach_app
+  purchases_flutter: ^8.10.1
+  purchases_ui_flutter: ^8.11.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

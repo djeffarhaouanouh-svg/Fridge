@@ -151,7 +151,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
                                     customBorder: const CircleBorder(),
                                     onTap: () => ref
                                         .read(mealsProvider.notifier)
-                                        .toggleFavorite(effectiveMeal.id),
+                                        .toggleFavorite(effectiveMeal.id, meal: effectiveMeal),
                                     child: SizedBox(
                                       width: 44,
                                       height: 44,

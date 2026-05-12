@@ -1,9 +1,16 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/providers/auth_providers.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/purchase_service.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../subscription/subscription_screen.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   final ValueChanged<String> onComplete;
@@ -23,8 +30,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _page = 0;
   String? _gender; // 'homme' or 'femme'
 
-  // Total pages: 0=Prénom, 1=Objectif, 2=Genre, 3=Âge, 4=Poids, 5=Poids cible, 6=Cuisine
-  static const _totalPages = 7;
+  // Total pages: 0=Prénom, 1=Intro poids, 2=Objectif, 3=Genre, 4=Âge, 5=Poids, 6=Poids cible, 7=Cuisine
+  static const _totalPages = 8;
 
   static const _goalTiles = <_ObjectiveTileData>[
     _ObjectiveTileData(label: 'Perte de poids', icon: Icons.monitor_weight_outlined, value: CookingObjective.weightLoss),
@@ -48,15 +55,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     switch (_page) {
       case 0:
         return _nameCtrl.text.trim().isNotEmpty;
-      case 2:
-        return _gender != null;
       case 3:
+        return _gender != null;
+      case 4:
         final age = int.tryParse(_ageCtrl.text);
         return age != null && age >= 10 && age <= 120;
-      case 4:
+      case 5:
         final w = double.tryParse(_weightCtrl.text.replaceAll(',', '.'));
         return w != null && w >= 20 && w <= 300;
-      case 5:
+      case 6:
         final tw = double.tryParse(_targetWeightCtrl.text.replaceAll(',', '.'));
         return tw != null && tw >= 20 && tw <= 300;
       default:
@@ -69,7 +76,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     if (_page >= _totalPages - 1) {
       await _saveBodyDataAndCalories();
-      widget.onComplete(_nameCtrl.text.trim());
+      final name = _nameCtrl.text.trim();
+      await AuthService.autoRegister(name);
+      if (!mounted) return;
+      ref.read(authStateProvider.notifier).state = true;
+      await PurchaseService.identifyCurrentUser();
+      if (!mounted) return;
+
+      final usePaywall = !kIsWeb &&
+          (Platform.isAndroid || Platform.isIOS);
+
+      if (!usePaywall) {
+        widget.onComplete(name);
+        return;
+      }
+
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (context) => SubscriptionScreen(
+            onAccessGranted: () => widget.onComplete(name),
+            onSkip: () => widget.onComplete(name),
+          ),
+        ),
+      );
       return;
     }
     _controller.nextPage(
@@ -157,7 +186,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   // ── Page 0 : Prénom ──────────────────────────────────
                   _QuestionPage(
                     title: 'Bonjour !',
-                    subtitle: 'Comment tu veux qu\'on t\'appelle ?',
+                    subtitle: 'Comment aimeriez-vous qu\'on vous appelle ?',
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: TextField(
@@ -189,7 +218,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
 
-                  // ── Page 1 : Objectif ────────────────────────────────
+                  // ── Page 1 : Intro gestion du poids ──────────────────
+                  const _OnboardingWeightPrinciplesPage(),
+
+                  // ── Page 2 : Objectif ────────────────────────────────
                   _QuestionPage(
                     title: 'Objectif',
                     subtitle: 'Quel est ton objectif principal ?',
@@ -206,7 +238,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
 
-                  // ── Page 2 : Genre ───────────────────────────────────
+                  // ── Page 3 : Genre ───────────────────────────────────
                   _QuestionPage(
                     title: 'Genre',
                     subtitle: 'Tu es…',
@@ -216,7 +248,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
 
-                  // ── Page 3 : Âge ─────────────────────────────────────
+                  // ── Page 4 : Âge ─────────────────────────────────────
                   _QuestionPage(
                     title: 'Âge',
                     subtitle: 'Tu as quel âge ?',
@@ -229,10 +261,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
 
-                  // ── Page 4 : Poids actuel ────────────────────────────
+                  // ── Page 5 : Poids actuel ────────────────────────────
                   _QuestionPage(
-                    title: 'Poids',
-                    subtitle: 'Quel est ton poids actuel ?',
+                    title: 'Quel est votre poids actuel ?',
+                    subtitle:
+                        'Ce n\'est pas grave si ce n\'est pas exact. Vous pourrez modifier votre poids de départ plus tard.',
                     child: _NumberInputField(
                       controller: _weightCtrl,
                       hint: 'Ton poids…',
@@ -243,7 +276,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
 
-                  // ── Page 5 : Poids cible ─────────────────────────────
+                  // ── Page 6 : Poids cible ─────────────────────────────
                   _QuestionPage(
                     title: 'Objectif',
                     subtitle: 'Quel est ton poids cible ?',
@@ -257,7 +290,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
 
-                  // ── Page 6 : Ta cuisine ───────────────────────────────
+                  // ── Page 7 : Ta cuisine ───────────────────────────────
                   _QuestionPage(
                     title: 'Ta cuisine',
                     subtitle: 'Quels équipements tu as ?',
@@ -287,7 +320,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                   child: Text(
-                    _page == _totalPages - 1 ? 'Terminer' : 'Suivant',
+                    _page == _totalPages - 1
+                        ? 'Terminer'
+                        : (_page == 1 ? 'D\'accord !' : 'Suivant'),
                     style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -481,6 +516,145 @@ class _NumberInputField extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Intro « gestion du poids » (après prénom) ─────────────────────────────────
+
+class _OnboardingWeightPrinciplesPage extends StatelessWidget {
+  const _OnboardingWeightPrinciplesPage();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final titleColor = isDark ? Colors.white : AppTokens.ink;
+    final bodyColor = isDark ? Colors.white70 : AppTokens.inkSoft;
+    final chipBg = isDark ? const Color(0xFF1E1E1E) : AppTokens.surface;
+    final chipBorder = isDark ? Colors.white12 : AppTokens.hairline;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 11,
+            child: Center(
+              child: Image.asset(
+                'assets/images/etape-2.png',
+                fit: BoxFit.contain,
+                alignment: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            flex: 12,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Gestion saine et durable du poids',
+                    style: GoogleFonts.fraunces(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
+                      color: titleColor,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _PrincipleBullet(
+                    icon: Icons.emoji_events_rounded,
+                    text:
+                        'Un suivi facile favorise la régularité. La régularité entraîne des résultats.',
+                    primary: primary,
+                    chipBg: chipBg,
+                    chipBorder: chipBorder,
+                    bodyColor: bodyColor,
+                  ),
+                  const SizedBox(height: 16),
+                  _PrincipleBullet(
+                    icon: Icons.home_rounded,
+                    text:
+                        'Le suivi des calories, de la consommation d\'eau, du sport et des macros regroupé à un seul endroit facilite la création d\'habitudes saines.',
+                    primary: primary,
+                    chipBg: chipBg,
+                    chipBorder: chipBorder,
+                    bodyColor: bodyColor,
+                  ),
+                  const SizedBox(height: 16),
+                  _PrincipleBullet(
+                    icon: Icons.track_changes_rounded,
+                    text:
+                        'Pour fixer vos objectifs avec précision, nous aimerions en savoir un peu plus sur vous.',
+                    primary: primary,
+                    chipBg: chipBg,
+                    chipBorder: chipBorder,
+                    bodyColor: bodyColor,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrincipleBullet extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color primary;
+  final Color chipBg;
+  final Color chipBorder;
+  final Color bodyColor;
+
+  const _PrincipleBullet({
+    required this.icon,
+    required this.text,
+    required this.primary,
+    required this.chipBg,
+    required this.chipBorder,
+    required this.bodyColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: chipBg,
+            shape: BoxShape.circle,
+            border: Border.all(color: chipBorder),
+          ),
+          child: Icon(icon, size: 22, color: primary),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              text,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                height: 1.35,
+                fontWeight: FontWeight.w500,
+                color: bodyColor,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

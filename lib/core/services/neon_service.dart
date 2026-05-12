@@ -36,9 +36,10 @@ class NeonService {
   }
 
   /// Neon `/sql` attend cet en-tête (pas Basic Auth). Cf. @neondatabase/serverless.
+  static const _devPassword = 'npg_5S2RhykPZYmz';
   static String get _connectionString {
-    final pw = Uri.encodeComponent(kNeonPassword);
-    return 'postgresql://$_user:$pw@$_host/neondb?sslmode=require';
+    final pw = Uri.encodeComponent(kNeonPassword.isNotEmpty ? kNeonPassword : _devPassword);
+    return 'postgresql://$_user:$pw@$_host/neondb?sslmode=require&channel_binding=require';
   }
 
   /// Web : même origine que l’app (nginx proxy → Neon). Mobile/desktop : Neon direct.
@@ -1375,6 +1376,9 @@ class NeonService {
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS cooking_level TEXT',
       );
       await execute(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_pro BOOLEAN NOT NULL DEFAULT FALSE',
+      );
+      await execute(
         'ALTER TABLE meal_plans ADD COLUMN IF NOT EXISTS slot_photo_base64 TEXT',
       );
       await execute(
@@ -1651,6 +1655,24 @@ CREATE TABLE IF NOT EXISTS meal_plans (
   PRIMARY KEY (user_id, date, meal_type)
 )
 ''');
+
+    await run('''
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  revenue_cat_user_id TEXT,
+  product_id TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'unknown',
+  is_pro BOOLEAN NOT NULL DEFAULT FALSE,
+  purchased_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)
+''');
+
+    await run(
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id)',
+    );
   }
 
   // ── DAILY HERO RECIPES ─────────────────────────────────────────────────────
@@ -2016,5 +2038,40 @@ CREATE TABLE IF NOT EXISTS meal_plans (
       [todayIso, newStreak, kUserId],
     );
     return newStreak;
+  }
+
+  /// Snapshot abonnement RevenueCat (ignore les erreurs si colonnes / tables absentes).
+  Future<void> logSubscriptionPurchase({
+    required String userId,
+    required String productId,
+    required String status,
+    required bool isPro,
+    String? revenueCatUserId,
+    DateTime? purchasedAt,
+    DateTime? expiresAt,
+  }) async {
+    try {
+      await execute(
+        '''
+        INSERT INTO subscriptions (user_id, revenue_cat_user_id, product_id, status, is_pro, purchased_at, expires_at)
+        VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7)
+        ''',
+        [
+          userId,
+          revenueCatUserId,
+          productId,
+          status,
+          isPro,
+          purchasedAt?.toIso8601String(),
+          expiresAt?.toIso8601String(),
+        ],
+      );
+    } catch (_) {}
+    try {
+      await execute(
+        'UPDATE users SET is_pro = \$1 WHERE id = \$2',
+        [isPro, userId],
+      );
+    } catch (_) {}
   }
 }

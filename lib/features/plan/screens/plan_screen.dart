@@ -181,6 +181,16 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     )).then((_) => _loadTodayConsumed());
   }
 
+  void _removeSlot(DateTime day, String mealType) {
+    final key = planSlotStorageKey(day, mealType);
+    final current = Map<String, Meal>.from(ref.read(planMealSelectionsProvider));
+    current.remove(key);
+    ref.read(planMealSelectionsProvider.notifier).state = current;
+    final photos = Map<String, Uint8List>.from(ref.read(planSlotPhotosProvider));
+    photos.remove(key);
+    ref.read(planSlotPhotosProvider.notifier).state = photos;
+  }
+
   void _openAddSlotMenu(DateTime day, Map<String, DayPlan> planByDate) {
     showModalBottomSheet<void>(
       context: context,
@@ -278,7 +288,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
           CustomScrollView(
             controller: _scrollController,
             slivers: [
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+              SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 24)),
               SliverToBoxAdapter(
                 child: _PlanNutritionDashboard(
                   targetCalories: profile.targetCalories,
@@ -367,6 +377,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                                           slotAnalyses: slotAnalyses,
                                           slotDefs: _slotDefs,
                                           onSlotTap: (mealType) => _openSlotEditor(day, mealType, planByDate),
+                                          onSlotDelete: (mealType) => _removeSlot(day, mealType),
                                           slotTitle: (mealType) => _slotLineTitle(
                                             day,
                                             mealType,
@@ -631,6 +642,7 @@ class _DayPlanCard extends StatelessWidget {
   final Map<String, Map<String, dynamic>> slotAnalyses;
   final List<(String, String)> slotDefs;
   final void Function(String mealType) onSlotTap;
+  final void Function(String mealType) onSlotDelete;
   final String Function(String mealType) slotTitle;
 
   const _DayPlanCard({
@@ -647,6 +659,7 @@ class _DayPlanCard extends StatelessWidget {
     required this.slotAnalyses,
     required this.slotDefs,
     required this.onSlotTap,
+    required this.onSlotDelete,
     required this.slotTitle,
   });
 
@@ -691,6 +704,7 @@ class _DayPlanCard extends StatelessWidget {
                 selectedMeal: selections[planSlotStorageKey(day, slotDefs[i].$1)],
                 customPhoto: slotPhotos[planSlotStorageKey(day, slotDefs[i].$1)],
                 onTap: () => onSlotTap(slotDefs[i].$1),
+                onDelete: () => onSlotDelete(slotDefs[i].$1),
               ),
               if (i < slotDefs.length - 1) const SizedBox(height: 4),
             ],
@@ -709,6 +723,7 @@ class _DayMealSlotTile extends StatelessWidget {
   final Meal? selectedMeal;
   final Uint8List? customPhoto;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
   const _DayMealSlotTile({
     required this.typeLabel,
@@ -718,6 +733,7 @@ class _DayMealSlotTile extends StatelessWidget {
     required this.selectedMeal,
     required this.customPhoto,
     required this.onTap,
+    this.onDelete,
   });
 
   @override
@@ -773,7 +789,19 @@ class _DayMealSlotTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.add, color: AppTokens.coral, size: 18),
+              GestureDetector(
+                onTap: (selectedMeal != null || titleText.isNotEmpty || customPhoto != null) ? onDelete : null,
+                behavior: HitTestBehavior.opaque,
+                child: Icon(
+                  (selectedMeal != null || titleText.isNotEmpty || customPhoto != null)
+                      ? Icons.delete_outline
+                      : Icons.add,
+                  color: (selectedMeal != null || titleText.isNotEmpty || customPhoto != null)
+                      ? Colors.red.shade400
+                      : AppTokens.coral,
+                  size: 18,
+                ),
+              ),
             ],
           ),
         ),
@@ -1217,22 +1245,6 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    _SectionTitle(title: 'Salades'),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 160,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _saladMeals.length,
-                        itemBuilder: (_, i) => _MealPickCard(
-                          meal: _saladMeals[i],
-                          isSelected: _selected?.id == _saladMeals[i].id,
-                          onTap: () => _selectMeal(_saladMeals[i]),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
                     if (sportMeals.isNotEmpty) ...[
                       _SectionTitle(title: 'Prise de masse'),
                       const SizedBox(height: 12),
@@ -1497,36 +1509,6 @@ final _budgetMeals = [
   ),
 ];
 
-final _saladMeals = [
-  Meal(
-    id: 'plan_salad_1', type: 'balanced', typeLabel: 'Équilibré', emoji: '🥗',
-    title: 'César légère', kcal: 340, protein: 'moyen',
-    difficulty: 'facile', time: '14 min', locked: false,
-    photo: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=900', color: '#82D28C',
-    ingredients: [Ingredient(name: 'Laitue', qty: '1/2', photo: ''), Ingredient(name: 'Poulet', qty: '120 g', photo: ''), Ingredient(name: 'Parmesan', qty: '20 g', photo: '')],
-    steps: ['Coupe la laitue et prépare les copeaux de parmesan.', 'Poêle le poulet assaisonné puis tranche-le.', 'Mélange avec la sauce césar et les croûtons.'],
-    prepTimeMin: 8, cookTimeMin: 6,
-  ),
-  Meal(
-    id: 'plan_salad_2', type: 'stylish', typeLabel: 'Stylé', emoji: '🥑',
-    title: 'Bowl avocat-feta', kcal: 360, protein: 'moyen',
-    difficulty: 'facile', time: '12 min', locked: false,
-    photo: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900', color: '#6FCF97',
-    ingredients: [Ingredient(name: 'Avocat', qty: '1', photo: ''), Ingredient(name: 'Feta', qty: '60 g', photo: ''), Ingredient(name: 'Concombre', qty: '1/2', photo: '')],
-    steps: ['Coupe tous les ingrédients en cubes.', 'Ajoute un filet d huile d olive et du citron.', 'Assaisonne puis mélange délicatement.'],
-    prepTimeMin: 10, cookTimeMin: 2,
-  ),
-  Meal(
-    id: 'plan_salad_3', type: 'balanced', typeLabel: 'Équilibré', emoji: '🥗',
-    title: 'Salade de quinoa', kcal: 320, protein: 'moyen',
-    difficulty: 'facile', time: '15 min', locked: false,
-    photo: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=900', color: '#27AE60',
-    ingredients: [Ingredient(name: 'Quinoa', qty: '80 g', photo: ''), Ingredient(name: 'Tomates cerises', qty: '8', photo: ''), Ingredient(name: 'Menthe', qty: '6 feuilles', photo: '')],
-    steps: ['Rince puis cuis le quinoa dans deux volumes d eau.', 'Laisse tiédir et ajoute tomates et herbes.', 'Assaisonne avec citron, huile d olive et sel.'],
-    prepTimeMin: 9, cookTimeMin: 6,
-  ),
-];
-
 // ─── Dashboard nutrition ────────────────────────────────────────────────────
 
 class _PlanNutritionDashboard extends StatelessWidget {
@@ -1760,7 +1742,7 @@ class _MealPickCard extends ConsumerWidget {
                   Positioned(
                     top: 6, right: 6,
                     child: GestureDetector(
-                      onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id),
+                      onTap: () => ref.read(mealsProvider.notifier).toggleFavorite(meal.id, meal: meal),
                       child: Container(
                         width: 28, height: 28,
                         decoration: BoxDecoration(

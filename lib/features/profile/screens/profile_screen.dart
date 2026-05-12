@@ -7,7 +7,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/services/neon_service.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/meal_image.dart';
-import '../../../main.dart';
+import '../../../core/providers/auth_providers.dart';
 import '../../../core/services/fridge_sync.dart';
 import '../../../core/services/fridge_expiry.dart';
 import '../../../core/utils/ingredient_category.dart';
@@ -16,6 +16,7 @@ import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
 import '../../meals/screens/recipe_screen.dart';
 import '../../navigation/widgets/bottom_nav.dart';
+import '../../subscription/subscription_screen.dart';
 import '../providers/profile_provider.dart';
 
 Future<void> showAddFridgeIngredientDialog(BuildContext context, WidgetRef ref) async {
@@ -747,7 +748,16 @@ class ProfileScreen extends ConsumerWidget {
             // ── 7. Abonnement ────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-              child: Container(
+              child: GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => SubscriptionScreen(
+                      onAccessGranted: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ),
+                child: Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -795,6 +805,7 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
               ),
             ),
 

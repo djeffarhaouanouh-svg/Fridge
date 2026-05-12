@@ -280,20 +280,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         ref.read(mealsProvider.notifier).loadFromDatabase(),
       ]);
 
+      // Precache en arrière-plan — ne bloque pas l'affichage.
       if (mounted) {
         final meals = ref.read(mealsProvider);
-        final imageFutures = <Future>[];
         for (final meal in meals.take(8)) {
           if (meal.photo.startsWith('http')) {
-            imageFutures.add(
-              precacheImage(CachedNetworkImageProvider(meal.photo), context)
-                  .catchError((_) {}),
-            );
+            precacheImage(CachedNetworkImageProvider(meal.photo), context)
+                .catchError((_) {});
           }
-        }
-        if (imageFutures.isNotEmpty) {
-          await Future.wait(imageFutures, eagerError: false)
-              .timeout(const Duration(seconds: 5), onTimeout: () => []);
         }
       }
     } catch (e, st) {

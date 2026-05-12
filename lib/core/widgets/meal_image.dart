@@ -131,6 +131,9 @@ class MealImage extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: photo,
       fit: fit,
+      fadeInDuration: const Duration(milliseconds: 350),
+      fadeOutDuration: const Duration(milliseconds: 200),
+      memCacheWidth: 800,
       placeholder: (_, __) => Container(color: AppTokens.placeholder),
       errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
     );

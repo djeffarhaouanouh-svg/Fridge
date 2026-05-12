@@ -31,36 +31,24 @@ class ResultsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : AppTokens.paper,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.maybePop(context),
-                    child: Icon(Icons.arrow_back_ios_new, size: 18, color: ink),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Voici ce que j\'ai détecté',
-                        style: GoogleFonts.fraunces(
-                          fontSize: 16, fontWeight: FontWeight.w600, color: ink,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 18),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+      appBar: AppBar(
+        backgroundColor: isDark ? const Color(0xFF121212) : AppTokens.paper,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.maybePop(context),
+          child: Icon(Icons.arrow_back_ios_new, size: 18, color: ink),
+        ),
+        title: Text(
+          'Voici ce que j\'ai détecté',
+          style: GoogleFonts.fraunces(
+            fontSize: 16, fontWeight: FontWeight.w600, color: ink,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
                 children: [
                   // Section ingrédients détectés (dernière photo)
                   if (ingredients.isNotEmpty) ...[
@@ -222,11 +210,7 @@ class ResultsScreen extends ConsumerWidget {
                       onTap: () {},
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      ],
       ),
     );
   }

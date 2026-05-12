@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'core/config/app_secrets.dart';
 import 'core/providers/auth_providers.dart';
 import 'core/services/auth_service.dart';
@@ -278,6 +279,23 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         })(),
         ref.read(mealsProvider.notifier).loadFromDatabase(),
       ]);
+
+      if (mounted) {
+        final meals = ref.read(mealsProvider);
+        final imageFutures = <Future>[];
+        for (final meal in meals.take(8)) {
+          if (meal.photo.startsWith('http')) {
+            imageFutures.add(
+              precacheImage(CachedNetworkImageProvider(meal.photo), context)
+                  .catchError((_) {}),
+            );
+          }
+        }
+        if (imageFutures.isNotEmpty) {
+          await Future.wait(imageFutures, eagerError: false)
+              .timeout(const Duration(seconds: 5), onTimeout: () => []);
+        }
+      }
     } catch (e, st) {
       debugPrint('Sync Neon au démarrage: $e\n$st');
     } finally {

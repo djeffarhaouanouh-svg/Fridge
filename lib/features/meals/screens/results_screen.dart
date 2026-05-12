@@ -187,11 +187,14 @@ class ResultsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 18),
 
-                  // Liste des recettes
-                  ...List.generate(meals.length, (i) => _RecipeCard(
-                    meal: meals[i],
+                  // Liste des recettes — révélation staggered
+                  ...List.generate(meals.length, (i) => _AnimatedCard(
                     index: i,
-                    isRecommended: i == _recommendedIndex(meals),
+                    child: _RecipeCard(
+                      meal: meals[i],
+                      index: i,
+                      isRecommended: i == _recommendedIndex(meals),
+                    ),
                   )),
 
                   const SizedBox(height: 28),
@@ -807,4 +810,52 @@ class _Badge extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Animation staggered par carte ─────────────────────────────────────────────
+
+class _AnimatedCard extends StatefulWidget {
+  final int index;
+  final Widget child;
+  const _AnimatedCard({required this.index, required this.child});
+
+  @override
+  State<_AnimatedCard> createState() => _AnimatedCardState();
+}
+
+class _AnimatedCardState extends State<_AnimatedCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    );
+    _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut));
+
+    Future.delayed(Duration(milliseconds: 120 + widget.index * 260), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+        opacity: _opacity,
+        child: SlideTransition(position: _slide, child: widget.child),
+      );
 }

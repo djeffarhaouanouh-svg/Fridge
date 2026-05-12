@@ -20,6 +20,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../../navigation/widgets/bottom_nav.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/screens/results_screen.dart';
+import 'scan_loading_screen.dart';
 
 // ─── Ingredient entry with per-tag animation ─────────────────────────────────
 
@@ -409,67 +410,19 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   Future<void> _analyzePhotos() async {
     if (_photos.isEmpty) return;
-
     _liveDetectionTimer?.cancel();
     _liveDetectionPaused = true;
-
-    ref.read(scanStatusProvider.notifier).state = ScanStatus.loading;
     ref.read(latestScanMealsProvider.notifier).state = const [];
     ref.read(latestScanIngredientsProvider.notifier).state = const [];
-    final claude = ClaudeService();
-    final vision = OpenAiVisionService();
 
-    try {
-      final ingredients = await vision.detectIngredients(List.from(_photos));
+    final photos = List<Uint8List>.from(_photos);
+    setState(() => _photos.clear());
 
-      if (ingredients.isEmpty) {
-        _showError('Aucun ingrédient détecté. Réessaie avec une meilleure photo.');
-        ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
-        _liveDetectionPaused = false;
-        _startLiveDetection();
-        return;
-      }
-
-      final existing = ref.read(detectedIngredientsProvider);
-      final latestDetected = <String>[];
-      final latestSeen = <String>{};
-      for (final item in ingredients) {
-        final v = item.trim();
-        if (v.isEmpty) continue;
-        if (latestSeen.add(v.toLowerCase())) latestDetected.add(v);
-      }
-      final merged = <String>[];
-      final seen = <String>{};
-      for (final item in [...existing, ...latestDetected]) {
-        final v = item.trim();
-        if (v.isEmpty) continue;
-        if (seen.add(v.toLowerCase())) merged.add(v);
-      }
-      ref.read(detectedIngredientsProvider.notifier).state = merged;
-      ref.read(latestScanIngredientsProvider.notifier).state = latestDetected;
-      await recordIngredientsAdded(latestDetected);
-      await persistFridgeToNeon(merged);
-
-      final profile = ref.read(userProfileProvider);
-      final meals = await claude.findRecipes(merged, profile: profile, neonService: NeonService());
-      if (meals.isNotEmpty) {
-        ref.read(latestScanMealsProvider.notifier).state = meals;
-        await ref.read(mealsProvider.notifier).mergeScanResultsAndPersist(meals);
-      }
-
-      ref.read(scanStatusProvider.notifier).state = ScanStatus.done;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_scan_date', DateTime.now().toIso8601String());
-      setState(() => _photos.clear());
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ResultsScreen()),
-        );
-      }
-    } catch (e) {
-      _showError('Erreur : $e');
-      ref.read(scanStatusProvider.notifier).state = ScanStatus.idle;
+    if (mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ScanLoadingScreen(photos: photos)),
+      );
       _liveDetectionPaused = false;
       _startLiveDetection();
     }

@@ -12,11 +12,38 @@ import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
 import 'recipe_screen.dart';
 
-class ResultsScreen extends ConsumerWidget {
+class ResultsScreen extends ConsumerStatefulWidget {
   const ResultsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ResultsScreen> createState() => _ResultsScreenState();
+}
+
+class _ResultsScreenState extends ConsumerState<ResultsScreen> {
+  bool _isRegenerating = false;
+
+  Future<void> _regen() async {
+    setState(() => _isRegenerating = true);
+    try {
+      final ingredients = ref.read(detectedIngredientsProvider);
+      final profile = ref.read(userProfileProvider);
+      final meals = await ClaudeService().findRecipes(
+        ingredients,
+        profile: profile,
+        neonService: NeonService(),
+      );
+      if (meals.isNotEmpty && mounted) {
+        ref.read(latestScanMealsProvider.notifier).state = meals;
+        await ref.read(mealsProvider.notifier).mergeScanResultsAndPersist(meals);
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isRegenerating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final ink = isDark ? Colors.white : AppTokens.ink;
     final muted = isDark ? Colors.white70 : AppTokens.muted;
@@ -202,14 +229,23 @@ class ResultsScreen extends ConsumerWidget {
                   // CTA Explorer
                   Align(
                     alignment: Alignment.center,
-                    child: GlassButton(
-                      label: 'Explorer d\'autres idées',
-                      icon: Icons.explore_outlined,
-                      color: GlassButtonColor.green,
-                      size: GlassButtonSize.lg,
-                      fullWidth: false,
-                      onTap: () {},
-                    ),
+                    child: _isRegenerating
+                        ? const SizedBox(
+                            width: 26,
+                            height: 26,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: AppTokens.coral,
+                            ),
+                          )
+                        : GlassButton(
+                            label: 'Explorer d\'autres idées',
+                            icon: Icons.explore_outlined,
+                            color: GlassButtonColor.green,
+                            size: GlassButtonSize.lg,
+                            fullWidth: false,
+                            onTap: _regen,
+                          ),
                   ),
       ],
       ),

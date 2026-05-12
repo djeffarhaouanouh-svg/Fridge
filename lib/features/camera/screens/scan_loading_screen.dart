@@ -174,7 +174,7 @@ class _ScanLoadingScreenState extends ConsumerState<ScanLoadingScreen>
           padding: const EdgeInsets.symmetric(horizontal: 36),
           child: Column(
             children: [
-              const Spacer(flex: 2),
+              const Spacer(),
 
               // Mascotte pulsante
               AnimatedBuilder(
@@ -270,7 +270,7 @@ class _ScanLoadingScreenState extends ConsumerState<ScanLoadingScreen>
                 ),
               ),
 
-              const Spacer(flex: 3),
+              const Spacer(),
             ],
           ),
         ),

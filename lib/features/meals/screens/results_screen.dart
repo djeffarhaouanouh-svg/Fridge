@@ -150,23 +150,30 @@ class ResultsScreen extends ConsumerWidget {
                     const SizedBox(height: 20),
                   ],
 
-                  // Titre section recettes
+                  // Titre section recettes — AI personality
                   RichText(
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: '${meals.length} recettes pour ',
+                          text: 'J\'ai trouvé ',
                           style: GoogleFonts.fraunces(
                             fontSize: 22, fontWeight: FontWeight.w700,
                             color: ink, height: 1.2,
                           ),
                         ),
                         TextSpan(
-                          text: 'ce soir',
+                          text: '${meals.length} idées',
                           style: GoogleFonts.fraunces(
                             fontSize: 22, fontWeight: FontWeight.w700,
                             color: AppTokens.coral, fontStyle: FontStyle.italic,
                             height: 1.2,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' pour ce soir 👨‍🍳',
+                          style: GoogleFonts.fraunces(
+                            fontSize: 22, fontWeight: FontWeight.w700,
+                            color: ink, height: 1.2,
                           ),
                         ),
                       ],
@@ -174,7 +181,7 @@ class ResultsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Avec ce que tu as déjà',
+                    _aiSubtitle(meals),
                     style: GoogleFonts.inter(
                       fontSize: 13, fontWeight: FontWeight.w500, color: muted,
                     ),
@@ -182,19 +189,19 @@ class ResultsScreen extends ConsumerWidget {
                   const SizedBox(height: 18),
 
                   // Liste des recettes
-                  ...List.generate(meals.length, (i) => _RecipeRow(
+                  ...List.generate(meals.length, (i) => _RecipeCard(
                     meal: meals[i],
                     index: i,
                   )),
 
                   const SizedBox(height: 28),
 
-                  // CTA "Générer plus de recettes"
+                  // CTA Explorer
                   Align(
                     alignment: Alignment.center,
                     child: GlassButton(
-                      label: 'Générer plus de recettes',
-                      icon: Icons.auto_awesome,
+                      label: 'Explorer d\'autres idées',
+                      icon: Icons.explore_outlined,
                       color: GlassButtonColor.green,
                       size: GlassButtonSize.lg,
                       fullWidth: false,
@@ -476,18 +483,58 @@ class _IngredientTag extends StatelessWidget {
   }
 }
 
-// ── Ligne recette ────────────────────────────────────────────────────────────
+// ── Helpers IA ───────────────────────────────────────────────────────────────
 
-class _RecipeRow extends ConsumerWidget {
+int _parseTimeMinutes(String time) {
+  final match = RegExp(r'(\d+)').firstMatch(time);
+  return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+}
+
+String _aiSubtitle(List<Meal> meals) {
+  if (meals.isEmpty) return 'Avec ce que tu as déjà';
+  final n = meals.length;
+  final fastCount = meals.where((m) {
+    final min = _parseTimeMinutes(m.time);
+    return min > 0 && min <= 20;
+  }).length;
+  if (fastCount == n) return 'Tout se prépare en moins de 20 minutes ⚡';
+  final highProteinCount = meals.where((m) => m.protein == 'élevé').length;
+  if (highProteinCount * 2 >= n) return 'Riches en protéines, parfait pour tes objectifs 💪';
+  final lightCount = meals.where((m) => m.kcal > 0 && m.kcal < 400).length;
+  if (lightCount == n) return 'Des recettes légères et équilibrées 🌿';
+  final options = [
+    'Tes ingrédients matchent super bien ensemble.',
+    'Tu peux faire quelque chose de vraiment bon ce soir.',
+    'Avec ce que tu as déjà dans ton frigo.',
+  ];
+  return options[n % options.length];
+}
+
+String _aiComment(Meal meal) {
+  final timeMin = _parseTimeMinutes(meal.time);
+  if (timeMin > 0 && timeMin <= 15) return 'Prêt en moins de 15 minutes.';
+  if (meal.protein == 'élevé' || (meal.proteinG != null && meal.proteinG! >= 25)) {
+    return 'Excellent apport en protéines.';
+  }
+  if (meal.kcal > 0 && meal.kcal < 350) return 'Léger et frais pour ce soir.';
+  if (meal.kcal > 550) return 'Copieux et bien nourrissant.';
+  if (meal.difficulty == 'facile') return 'Simple à préparer, délicieux à déguster.';
+  return 'Parfait avec ce que tu as dans ton frigo.';
+}
+
+// ── Carte recette premium ─────────────────────────────────────────────────────
+
+class _RecipeCard extends ConsumerWidget {
   final Meal meal;
   final int index;
-  const _RecipeRow({required this.meal, required this.index});
+  const _RecipeCard({required this.meal, required this.index});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final ink = isDark ? Colors.white : AppTokens.ink;
     final muted = isDark ? Colors.white70 : AppTokens.muted;
+    final cardBg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
     final num = (index + 1).toString().padLeft(2, '0');
 
     return GestureDetector(
@@ -497,86 +544,203 @@ class _RecipeRow extends ConsumerWidget {
           builder: (_) => RecipeScreen(meal: meal, isGeneratedRecipe: true),
         ));
       },
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Thumbnail
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                  child: SizedBox(
-                    width: 72, height: 72,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          boxShadow: [
+            BoxShadow(
+              color: AppTokens.coral.withOpacity(0.13),
+              blurRadius: 28,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Hero image
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppTokens.radiusMd),
+              ),
+              child: Stack(
+                children: [
+                  SizedBox(
+                    height: 210,
+                    width: double.infinity,
                     child: MealImage(
                       photo: meal.photo,
                       fallbackKey: meal.title,
                     ),
                   ),
-                ),
-                const SizedBox(width: 14),
-
-                // Infos
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('N°$num',
-                        style: GoogleFonts.inter(
-                          fontSize: 11, fontWeight: FontWeight.w700,
-                          color: AppTokens.coral, letterSpacing: 0.3,
+                  // Gradient bottom overlay
+                  Positioned(
+                    bottom: 0, left: 0, right: 0,
+                    child: Container(
+                      height: 90,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.55),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(meal.title,
-                        style: GoogleFonts.fraunces(
-                          fontSize: 15.5, fontWeight: FontWeight.w600,
-                          color: ink, height: 1.25,
-                        ),
-                        maxLines: 2, overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(Icons.schedule_outlined, size: 13, color: muted),
-                          const SizedBox(width: 4),
-                          Text(meal.time,
-                            style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w500, color: muted,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Text('·',
-                              style: GoogleFonts.inter(fontSize: 12, color: muted),
-                            ),
-                          ),
-                          Text('${meal.kcal} kcal',
-                            style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w600, color: muted,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Text('·',
-                              style: GoogleFonts.inter(fontSize: 12, color: muted),
-                            ),
-                          ),
-                          Text(meal.difficulty,
-                            style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w500, color: muted,
-                            ),
+                    ),
+                  ),
+                  // N° badge
+                  Positioned(
+                    top: 12, left: 14,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTokens.coral,
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTokens.coral.withOpacity(0.5),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
+                      child: Text('N°$num',
+                        style: GoogleFonts.inter(
+                          fontSize: 11, fontWeight: FontWeight.w800,
+                          color: Colors.white, letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Content
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(meal.title,
+                    style: GoogleFonts.fraunces(
+                      fontSize: 17, fontWeight: FontWeight.w700,
+                      color: ink, height: 1.25,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(_aiComment(meal),
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5, fontWeight: FontWeight.w400,
+                      color: muted, fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      _Badge(
+                        label: '${meal.kcal} kcal',
+                        icon: Icons.local_fire_department_outlined,
+                        color: AppTokens.coral,
+                        isDark: isDark,
+                      ),
+                      _Badge(
+                        label: meal.protein == 'élevé' ? 'Protéines ↑' : 'Protéines ~',
+                        icon: Icons.fitness_center_rounded,
+                        color: meal.protein == 'élevé' ? const Color(0xFF4CAF50) : muted,
+                        isDark: isDark,
+                      ),
+                      _Badge(
+                        label: meal.difficulty,
+                        icon: Icons.bar_chart_rounded,
+                        color: muted,
+                        isDark: isDark,
+                      ),
+                      _Badge(
+                        label: meal.time,
+                        icon: Icons.schedule_outlined,
+                        color: muted,
+                        isDark: isDark,
+                      ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    decoration: BoxDecoration(
+                      color: ink,
+                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Voir la recette',
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5, fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.black : Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(Icons.arrow_forward_rounded, size: 15,
+                          color: isDark ? Colors.black : Colors.white),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool isDark;
+  const _Badge({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.08) : AppTokens.surface,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label,
+            style: GoogleFonts.inter(
+              fontSize: 11.5, fontWeight: FontWeight.w600,
+              color: color,
             ),
           ),
-          Container(height: 1.5, color: AppTokens.coral.withOpacity(0.25)),
         ],
       ),
     );

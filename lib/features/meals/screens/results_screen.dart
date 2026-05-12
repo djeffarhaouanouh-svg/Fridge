@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/ingredient_category.dart';
@@ -174,8 +173,8 @@ class ResultsScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      SvgPicture.asset(
-                        'assets/images/mascotte_normal.svg',
+                      Image.asset(
+                        'assets/images/mascotte_normal.png',
                         width: 36,
                         height: 36,
                       ),

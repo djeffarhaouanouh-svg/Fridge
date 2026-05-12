@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/services/claude_service.dart';
@@ -53,7 +52,6 @@ class CameraScreen extends ConsumerStatefulWidget {
 class _CameraScreenState extends ConsumerState<CameraScreen>
     with TickerProviderStateMixin {
   // Existing photo capture state
-  final _picker = ImagePicker();
   final List<Uint8List> _photos = [];
   final _viewfinderKey = GlobalKey();
   final _thumbnailKey = GlobalKey();
@@ -282,64 +280,27 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     super.dispose();
   }
 
-  Future<void> _showSourcePicker() async {
+  Future<void> _captureFromCamera() async {
     if (_isAnimating) return;
+    if (!_cameraReady || _cameraController == null) return;
+
     _liveDetectionPaused = true;
-
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF2A2420),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            _SourceOption(
-              icon: Icons.camera_alt_outlined,
-              label: 'Prendre une photo',
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            const SizedBox(height: 12),
-            _SourceOption(
-              icon: Icons.photo_library_outlined,
-              label: 'Choisir dans la galerie',
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (source == null || !mounted) {
-      _liveDetectionPaused = false;
-      return;
+    try {
+      final xFile = await _cameraController!.takePicture();
+      final bytes = await xFile.readAsBytes();
+      try {
+        File(xFile.path).deleteSync();
+      } catch (_) {}
+      if (!mounted) return;
+      await _applyCapturedPhoto(bytes);
+    } catch (e, st) {
+      debugPrint('takePicture (capture): $e\n$st');
+    } finally {
+      if (mounted) _liveDetectionPaused = false;
     }
-    await _pickAndProcess(source);
-    _liveDetectionPaused = false;
   }
 
-  Future<void> _pickAndProcess(ImageSource source) async {
-    final photo = await _picker.pickImage(
-      source: source,
-      imageQuality: 75,
-    );
-    if (photo == null) return;
-    final bytes = await photo.readAsBytes();
-    if (!mounted) return;
-
+  Future<void> _applyCapturedPhoto(Uint8List bytes) async {
     setState(() => _isAnimating = true);
     try {
       await NeonService().saveUserPhotoBytes(bytes);
@@ -742,7 +703,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   child: GestureDetector(
                     onTap: (isScanning || _isAnimating)
                         ? null
-                        : _showSourcePicker,
+                        : _captureFromCamera,
                     child: Container(
                       width: 80,
                       height: 80,
@@ -1013,45 +974,6 @@ class _SingleIngredientTag extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Source picker option ─────────────────────────────────────────────────────
-
-class _SourceOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  const _SourceOption(
-      {required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white12, width: 0.5),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: AppTokens.coral, size: 22),
-            const SizedBox(width: 14),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
-            ),
-          ],
         ),
       ),
     );

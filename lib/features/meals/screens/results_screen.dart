@@ -653,27 +653,25 @@ class _RecipeCard extends ConsumerWidget {
                     children: [
                       _Badge(
                         label: '${meal.kcal} kcal',
-                        icon: Icons.local_fire_department_outlined,
+                        icon: Icons.local_fire_department_rounded,
                         color: AppTokens.coral,
-                        isDark: isDark,
                       ),
                       _Badge(
-                        label: meal.protein == 'élevé' ? 'Protéines ↑' : 'Protéines ~',
+                        label: meal.protein == 'élevé' ? 'Protéines ↑' : 'Protéines',
                         icon: Icons.fitness_center_rounded,
-                        color: meal.protein == 'élevé' ? const Color(0xFF4CAF50) : muted,
-                        isDark: isDark,
+                        color: meal.protein == 'élevé'
+                            ? const Color(0xFF4CAF50)
+                            : const Color(0xFF9E9E9E),
                       ),
                       _Badge(
                         label: meal.difficulty,
-                        icon: Icons.bar_chart_rounded,
-                        color: muted,
-                        isDark: isDark,
+                        icon: Icons.bolt_rounded,
+                        color: const Color(0xFFF5A623),
                       ),
                       _Badge(
                         label: meal.time,
-                        icon: Icons.schedule_outlined,
-                        color: muted,
-                        isDark: isDark,
+                        icon: Icons.schedule_rounded,
+                        color: const Color(0xFF5B8DEF),
                       ),
                     ],
                   ),
@@ -685,19 +683,12 @@ class _RecipeCard extends ConsumerWidget {
                       color: ink,
                       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Voir la recette',
-                          style: GoogleFonts.inter(
-                            fontSize: 13.5, fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.black : Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(Icons.arrow_forward_rounded, size: 15,
-                          color: isDark ? Colors.black : Colors.white),
-                      ],
+                    child: Text('Voir la recette',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 13.5, fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.black : Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -714,30 +705,25 @@ class _Badge extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
-  final bool isDark;
-  const _Badge({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.isDark,
-  });
+  const _Badge({required this.label, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.08) : AppTokens.surface,
-        borderRadius: BorderRadius.circular(8),
+        color: color.withOpacity(0.13),
+        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+        border: Border.all(color: color.withOpacity(0.25), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
           Text(label,
             style: GoogleFonts.inter(
-              fontSize: 11.5, fontWeight: FontWeight.w600,
+              fontSize: 12, fontWeight: FontWeight.w600,
               color: color,
             ),
           ),

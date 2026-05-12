@@ -17,6 +17,45 @@ import '../../home/providers/daily_hero_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/day_plan.dart';
 
+/// Jours consécutifs avec au moins un créneau renseigné (recette et/ou photo analysée).
+/// La date « active » la plus récente peut être hier si aujourd'hui est encore vide.
+int computeMealLoggingStreakDays({
+  required Map<String, Meal> selections,
+  required Map<String, Uint8List> slotPhotos,
+  required Map<String, Map<String, dynamic>> slotAnalyses,
+}) {
+  String iso(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  bool dayHasEntry(String isoDay) {
+    final prefix = '${isoDay}_';
+    bool any(Iterable<String> keys) => keys.any((k) => k.startsWith(prefix));
+    return any(selections.keys) || any(slotPhotos.keys) || any(slotAnalyses.keys);
+  }
+
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+
+  DateTime? streakEnd;
+  for (var i = 0; i < 400; i++) {
+    final d = today.subtract(Duration(days: i));
+    if (dayHasEntry(iso(d))) {
+      streakEnd = d;
+      break;
+    }
+  }
+  if (streakEnd == null) return 0;
+
+  var count = 0;
+  for (var d = streakEnd;; d = d.subtract(const Duration(days: 1))) {
+    if (!dayHasEntry(iso(d))) break;
+    count++;
+    if (count > 400) break;
+  }
+  return count;
+}
+
 /// Clé stockage créneau plan : `YYYY-MM-DD_Type`.
 String planSlotStorageKey(DateTime day, String mealType) =>
     '${day.year.toString().padLeft(4, '0')}-'
@@ -299,6 +338,22 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   consumedProtein: consumedPro,
                   consumedCarbs: consumedCarbs,
                   consumedFats: consumedFats,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                  child: _PlanMealLogStreakCard(
+                    streakDays: computeMealLoggingStreakDays(
+                      selections: selections,
+                      slotPhotos: slotPhotos,
+                      slotAnalyses: slotAnalyses,
+                    ),
+                    isDark: isDark,
+                    cardBg: cardBg,
+                    ink: ink,
+                    muted: muted,
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
@@ -1508,6 +1563,109 @@ final _budgetMeals = [
     prepTimeMin: 7, cookTimeMin: 13,
   ),
 ];
+
+// ─── Série repas (gamification) ─────────────────────────────────────────────
+
+class _PlanMealLogStreakCard extends StatelessWidget {
+  final int streakDays;
+  final bool isDark;
+  final Color cardBg;
+  final Color ink;
+  final Color muted;
+
+  /// Palier visuel : au-delà, la barre reste pleine (la série affichée continue d’augmenter).
+  static const int barCapDays = 7;
+
+  const _PlanMealLogStreakCard({
+    required this.streakDays,
+    required this.isDark,
+    required this.cardBg,
+    required this.ink,
+    required this.muted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = streakDays <= 0
+        ? 0.0
+        : (streakDays / barCapDays).clamp(0.0, 1.0);
+    const streakOrange = Color(0xFFFF9800);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+        border: Border.all(color: isDark ? Colors.white12 : AppTokens.hairline),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('🔥', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      streakDays <= 0 ? 'Ta série repas' : 'Série repas',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      streakDays <= 0
+                          ? 'Ajoute au moins un plat par jour pour remplir la barre.'
+                          : streakDays == 1
+                              ? '1 jour d’affilée — continue comme ça !'
+                              : '$streakDays jours d’affilée',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: muted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                streakDays <= 0 ? '0' : '$streakDays',
+                style: GoogleFonts.fraunces(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: streakOrange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: isDark ? Colors.white12 : AppTokens.hairline,
+              valueColor: const AlwaysStoppedAnimation<Color>(streakOrange),
+              minHeight: 8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 // ─── Dashboard nutrition ────────────────────────────────────────────────────
 

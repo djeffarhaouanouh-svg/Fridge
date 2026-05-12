@@ -179,6 +179,15 @@ CREATE TABLE IF NOT EXISTS meal_plans (
 COMMIT;
 
 -- =============================================================================
+-- Gamification « série repas » (OPTIONNEL)
+-- L’app derive déjà la série côté client depuis `meal_plans` (recipe_id et/ou
+-- slot_photo_base64 / slot_analysis_json). Ces colonnes servent seulement si tu
+-- veux persister un compteur serveur (classement, stats SQL sans agrégation).
+-- =============================================================================
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS meal_log_streak INTEGER NOT NULL DEFAULT 0;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS last_meal_log_date DATE;
+
+-- =============================================================================
 -- Index utiles (optionnel, idempotent)
 -- =============================================================================
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);

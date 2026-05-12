@@ -274,232 +274,189 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   @override
   Widget build(BuildContext context) {
-    final busy = _isPurchasing || _loadingOfferings;
-    final selectedPackage = _packageFor(_selected);
-    final canPurchase = _revenueCatReady && !busy && selectedPackage != null;
+    final canPurchase = _revenueCatReady && !_isPurchasing && !_loadingOfferings
+        && _packageFor(_selected) != null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3E0),
       body: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 60),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.kitchen_outlined, size: 15, color: AppTokens.coral),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              'Recettes et suivi pensés pour ton frigo',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppTokens.inkSoft,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      width: 60,
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (widget.onSkip != null) {
-                              widget.onSkip!();
-                            } else {
-                              Navigator.of(context).pop();
-                            }
-                          },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Header ──────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Row(
+                children: [
+                  const SizedBox(width: 60),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.kitchen_outlined, size: 15, color: AppTokens.coral),
+                        const SizedBox(width: 8),
+                        Flexible(
                           child: Text(
-                            'Passer',
+                            'Recettes et suivi pensés pour ton frigo',
+                            textAlign: TextAlign.center,
                             style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppTokens.coral,
+                              fontSize: 12, fontWeight: FontWeight.w600,
+                              color: AppTokens.inkSoft,
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 16),
-                      Text(
-                        'Fridge Pro',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.fraunces(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: AppTokens.ink,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Choisis ton offre pour débloquer tout le potentiel de l'app",
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: AppTokens.inkSoft,
-                          height: 1.4,
-                        ),
-                      ),
-                      if (!_loadingOfferings && !_revenueCatReady)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4, bottom: 12),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF8E1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.amber.shade700.withValues(alpha: 0.35),
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "RevenueCat ne s'est pas lancé",
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTokens.ink,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '• Lance avec run.bat ou VS Code « Fridge App » (secrets.json à la racine du projet).\n'
-                                    '• Après modification de secrets.json : arrête l\'app puis Run — le hot reload ne recharge pas les clés.\n'
-                                    '• Émulateur Android ou simulateur iOS uniquement (pas Chrome, pas Windows desktop).\n'
-                                    '• Onboarding déjà fait ? Tu ne repasses plus ici : désinstalle l\'app ou efface ses données pour retester.',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      height: 1.4,
-                                      color: AppTokens.inkSoft,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 56),
-                      Center(
-                        child: Image.asset(
-                          _kPaywallMascotAsset,
-                          width: _kPaywallMascotSize,
-                          height: _kPaywallMascotSize,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.medium,
-                        ),
-                      ),
-                      if (_loadingOfferings)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: LinearProgressIndicator(
-                            backgroundColor: AppTokens.hairline,
+                  ),
+                  SizedBox(
+                    width: 60,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () => widget.onSkip != null
+                            ? widget.onSkip!()
+                            : Navigator.of(context).pop(),
+                        child: Text(
+                          'Passer',
+                          style: GoogleFonts.inter(
+                            fontSize: 13, fontWeight: FontWeight.w600,
                             color: AppTokens.coral,
                           ),
                         ),
-                      _PlanCard(
-                        selected: _selected == _Plan.lifetime,
-                        available: _packageFor(_Plan.lifetime) != null,
-                        title: 'À vie',
-                        subtitle: 'Accès à vie à Fridge Pro',
-                        price: _priceFor(_Plan.lifetime),
-                        onTap: () => setState(() => _selected = _Plan.lifetime),
                       ),
-                      const SizedBox(height: 10),
-                      _PlanCard(
-                        selected: _selected == _Plan.monthly,
-                        available: _packageFor(_Plan.monthly) != null,
-                        title: 'Mensuel',
-                        subtitle: 'Abonnement mensuel',
-                        price: _priceFor(_Plan.monthly),
-                        badge: 'Populaire',
-                        onTap: () => setState(() => _selected = _Plan.monthly),
-                      ),
-                      const SizedBox(height: 10),
-                      _PlanCard(
-                        selected: _selected == _Plan.weekly,
-                        available: _packageFor(_Plan.weekly) != null,
-                        title: 'Semaine',
-                        subtitle: 'Abonnement hebdomadaire',
-                        price: _priceFor(_Plan.weekly),
-                        onTap: () => setState(() => _selected = _Plan.weekly),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Titre ───────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+              child: Column(
+                children: [
+                  Text(
+                    'Fridge Pro',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.fraunces(
+                      fontSize: 26, fontWeight: FontWeight.w800,
+                      color: AppTokens.ink, height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Choisis ton offre pour débloquer tout le potentiel de l'app",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 13, color: AppTokens.inkSoft, height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Mascotte flexible ────────────────────────────────────────────
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 240, maxHeight: 240),
+                  child: Image.asset(
+                    _kPaywallMascotAsset,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.medium,
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: canPurchase ? _purchase : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTokens.coral,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: AppTokens.coral.withValues(alpha: 0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                      ),
+            ),
+
+            // ── Plans ────────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  _PlanCard(
+                    selected: _selected == _Plan.lifetime,
+                    available: _packageFor(_Plan.lifetime) != null,
+                    title: 'À vie',
+                    subtitle: 'Accès à vie à Fridge Pro',
+                    price: _priceFor(_Plan.lifetime),
+                    onTap: () => setState(() => _selected = _Plan.lifetime),
+                  ),
+                  const SizedBox(height: 8),
+                  _PlanCard(
+                    selected: _selected == _Plan.monthly,
+                    available: _packageFor(_Plan.monthly) != null,
+                    title: 'Mensuel',
+                    subtitle: 'Abonnement mensuel',
+                    price: _priceFor(_Plan.monthly),
+                    badge: 'Populaire',
+                    onTap: () => setState(() => _selected = _Plan.monthly),
+                  ),
+                  const SizedBox(height: 8),
+                  _PlanCard(
+                    selected: _selected == _Plan.weekly,
+                    available: _packageFor(_Plan.weekly) != null,
+                    title: 'Semaine',
+                    subtitle: 'Abonnement hebdomadaire',
+                    price: _priceFor(_Plan.weekly),
+                    onTap: () => setState(() => _selected = _Plan.weekly),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Bouton fixe en bas ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: canPurchase ? _purchase : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTokens.coral,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppTokens.coral.withValues(alpha: 0.45),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                     ),
-                    child: _isPurchasing
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            canPurchase ? 'Commencer' : 'Chargement…',
-                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  child: _isPurchasing
+                      ? const SizedBox(
+                          width: 24, height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5, color: Colors.white,
                           ),
+                        )
+                      : Text(
+                          'Commencer',
+                          style: GoogleFonts.inter(
+                            fontSize: 16, fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+
+            // ── Footer ───────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _FooterLink(
+                    label: 'Restaurer les achats',
+                    onTap: _isPurchasing ? () {} : _restorePurchases,
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  _FooterLink(label: 'Conditions', onTap: () => _openUrl(_kTermsUrl)),
+                  const SizedBox(width: 12),
+                  _FooterLink(label: 'Confidentialité', onTap: () => _openUrl(_kPrivacyUrl)),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _FooterLink(
-                      label: 'Restaurer les achats',
-                      onTap: busy ? () {} : _restorePurchases,
-                    ),
-                    const SizedBox(width: 12),
-                    _FooterLink(label: 'Conditions', onTap: () => _openUrl(_kTermsUrl)),
-                    const SizedBox(width: 12),
-                    _FooterLink(label: 'Confidentialité', onTap: () => _openUrl(_kPrivacyUrl)),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
+        ),
       ),
     );
   }

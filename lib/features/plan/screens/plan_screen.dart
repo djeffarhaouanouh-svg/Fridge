@@ -1592,37 +1592,33 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
     with SingleTickerProviderStateMixin {
   static const Color _streakOrange = Color(0xFFFF9800);
 
-  /// Valeur affichée ; reste figée tant qu’une route recouvre le plan (fiche repas, sheet).
-  late int _displayStreak;
-
   late final AnimationController _controller;
   late Animation<double> _shakeTurns;
   late Animation<double> _shakeDx;
   late Animation<double> _emojiScale;
   Animation<double>? _barFill;
 
-  /// Évite qu’un `Future.delayed` obsolète relance l’anim après un nouveau sync.
   int _replayGeneration = 0;
 
-  bool _routeIsCurrent(BuildContext context) =>
-      ModalRoute.of(context)?.isCurrent ?? true;
+  double _barTargetFraction() => widget.streakDays <= 0
+      ? 0.0
+      : (widget.streakDays / _PlanMealLogStreakCard.barCapDays).clamp(0.0, 1.0);
 
   @override
   void initState() {
     super.initState();
-    _displayStreak = widget.streakDays;
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2600),
     );
-    _attachAnimations();
+    _attachAnimations(barBegin: 0.0);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (_routeIsCurrent(context)) _controller.forward();
+      _controller.forward();
     });
   }
 
-  void _attachAnimations() {
+  void _attachAnimations({required double barBegin}) {
     _shakeTurns = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 0.0, end: -0.17), weight: 1),
       TweenSequenceItem(tween: Tween(begin: -0.17, end: 0.17), weight: 1),
@@ -1656,10 +1652,9 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
       curve: const Interval(0.28, 0.54, curve: Curves.easeOutBack),
     ));
 
-    final target = _displayStreak <= 0
-        ? 0.0
-        : (_displayStreak / _PlanMealLogStreakCard.barCapDays).clamp(0.0, 1.0);
-    _barFill = Tween<double>(begin: 0, end: target).animate(
+    final target = _barTargetFraction();
+    final begin = barBegin.clamp(0.0, 1.0);
+    _barFill = Tween<double>(begin: begin, end: target).animate(
       CurvedAnimation(
         parent: _controller,
         curve: const Interval(0.54, 1.0, curve: Curves.easeOutCubic),
@@ -1667,45 +1662,32 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
     );
   }
 
-  /// Après fermeture d’une route (fiche repas), attendre la fin de la transition
-  /// avant de lancer l’anim — sinon secousse/pulse passent hors écran.
-  static const Duration _kReplayAfterRouteDelay = Duration(milliseconds: 420);
-
-  void _applyNewStreakAndReplay({required bool delayForRouteTransition}) {
+  void _replayWithBarFrom(double barBegin) {
     _replayGeneration++;
     final gen = _replayGeneration;
-    _displayStreak = widget.streakDays;
-    _attachAnimations();
+    _attachAnimations(barBegin: barBegin);
     _controller.reset();
 
     void start() {
       if (!mounted || gen != _replayGeneration) return;
-      if (!_routeIsCurrent(context)) return;
       _controller.forward(from: 0);
     }
 
-    if (delayForRouteTransition) {
-      Future<void>.delayed(_kReplayAfterRouteDelay, start);
-    } else {
-      start();
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_routeIsCurrent(context)) return;
-    if (_displayStreak != widget.streakDays) {
-      _applyNewStreakAndReplay(delayForRouteTransition: true);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => start());
   }
 
   @override
   void didUpdateWidget(covariant _PlanMealLogStreakCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.streakDays == widget.streakDays) return;
-    if (!_routeIsCurrent(context)) return;
-    _applyNewStreakAndReplay(delayForRouteTransition: false);
+
+    final prevFraction = _barFill?.value ??
+        (oldWidget.streakDays <= 0
+            ? 0.0
+            : (oldWidget.streakDays / _PlanMealLogStreakCard.barCapDays)
+                .clamp(0.0, 1.0));
+
+    _replayWithBarFrom(prevFraction);
   }
 
   @override
@@ -1716,12 +1698,10 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
 
   @override
   Widget build(BuildContext context) {
-    const streakOrange = _streakOrange;
-
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        final barVal = _barFill?.value ?? 0.0;
+        final barVal = _barFill?.value ?? _barTargetFraction();
 
         return Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -1760,7 +1740,7 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _displayStreak <= 0 ? 'Ta série repas' : 'Série repas',
+                          widget.streakDays <= 0 ? 'Ta série repas' : 'Série repas',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -1769,11 +1749,11 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _displayStreak <= 0
+                          widget.streakDays <= 0
                               ? 'Ajoute au moins un plat par jour pour remplir la barre.'
-                              : _displayStreak == 1
+                              : widget.streakDays == 1
                                   ? '1 jour d’affilée — continue comme ça !'
-                                  : '$_displayStreak jours d’affilée',
+                                  : '${widget.streakDays} jours d’affilée',
                           style: GoogleFonts.inter(
                             fontSize: 11,
                             color: widget.muted,
@@ -1784,11 +1764,11 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
                     ),
                   ),
                   Text(
-                    _displayStreak <= 0 ? '0' : '$_displayStreak',
+                    widget.streakDays <= 0 ? '0' : '${widget.streakDays}',
                     style: GoogleFonts.fraunces(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: streakOrange,
+                      color: _streakOrange,
                     ),
                   ),
                 ],
@@ -1799,7 +1779,7 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
                 child: LinearProgressIndicator(
                   value: barVal,
                   backgroundColor: widget.isDark ? Colors.white12 : AppTokens.hairline,
-                  valueColor: const AlwaysStoppedAnimation<Color>(streakOrange),
+                  valueColor: const AlwaysStoppedAnimation<Color>(_streakOrange),
                   minHeight: 8,
                 ),
               ),

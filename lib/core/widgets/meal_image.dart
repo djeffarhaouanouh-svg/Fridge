@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
-import '../theme/app_tokens.dart';
 
 class MealImage extends StatelessWidget {
   final String photo;
@@ -83,6 +82,12 @@ class MealImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    // Fixed beige placeholder reads as a gray “flash” on dark cards; blend with theme.
+    final loadingBg = cs.brightness == Brightness.dark
+        ? cs.surfaceContainerHighest
+        : cs.surface;
+
     final localAsset = _guessLocalAsset();
 
     if (photo.isEmpty) {
@@ -92,10 +97,10 @@ class MealImage extends StatelessWidget {
           fit: fit,
           width: double.infinity,
           height: double.infinity,
-          errorBuilder: (_, __, ___) => Container(color: AppTokens.placeholder),
+          errorBuilder: (_, __, ___) => Container(color: loadingBg),
         );
       }
-      return Container(color: AppTokens.placeholder);
+      return Container(color: loadingBg);
     }
 
     if (photo.startsWith('assets/')) {
@@ -104,7 +109,7 @@ class MealImage extends StatelessWidget {
         fit: fit,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) => Container(color: AppTokens.placeholder),
+        errorBuilder: (_, __, ___) => Container(color: loadingBg),
       );
     }
 
@@ -114,7 +119,7 @@ class MealImage extends StatelessWidget {
         fit: fit,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) => Container(color: AppTokens.placeholder),
+        errorBuilder: (_, __, ___) => Container(color: loadingBg),
       );
     }
 
@@ -124,18 +129,20 @@ class MealImage extends StatelessWidget {
         fit: fit,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) => Container(color: AppTokens.placeholder),
+        errorBuilder: (_, __, ___) => Container(color: loadingBg),
       );
     }
 
     return CachedNetworkImage(
       imageUrl: photo,
       fit: fit,
-      fadeInDuration: const Duration(milliseconds: 350),
-      fadeOutDuration: const Duration(milliseconds: 200),
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      placeholderFadeInDuration: Duration.zero,
       memCacheWidth: 800,
-      placeholder: (_, __) => Container(color: AppTokens.placeholder),
-      errorWidget: (_, __, ___) => Container(color: AppTokens.placeholder),
+      useOldImageOnUrlChange: true,
+      placeholder: (_, __) => Container(color: loadingBg),
+      errorWidget: (_, __, ___) => Container(color: loadingBg),
     );
   }
 

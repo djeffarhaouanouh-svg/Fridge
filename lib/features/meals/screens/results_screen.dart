@@ -619,6 +619,38 @@ class _RecipeCard extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  // Vignette "Top IA" sur la carte la plus recommandée
+                  if (index == 0)
+                    Positioned(
+                      top: 12, right: 14,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF8C00),
+                          borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF8C00).withOpacity(0.5),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('✦', style: TextStyle(fontSize: 10, color: Colors.white)),
+                            const SizedBox(width: 4),
+                            Text('Recommandé',
+                              style: GoogleFonts.inter(
+                                fontSize: 11, fontWeight: FontWeight.w700,
+                                color: Colors.white, letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -194,6 +194,7 @@ class ResultsScreen extends ConsumerWidget {
                   ...List.generate(meals.length, (i) => _RecipeCard(
                     meal: meals[i],
                     index: i,
+                    isRecommended: i == _recommendedIndex(meals),
                   )),
 
                   const SizedBox(height: 28),
@@ -522,10 +523,31 @@ String _aiComment(Meal meal) {
 
 // ── Carte recette premium ─────────────────────────────────────────────────────
 
+int _recommendedIndex(List<Meal> meals) {
+  if (meals.isEmpty) return 0;
+  int best = 0;
+  int bestScore = -1;
+  for (int i = 0; i < meals.length; i++) {
+    final m = meals[i];
+    int score = 0;
+    if (m.protein == 'élevé') score += 3;
+    if (m.proteinG != null && m.proteinG! >= 25) score += 2;
+    final min = _parseTimeMinutes(m.time);
+    if (min > 0 && min <= 20) score += 2;
+    if (m.kcal > 0 && m.kcal < 450) score += 2;
+    if (m.difficulty == 'facile') score += 1;
+    if (score > bestScore) { bestScore = score; best = i; }
+  }
+  return best;
+}
+
+// ── Carte recette premium ─────────────────────────────────────────────────────
+
 class _RecipeCard extends ConsumerWidget {
   final Meal meal;
   final int index;
-  const _RecipeCard({required this.meal, required this.index});
+  final bool isRecommended;
+  const _RecipeCard({required this.meal, required this.index, this.isRecommended = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -620,7 +642,7 @@ class _RecipeCard extends ConsumerWidget {
                     ),
                   ),
                   // Vignette "Top IA" sur la carte la plus recommandée
-                  if (index == 0)
+                  if (isRecommended)
                     Positioned(
                       top: 12, right: 14,
                       child: Container(

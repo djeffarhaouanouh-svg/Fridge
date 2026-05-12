@@ -38,7 +38,7 @@ class ResultsScreen extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: GestureDetector(
-          onTap: () => Navigator.maybePop(context),
+          onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
           child: Icon(Icons.arrow_back_ios_new, size: 18, color: ink),
         ),
         title: Text(

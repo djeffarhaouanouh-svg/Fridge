@@ -5,6 +5,9 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/ingredient_category.dart';
 import '../../../core/widgets/meal_image.dart';
 import '../../../core/widgets/glass_button.dart';
+import '../../../core/services/claude_service.dart';
+import '../../../core/services/neon_service.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../meals/providers/meals_provider.dart';
 import '../../meals/models/meal.dart';
 import 'recipe_screen.dart';
@@ -231,6 +234,7 @@ class _IngredientsEditorSheetState
   final _addCtrl = TextEditingController();
   final _editCtrl = TextEditingController();
   int? _editingIndex;
+  bool _isRegenerating = false;
 
   @override
   void dispose() {
@@ -270,6 +274,25 @@ class _IngredientsEditorSheetState
     list.add(val.toLowerCase());
     ref.read(latestScanIngredientsProvider.notifier).state = list;
     _addCtrl.clear();
+  }
+
+  Future<void> _validateAndRegen() async {
+    setState(() => _isRegenerating = true);
+    try {
+      final ingredients = ref.read(latestScanIngredientsProvider);
+      final profile = ref.read(userProfileProvider);
+      final meals = await ClaudeService().findRecipes(
+        ingredients,
+        profile: profile,
+        neonService: NeonService(),
+      );
+      if (meals.isNotEmpty) {
+        ref.read(latestScanMealsProvider.notifier).state = meals;
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (mounted) setState(() => _isRegenerating = false);
+    }
   }
 
   @override
@@ -416,22 +439,29 @@ class _IngredientsEditorSheetState
 
             const SizedBox(height: 16),
 
-            // Bouton valider
+            // Bouton valider et regénérer
             GestureDetector(
-              onTap: () => Navigator.pop(context),
+              onTap: _isRegenerating ? null : _validateAndRegen,
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: AppTokens.ink,
+                  color: _isRegenerating ? AppTokens.ink.withOpacity(0.5) : AppTokens.ink,
                   borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                 ),
                 child: Center(
-                  child: Text('Valider',
-                    style: GoogleFonts.inter(
-                      fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white,
-                    ),
-                  ),
+                  child: _isRegenerating
+                    ? const SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white,
+                        ),
+                      )
+                    : Text('Valider et regénérer',
+                        style: GoogleFonts.inter(
+                          fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white,
+                        ),
+                      ),
                 ),
               ),
             ),

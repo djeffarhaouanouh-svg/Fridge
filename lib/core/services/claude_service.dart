@@ -277,6 +277,7 @@ RÈGLES IMPORTANTES :
 - Éviter les recettes impossibles avec les ingrédients présents
 - Les recettes doivent donner envie et sembler naturelles
 - Ne jamais inventer des techniques culinaires absurdes
+- Pour les produits industriels ou transformés (pâtes en paquet, gnocchis du commerce, conserves, plats préparés, etc.), dans les étapes de cuisson, mentionner explicitement : "Suivre le mode de cuisson conseillé sur l'emballage" au lieu de donner des temps ou températures inventés
 
 STYLE :
 - Moderne

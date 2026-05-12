@@ -1592,77 +1592,120 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
     with SingleTickerProviderStateMixin {
   static const Color _streakOrange = Color(0xFFFF9800);
 
+  /// Valeur affichée ; reste figée tant qu’une route recouvre le plan (fiche repas, sheet).
+  late int _displayStreak;
+
   late final AnimationController _controller;
   late Animation<double> _shakeTurns;
   late Animation<double> _shakeDx;
   late Animation<double> _emojiScale;
   Animation<double>? _barFill;
 
+  /// Évite qu’un `Future.delayed` obsolète relance l’anim après un nouveau sync.
+  int _replayGeneration = 0;
+
+  bool _routeIsCurrent(BuildContext context) =>
+      ModalRoute.of(context)?.isCurrent ?? true;
+
   @override
   void initState() {
     super.initState();
+    _displayStreak = widget.streakDays;
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2600),
     );
     _attachAnimations();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _controller.forward();
+      if (!mounted) return;
+      if (_routeIsCurrent(context)) _controller.forward();
     });
   }
 
   void _attachAnimations() {
     _shakeTurns = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: -0.12), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -0.12, end: 0.12), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 0.12, end: -0.1), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -0.17), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -0.17, end: 0.17), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.17, end: -0.14), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -0.14, end: 0.14), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.14, end: -0.1), weight: 1),
       TweenSequenceItem(tween: Tween(begin: -0.1, end: 0.1), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 0.1, end: -0.07), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -0.07, end: 0.07), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 0.07, end: 0.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.1, end: 0.0), weight: 1),
     ]).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.26, curve: Curves.linear),
+      curve: const Interval(0.0, 0.28, curve: Curves.linear),
     ));
 
     _shakeDx = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: -5.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -5.0, end: 6.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -8.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -8.0, end: 9.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 9.0, end: -7.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -7.0, end: 6.0), weight: 1),
       TweenSequenceItem(tween: Tween(begin: 6.0, end: -5.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -5.0, end: 4.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 4.0, end: -3.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -3.0, end: 0.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -5.0, end: 0.0), weight: 1),
     ]).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.26, curve: Curves.linear),
+      curve: const Interval(0.0, 0.28, curve: Curves.linear),
     ));
 
     _emojiScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.52), weight: 45),
-      TweenSequenceItem(tween: Tween(begin: 1.52, end: 1.0), weight: 55),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.62), weight: 45),
+      TweenSequenceItem(tween: Tween(begin: 1.62, end: 1.0), weight: 55),
     ]).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.26, 0.52, curve: Curves.easeOutBack),
+      curve: const Interval(0.28, 0.54, curve: Curves.easeOutBack),
     ));
 
-    final target = widget.streakDays <= 0
+    final target = _displayStreak <= 0
         ? 0.0
-        : (widget.streakDays / _PlanMealLogStreakCard.barCapDays).clamp(0.0, 1.0);
+        : (_displayStreak / _PlanMealLogStreakCard.barCapDays).clamp(0.0, 1.0);
     _barFill = Tween<double>(begin: 0, end: target).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.52, 1.0, curve: Curves.easeOutCubic),
+        curve: const Interval(0.54, 1.0, curve: Curves.easeOutCubic),
       ),
     );
+  }
+
+  /// Après fermeture d’une route (fiche repas), attendre la fin de la transition
+  /// avant de lancer l’anim — sinon secousse/pulse passent hors écran.
+  static const Duration _kReplayAfterRouteDelay = Duration(milliseconds: 420);
+
+  void _applyNewStreakAndReplay({required bool delayForRouteTransition}) {
+    _replayGeneration++;
+    final gen = _replayGeneration;
+    _displayStreak = widget.streakDays;
+    _attachAnimations();
+    _controller.reset();
+
+    void start() {
+      if (!mounted || gen != _replayGeneration) return;
+      if (!_routeIsCurrent(context)) return;
+      _controller.forward(from: 0);
+    }
+
+    if (delayForRouteTransition) {
+      Future<void>.delayed(_kReplayAfterRouteDelay, start);
+    } else {
+      start();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_routeIsCurrent(context)) return;
+    if (_displayStreak != widget.streakDays) {
+      _applyNewStreakAndReplay(delayForRouteTransition: true);
+    }
   }
 
   @override
   void didUpdateWidget(covariant _PlanMealLogStreakCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.streakDays != widget.streakDays) {
-      _attachAnimations();
-      _controller.forward(from: 0);
-    }
+    if (oldWidget.streakDays == widget.streakDays) return;
+    if (!_routeIsCurrent(context)) return;
+    _applyNewStreakAndReplay(delayForRouteTransition: false);
   }
 
   @override
@@ -1717,7 +1760,7 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.streakDays <= 0 ? 'Ta série repas' : 'Série repas',
+                          _displayStreak <= 0 ? 'Ta série repas' : 'Série repas',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -1726,11 +1769,11 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          widget.streakDays <= 0
+                          _displayStreak <= 0
                               ? 'Ajoute au moins un plat par jour pour remplir la barre.'
-                              : widget.streakDays == 1
+                              : _displayStreak == 1
                                   ? '1 jour d’affilée — continue comme ça !'
-                                  : '${widget.streakDays} jours d’affilée',
+                                  : '$_displayStreak jours d’affilée',
                           style: GoogleFonts.inter(
                             fontSize: 11,
                             color: widget.muted,
@@ -1741,7 +1784,7 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
                     ),
                   ),
                   Text(
-                    widget.streakDays <= 0 ? '0' : '${widget.streakDays}',
+                    _displayStreak <= 0 ? '0' : '$_displayStreak',
                     style: GoogleFonts.fraunces(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,

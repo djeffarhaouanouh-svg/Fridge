@@ -83,8 +83,8 @@ class MealImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    // Fixed beige placeholder reads as a gray “flash” on dark cards; blend with theme.
-    final loadingBg = cs.brightness == Brightness.dark
+    // Avoid solid gray/colored blocks while decoding — parent (card) shows through.
+    final subtleErrorBg = cs.brightness == Brightness.dark
         ? cs.surfaceContainerHighest
         : cs.surface;
 
@@ -97,10 +97,10 @@ class MealImage extends StatelessWidget {
           fit: fit,
           width: double.infinity,
           height: double.infinity,
-          errorBuilder: (_, __, ___) => Container(color: loadingBg),
+          errorBuilder: (_, __, ___) => ColoredBox(color: subtleErrorBg),
         );
       }
-      return Container(color: loadingBg);
+      return ColoredBox(color: subtleErrorBg);
     }
 
     if (photo.startsWith('assets/')) {
@@ -109,7 +109,7 @@ class MealImage extends StatelessWidget {
         fit: fit,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) => Container(color: loadingBg),
+        errorBuilder: (_, __, ___) => ColoredBox(color: subtleErrorBg),
       );
     }
 
@@ -119,7 +119,7 @@ class MealImage extends StatelessWidget {
         fit: fit,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) => Container(color: loadingBg),
+        errorBuilder: (_, __, ___) => ColoredBox(color: subtleErrorBg),
       );
     }
 
@@ -129,7 +129,7 @@ class MealImage extends StatelessWidget {
         fit: fit,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) => Container(color: loadingBg),
+        errorBuilder: (_, __, ___) => ColoredBox(color: subtleErrorBg),
       );
     }
 
@@ -141,8 +141,8 @@ class MealImage extends StatelessWidget {
       placeholderFadeInDuration: Duration.zero,
       memCacheWidth: 800,
       useOldImageOnUrlChange: true,
-      placeholder: (_, __) => Container(color: loadingBg),
-      errorWidget: (_, __, ___) => Container(color: loadingBg),
+      placeholder: (_, __) => const ColoredBox(color: Colors.transparent),
+      errorWidget: (_, __, ___) => ColoredBox(color: subtleErrorBg),
     );
   }
 

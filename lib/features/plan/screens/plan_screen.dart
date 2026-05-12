@@ -283,27 +283,34 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final isLoading = status == PlanStatus.loading;
 
     // Calcul local des calories/macros d'aujourd'hui — réactif et instantané
-    final _now = DateTime.now();
+    final now = DateTime.now();
     final todayPrefix =
-        '${_now.year.toString().padLeft(4, '0')}-'
-        '${_now.month.toString().padLeft(2, '0')}-'
-        '${_now.day.toString().padLeft(2, '0')}';
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+    // Union des clés : une analyse photo enlève le repas des `selections` mais garde l’analyse seule.
+    final todayKeys = <String>{
+      for (final k in selections.keys)
+        if (k.startsWith(todayPrefix)) k,
+      for (final k in slotAnalyses.keys)
+        if (k.startsWith(todayPrefix)) k,
+    };
     int consumedKcal = 0, consumedPro = 0, consumedCarbs = 0, consumedFats = 0;
-    for (final entry in selections.entries) {
-      if (!entry.key.startsWith(todayPrefix)) continue;
-      final analysis = slotAnalyses[entry.key];
+    for (final key in todayKeys) {
+      final analysis = slotAnalyses[key];
       if (analysis != null) {
         consumedKcal  += (analysis['kcal']     as num?)?.toInt() ?? 0;
         consumedPro   += (analysis['proteins'] as num?)?.toInt() ?? 0;
         consumedCarbs += (analysis['carbs']    as num?)?.toInt() ?? 0;
         consumedFats  += (analysis['fats']     as num?)?.toInt() ?? 0;
       } else {
-        final meal = entry.value;
-        consumedKcal  += meal.kcal;
-        // Macros explicites si l'IA les a fournis, sinon estimation 40/30/30
-        consumedPro   += meal.proteinG ?? (meal.kcal * 0.30 / 4).round();
-        consumedCarbs += meal.carbsG   ?? (meal.kcal * 0.40 / 4).round();
-        consumedFats  += meal.fatsG    ?? (meal.kcal * 0.30 / 9).round();
+        final meal = selections[key];
+        if (meal != null) {
+          consumedKcal  += meal.kcal;
+          consumedPro   += meal.proteinG ?? (meal.kcal * 0.30 / 4).round();
+          consumedCarbs += meal.carbsG   ?? (meal.kcal * 0.40 / 4).round();
+          consumedFats  += meal.fatsG    ?? (meal.kcal * 0.30 / 9).round();
+        }
       }
     }
     final days = _days;
@@ -329,30 +336,34 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
             slivers: [
               SliverToBoxAdapter(child: SizedBox(height: MediaQuery.of(context).padding.top + 24)),
               SliverToBoxAdapter(
-                child: _PlanNutritionDashboard(
-                  targetCalories: profile.targetCalories,
-                  targetProtein: profile.targetProtein,
-                  targetCarbs: profile.targetCarbs,
-                  targetFats: profile.targetFats,
-                  consumedCalories: consumedKcal,
-                  consumedProtein: consumedPro,
-                  consumedCarbs: consumedCarbs,
-                  consumedFats: consumedFats,
+                child: RepaintBoundary(
+                  child: _PlanNutritionDashboard(
+                    targetCalories: profile.targetCalories,
+                    targetProtein: profile.targetProtein,
+                    targetCarbs: profile.targetCarbs,
+                    targetFats: profile.targetFats,
+                    consumedCalories: consumedKcal,
+                    consumedProtein: consumedPro,
+                    consumedCarbs: consumedCarbs,
+                    consumedFats: consumedFats,
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
-                  child: _PlanMealLogStreakCard(
-                    streakDays: computeMealLoggingStreakDays(
-                      selections: selections,
-                      slotPhotos: slotPhotos,
-                      slotAnalyses: slotAnalyses,
+                  child: RepaintBoundary(
+                    child: _PlanMealLogStreakCard(
+                      streakDays: computeMealLoggingStreakDays(
+                        selections: selections,
+                        slotPhotos: slotPhotos,
+                        slotAnalyses: slotAnalyses,
+                      ),
+                      isDark: isDark,
+                      cardBg: cardBg,
+                      ink: ink,
+                      muted: muted,
                     ),
-                    isDark: isDark,
-                    cardBg: cardBg,
-                    ink: ink,
-                    muted: muted,
                   ),
                 ),
               ),
@@ -810,6 +821,7 @@ class _DayMealSlotTile extends StatelessWidget {
                   width: 48,
                   height: 48,
                   child: _slotThumbnail(
+                    context,
                     selectedMeal: selectedMeal,
                     customPhoto: customPhoto,
                   ),
@@ -864,15 +876,22 @@ class _DayMealSlotTile extends StatelessWidget {
     );
   }
 
-  Widget _slotThumbnail({required Meal? selectedMeal, required Uint8List? customPhoto}) {
+  Widget _slotThumbnail(
+    BuildContext context, {
+    required Meal? selectedMeal,
+    required Uint8List? customPhoto,
+  }) {
     if (selectedMeal != null) {
       return MealImage(photo: selectedMeal.photo, fallbackKey: selectedMeal.title);
     }
     if (customPhoto != null) {
       return Image.memory(customPhoto, fit: BoxFit.cover);
     }
+    final emptyBg = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF252525)
+        : const Color(0xFFF2F2F2);
     return Container(
-      color: AppTokens.placeholder,
+      color: emptyBg,
       child: Center(
         child: Text(_slotEmoji(), style: const TextStyle(fontSize: 26)),
       ),
@@ -1776,11 +1795,25 @@ class _PlanMealLogStreakCardState extends State<_PlanMealLogStreakCard>
               const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: barVal,
-                  backgroundColor: widget.isDark ? Colors.white12 : AppTokens.hairline,
-                  valueColor: const AlwaysStoppedAnimation<Color>(_streakOrange),
-                  minHeight: 8,
+                child: SizedBox(
+                  height: 8,
+                  width: double.infinity,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ColoredBox(
+                        color: widget.isDark ? Colors.white12 : AppTokens.hairline,
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: barVal.clamp(0.0, 1.0),
+                          heightFactor: 1,
+                          child: const ColoredBox(color: _streakOrange),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -1923,11 +1956,25 @@ class _DashMacroBar extends StatelessWidget {
             const SizedBox(height: 6),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: isDark ? Colors.white12 : AppTokens.hairline,
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-                minHeight: 4,
+              child: SizedBox(
+                height: 4,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColoredBox(
+                      color: isDark ? Colors.white12 : AppTokens.hairline,
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: progress.clamp(0.0, 1.0),
+                        heightFactor: 1,
+                        child: ColoredBox(color: color),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 6),

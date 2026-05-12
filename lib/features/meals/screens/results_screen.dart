@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/ingredient_category.dart';
@@ -151,33 +152,46 @@ class ResultsScreen extends ConsumerWidget {
                   ],
 
                   // Titre section recettes — AI personality
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'J\'ai trouvé ',
-                          style: GoogleFonts.fraunces(
-                            fontSize: 22, fontWeight: FontWeight.w700,
-                            color: ink, height: 1.2,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'J\'ai trouvé ',
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 22, fontWeight: FontWeight.w700,
+                                  color: ink, height: 1.2,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '${meals.length} idées',
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 22, fontWeight: FontWeight.w700,
+                                  color: AppTokens.coral, fontStyle: FontStyle.italic,
+                                  height: 1.2,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' pour ce soir',
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 22, fontWeight: FontWeight.w700,
+                                  color: ink, height: 1.2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        TextSpan(
-                          text: '${meals.length} idées',
-                          style: GoogleFonts.fraunces(
-                            fontSize: 22, fontWeight: FontWeight.w700,
-                            color: AppTokens.coral, fontStyle: FontStyle.italic,
-                            height: 1.2,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' pour ce soir 👨‍🍳',
-                          style: GoogleFonts.fraunces(
-                            fontSize: 22, fontWeight: FontWeight.w700,
-                            color: ink, height: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 8),
+                      SvgPicture.asset(
+                        'assets/images/mascotte_normal.svg',
+                        width: 36,
+                        height: 36,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(

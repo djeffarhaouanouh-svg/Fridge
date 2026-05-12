@@ -93,7 +93,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
                       icon: const Icon(Icons.arrow_back_ios_new_rounded,
                           color: Colors.white, size: 20),
                     ),

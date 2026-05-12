@@ -90,10 +90,15 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     try {
       final extras = await NeonService().loadPlanSlotExtras();
       if (!mounted) return;
+      // Réutilise les instances Uint8List déjà en mémoire pour que MemoryImage
+      // conserve sa clé de cache et ne re-décode pas (évite le flash gris).
+      final currentPhotos = ref.read(planSlotPhotosProvider);
       final photos = <String, Uint8List>{};
       final analyses = <String, Map<String, dynamic>>{};
       for (final entry in extras.entries) {
-        if (entry.value.photo != null) photos[entry.key] = entry.value.photo!;
+        if (entry.value.photo != null) {
+          photos[entry.key] = currentPhotos[entry.key] ?? entry.value.photo!;
+        }
         if (entry.value.analysis != null) analyses[entry.key] = entry.value.analysis!;
       }
       ref.read(planSlotPhotosProvider.notifier).state = photos;
@@ -885,7 +890,7 @@ class _DayMealSlotTile extends StatelessWidget {
       return MealImage(photo: selectedMeal.photo, fallbackKey: selectedMeal.title);
     }
     if (customPhoto != null) {
-      return Image.memory(customPhoto, fit: BoxFit.cover);
+      return Image.memory(customPhoto, fit: BoxFit.cover, gaplessPlayback: true);
     }
     final emptyBg = Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF252525)
@@ -1135,7 +1140,7 @@ class _PlanMealDetailScreenState extends ConsumerState<PlanMealDetailScreen> {
                                   key: const ValueKey('custom'),
                                   height: 200,
                                   width: double.infinity,
-                                  child: Image.memory(_pickedPhoto!, fit: BoxFit.cover),
+                                  child: Image.memory(_pickedPhoto!, fit: BoxFit.cover, gaplessPlayback: true),
                                 )
                               : meal != null
                                   ? SizedBox(
